@@ -1,0 +1,2 @@
+# plotman
+Chia plotting manager
