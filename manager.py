@@ -54,7 +54,10 @@ def daemon_thread(name):
         tmpdir_age = {}
         for d in tmpdirs:
             d_jobs = [j for j in jobs if j.tmpdir == d]
-            tmpdir_age[d] = min(d_jobs, key=Job.get_time_wall, default=MAX_AGE).get_time_wall()
+            if d_jobs:
+                tmpdir_age[d] = min(d_jobs, key=Job.get_time_wall, default=MAX_AGE).get_time_wall()
+            else:
+                tmpdir_age[d] = MAX_AGE
 
         # We should only plot if the youngest tmpdir is old enough
         if (min(tmpdir_age.values()) > global_stagger):

@@ -17,7 +17,6 @@ import sys
 
 class Job:
     'Represents a plotter job'
-    started = False
     k = 0
     r = 0
     u = 0
@@ -31,6 +30,7 @@ class Job:
     job_id = 0
     plot_id = 0
     proc = None   # will get a psutil.Process
+    initialized = False  # Set to true once data structures are fully initialized
 
     def get_running_jobs(logroot):
         jobs = []
@@ -39,6 +39,7 @@ class Job:
                 args = proc.cmdline()
                 # n.b.: args[0]=python, args[1]=chia
                 if args[2] == 'plots' and args[3] == 'create':
+
                     jobs += [ Job(proc, logroot) ]
         return jobs
 
@@ -87,12 +88,21 @@ class Job:
                     break
 
             # Find plot ID and start time.
+            if not self.init_from_logfile():
+                # This should rarely if ever happen, but if it does, this object is
+                # left in an uninitialized state and will probably crash things later.
+                # TODO: handle this error case better.
+                print('WARNING: unable to initialize job info from logfile %s' % self.logfile)
+
             assert self.logfile
             with open(self.logfile, 'r') as f:
+                found_id = False
+                found_log = False
                 for line in f:
                     m = re.match('^ID: ([0-9a-f]*)', line)
                     if m:
                         self.plot_id = m.group(1)
+                        found_id = True
                     m = re.match(r'^Starting phase 1/4:.*\.\.\. (.*)', line)
                     if m:
                         # Mon Nov  2 08:39:53 2020
@@ -100,7 +110,37 @@ class Job:
                         # this line will not have been logged yet and we won't initialize the start time.
                         # Should correct this.
                         self.start_time = datetime.strptime(m.group(1), '%a %b  %d %H:%M:%S %Y')
+                        found_log = True
                         break
+
+    def init_from_logfile(self):
+        '''Read plot ID and job start time from logfile.  Return true if we
+           find the info, false otherwise'''
+        assert self.logfile
+        # Try reading a few times; it can take ~5 seconds for the job to get started.
+        found_id = False
+        found_log = False
+        for attempt_number in range(8):
+            with open(self.logfile, 'r') as f:
+                for line in f:
+                    m = re.match('^ID: ([0-9a-f]*)', line)
+                    if m:
+                        self.plot_id = m.group(1)
+                        found_id = True
+                    m = re.match(r'^Starting phase 1/4:.*\.\.\. (.*)', line)
+                    if m:
+                        # Mon Nov  2 08:39:53 2020
+                        self.start_time = datetime.strptime(m.group(1), '%a %b  %d %H:%M:%S %Y')
+                        found_log = True
+                        break  # Stop reading lines in file
+
+            if found_id and found_log:
+                return True  # Stop trying
+            else:
+                time.sleep(1)  # Sleep 1 second and try again
+
+        return False  # Give up!
+
 
     def progress(self):
         assert self.logfile
