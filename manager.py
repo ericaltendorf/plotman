@@ -1,4 +1,7 @@
 #!/usr/bin/python3
+#
+# Warning: lsof may block or deadlock if NFS host is unreachable; avoid
+# using this tool if your plotting processes are touching NFS files.
 
 # TODO do we use all these?
 from datetime import datetime
@@ -20,63 +23,75 @@ import texttable as tt   # from somewhere?
 # Plotman libraries
 from job import Job
 
-parser = argparse.ArgumentParser(description='Initiate Chia plotting jobs.')
-parser.add_argument('--dryrun', default=False, action='store_true',
-        help='Show plotting actions but do not execute them.')
-args = parser.parse_args()
-dryrun = args.dryrun
-
+# Constants
 MIN = 60    # Seconds
 HR = 3600   # Seconds
+MAX_AGE = 1000_000_000   # Arbitrary large number of seconds
 
+# Plotting scheduling parameters
+tmpdir_stagger = 170 * MIN        # Don't run a job on a particular temp dir more often than this.
+global_stagger = 40 * MIN         # Global min; don't run any jobs more often than this.
+daemon_sleep_time = 5 * MIN       # How often the daemon wakes to consider starting a new plot job
+
+# Plot parameters
 kval = 32
-n_jobs_per_dir = 4 * 2            # Number of jobs to run per temp dir
-job_stagger_s = 3.5 * HR          # Seconds to wait between jobs on same tmpdir
-n_sequential = 1                  # Number of plots for each job to create
-tmpdir_stagger_s = 30 * MIN       # Seconds to offset jobs on different tmpdirs
 n_threads = 12                    # Threads per job
 n_buckets = 128                   # Number of buckets to split data into
+job_buffer = 4550                 # Per job memory
 
 # Directories
-dstdir_root = '/home/eric/chia/plots'
-dstdirs = [ '002', '003', '004', '005' ]
-# tmpdir_root = '/mnt/tmp'
 tmpdirs = [ '/mnt/tmp/' + d for d in [ '00', '01', '02', '03' ] ]
 tmpdir2 = '/mnt/tmp/a/'
-logroot = '/home/eric/chia/logs'
-logdir = os.path.join(logroot, datetime.now().strftime('%Y-%m-%d-%H-%M'))
+logdir = '/home/eric/chia/logs'
+dstdirs = [ '/home/eric/chia/plots/000', '/home/eric/chia/plots/001' ]
 
-# Per job memory
-total_buffer = 60000              # MB to dedicate to plotting buffers 
-job_buffer = int(total_buffer / (len(tmpdirs) * n_jobs_per_dir))
-job_buffer = 4550   # Force to just over the 3250 magic cutoff .. dangerous if you have too many jobs
 
-# Globals
-all_jobs = []
-test_global = 'initial value'
+def daemon_thread(name):
+    'Daemon thread for automatically starting jobs and monitoring job status'
 
- 
-#def daemon_thread():
-    #'Daemon thread for automatically starting jobs and monitoring job status'
-    #global all_jobs
-    #print('entering thread')
-    #while True:
-        #print('Plot initiator thread creating job')
-        #new_job = Job('/tmp/a', '/tmp/b', test_global)
-        #all_jobs = all_jobs + [ new_job ]
-        #for job in all_jobs:
-            #print(job.status_str_short())
-        #time.sleep(5)
+    while True:
+        jobs = Job.get_running_jobs(logdir)
 
-def init_logdir(logdir):
-    try:
-        os.makedirs(logdir)
-        latest_symlink = os.path.join(logroot, '0.latest')
-        os.remove(latest_symlink)
-        os.symlink(logdir, latest_symlink)
-    except OSError as err:
-        print('Failed to init logdirs: {0}'.format(err))
-        sys.exit(1)
+        # TODO: Factor out some of this complex logic, clean it up, add unit tests
+        
+        # Identify the most recent time a tmp had a job start (its "age")
+        tmpdir_age = {}
+        for d in tmpdirs:
+            d_jobs = [j for j in jobs if j.tmpdir == d]
+            tmpdir_age[d] = min(d_jobs, key=Job.get_time_wall, default=MAX_AGE).get_time_wall()
+
+        # We should only plot if the youngest tmpdir is old enough
+        if (min(tmpdir_age.values()) > global_stagger):
+
+            # Filter too-young tmpdirs
+            tmpdir_age = { k:v for k, v in tmpdir_age.items() if v > tmpdir_stagger }
+
+            if tmpdir_age:
+                # Plot to oldest tmpdir
+                tmpdir = max(tmpdir_age, key=tmpdir_age.get)
+
+                dstdir = random.choice(dstdirs)  # TODO: Pick most empty drive?
+
+                logfile = os.path.join(logdir, datetime.now().strftime('%Y-%m-%d-%H:%M:%S.log'))
+
+                plot_args = ['chia', 'plots', 'create',
+                        '-k', str(kval),
+                        '-r', str(n_threads),
+                        '-u', str(n_buckets),
+                        '-b', str(job_buffer),
+                        '-t', tmpdir,
+                        '-2', tmpdir2,
+                        '-d', dstdir ]
+
+                plot_cmd_str = ' '.join(plot_args)
+                full_cmd = '%s > %s 2>&1 &' % (plot_cmd_str, logfile)
+
+                print('\nDaemon starting new plot job:\n%s' % full_cmd)
+                call(full_cmd, shell=True)
+
+        time.sleep(daemon_sleep_time)
+
+
 
 def human_format(num, precision):
     magnitude = 0
@@ -93,18 +108,18 @@ def time_format(sec, precision):
 
 def status_report(jobs):
     tab = tt.Texttable()
-    headings = ['plot id', 'status', 'phase', 'k', 'r', 'tmp dir', 'tmp', 'wall', 'pid', 'mem', 'user', 'sys', 'io']
+    headings = ['plot id', 'k', 'tmp dir', 'wall', 'phase', 'tmp', 'pid', 'stat', 'mem', 'user', 'sys', 'io']
     tab.header(headings)
-    for j in jobs:
+    tab.set_cols_align('r' * len(headings))
+    for j in sorted(jobs, key=Job.get_time_wall):
         row = [j.plot_id[:8] + '...',
-               j.get_run_status(),
-               '%d:%d' % j.progress(),
                j.k,
-               j.r,
                j.tmpdir,
-               human_format(j.get_tmp_usage(), 0),
                time_format(j.get_time_wall(), 1),
+               '%d:%d' % j.progress(),
+               human_format(j.get_tmp_usage(), 0),
                j.proc.pid,
+               j.get_run_status(),
                human_format(j.get_mem_usage(), 1),
                time_format(j.get_time_user(), 1),
                time_format(j.get_time_sys(), 1),
@@ -128,15 +143,21 @@ if __name__ == "__main__":
     random.seed()
 
     print('...scanning process tables')
-    jobs = Job.get_running_jobs(logroot)
+    jobs = Job.get_running_jobs(logdir)
+
+    print('...starting background daemon')
+    # TODO: don't start the background daemon automatically; make it user startable/stoppable
+    daemon = threading.Thread(target=daemon_thread, args=('foo',), daemon=True)
+    daemon.start()
+
     print('Welcome to PlotMan.  Detected %d active plot jobs.  Type \'h\' for help.' % len(jobs))
 
-    # This is a really cheapo CLI.  Would be better to use some standard library.
+    # TODO: use a real CLI library, or make the tool a CLI tool and use argparser.
     while True:
-        cmd_line = input('plotman> ')
+        cmd_line = input('\033[94mplotman> \033[0m')
         if cmd_line:
             # Re-read active jobs
-            jobs = Job.get_running_jobs(logroot)
+            jobs = Job.get_running_jobs(logdir)
 
             cmd_line = cmd_line.split()
             cmd = cmd_line[0]
