@@ -3,12 +3,8 @@
 # Warning: lsof may block or deadlock if NFS host is unreachable; avoid
 # using this tool if your plotting processes are touching NFS files.
 
-# TODO do we use all these?
 from datetime import datetime
-from datetime import timedelta
-from enum import Enum, auto
 from subprocess import call
-import argparse
 
 import logging
 import os
