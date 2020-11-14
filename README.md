@@ -26,8 +26,16 @@ or as a true command line tool.
 The tool relies on reading the chia plot command line arguments and the format of
 the plot tool output.  Changes in those may break this tool.
 
-Code dependencies include
+## Installation
 
-1. texttable for generating pretty tables
-1. psutil for inspecting process and system info
+This program requires `psutil` and `texttable`.
 
+Installation for Ubuntu 20.04:
+
+```
+# Install Python package system
+sudo apt-get install python3-pip
+
+python3 -m pip install psutil
+python3 -m pip install texttable
+```
