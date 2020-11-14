@@ -1,0 +1,34 @@
+# Where to plot and log
+directories:
+        # One directory for logs
+        log: /home/YOU/chia/logs
+
+        # One or more directories; the scheduler will use all of them
+        tmp:
+                - /mnt/tmp/00
+                - /mnt/tmp/01
+
+        # One directory (TODO: support distributing across multiple tmp2 dirs)
+        tmp2: /mnt/tmp/00
+
+        # One or more directories; the scheduler will use all of them 
+        dst:
+                - /home/YOU/chia/chia-plots
+
+# Plotting scheduling parameters
+scheduling:
+        # Don't run a job on a particular temp dir more often than this.
+        tmpdir_stagger_m: 4
+
+        # Global min; don't run any jobs more often than this.
+        global_stagger_m: 2
+
+        # How often the daemon wakes to consider starting a new plot job
+        polling_time_m: 1
+
+# Plotting parameters
+plotting:
+        k: 25
+        n_threads: 2         # Threads per job
+        n_buckets: 128       # Number of buckets to split data into
+        job_buffer: 4550     # Per job memory

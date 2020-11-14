@@ -16,27 +16,25 @@ import texttable as tt   # from somewhere?
 # Plotman libraries
 from job import Job
 
-# Plot parameters (TODO: move these to a config somewhere)
-kval = 32
-n_threads = 12                    # Threads per job
-n_buckets = 128                   # Number of buckets to split data into
-job_buffer = 4550                 # Per job memory
+# Constants
+MIN = 60    # Seconds
+HR = 3600   # Seconds
 
 MAX_AGE = 1000_000_000   # Arbitrary large number of seconds
 
 # TODO: This takes lots of positional args.  Once we clean up how config
 # options are done in the main file, we should pass in a config object instead.
-def daemon_thread(logdir, tmpdirs, tmpdir2, dstdirs, tmpdir_stagger, global_stagger, daemon_sleep_time):
+def daemon_thread(dir_cfg, scheduling_cfg, plotting_cfg):
     'Daemon thread for automatically starting jobs and monitoring job status'
 
     while True:
-        jobs = Job.get_running_jobs(logdir)
+        jobs = Job.get_running_jobs(dir_cfg['log'])
 
         # TODO: Factor out some of this complex logic, clean it up, add unit tests
         
         # Identify the most recent time a tmp had a job start (its "age")
         tmpdir_age = {}
-        for d in tmpdirs:
+        for d in dir_cfg['tmp']:
             d_jobs = [j for j in jobs if j.tmpdir == d]
             if d_jobs:
                 tmpdir_age[d] = min(d_jobs, key=Job.get_time_wall, default=MAX_AGE).get_time_wall()
@@ -44,35 +42,37 @@ def daemon_thread(logdir, tmpdirs, tmpdir2, dstdirs, tmpdir_stagger, global_stag
                 tmpdir_age[d] = MAX_AGE
 
         # We should only plot if the youngest tmpdir is old enough
-        if (min(tmpdir_age.values()) > global_stagger):
+        if (min(tmpdir_age.values()) > scheduling_cfg['global_stagger_m'] * MIN):
 
             # Filter too-young tmpdirs
-            tmpdir_age = { k:v for k, v in tmpdir_age.items() if v > tmpdir_stagger }
+            tmpdir_age = { k:v for k, v in tmpdir_age.items()
+                if v > scheduling_cfg['tmpdir_stagger_m'] * MIN }
 
             if tmpdir_age:
                 # Plot to oldest tmpdir
                 tmpdir = max(tmpdir_age, key=tmpdir_age.get)
 
-                dstdir = random.choice(dstdirs)  # TODO: Pick most empty drive?
+                dstdir = random.choice(dir_cfg['dst'])  # TODO: Pick most empty drive?
 
-                logfile = os.path.join(logdir, datetime.now().strftime('%Y-%m-%d-%H:%M:%S.log'))
+                logfile = os.path.join(dir_cfg['log'],
+                        datetime.now().strftime('%Y-%m-%d-%H:%M:%S.log'))
 
                 plot_args = ['chia', 'plots', 'create',
-                        '-k', str(kval),
-                        '-r', str(n_threads),
-                        '-u', str(n_buckets),
-                        '-b', str(job_buffer),
+                        '-k', str(plotting_cfg['k']),
+                        '-r', str(plotting_cfg['n_threads']),
+                        '-u', str(plotting_cfg['n_buckets']),
+                        '-b', str(plotting_cfg['job_buffer']),
                         '-t', tmpdir,
-                        '-2', tmpdir2,
+                        '-2', dir_cfg['tmp2'],
                         '-d', dstdir ]
 
                 plot_cmd_str = ' '.join(plot_args)
                 full_cmd = '%s > %s 2>&1 &' % (plot_cmd_str, logfile)
 
                 print('\nDaemon starting new plot job:\n%s' % full_cmd)
-                call(full_cmd, shell=True)
+                # call(full_cmd, shell=True)
 
-        time.sleep(daemon_sleep_time)
+        time.sleep(scheduling_cfg['polling_time_m'] * MIN)
 
 def human_format(num, precision):
     magnitude = 0

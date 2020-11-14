@@ -12,42 +12,31 @@ import threading
 import random
 import readline          # For nice CLI
 import sys
+import yaml
 
 # Plotman libraries
 from job import Job
 import manager
 
-# Constants
-MIN = 60    # Seconds
-HR = 3600   # Seconds
-
-#
-# Configuration values.  TODO: factor these out into either a config
-# file or make them command line parameters.
-#
-
-# Plotting scheduling parameters
-tmpdir_stagger = 170 * MIN        # Don't run a job on a particular temp dir more often than this.
-global_stagger = 40 * MIN         # Global min; don't run any jobs more often than this.
-daemon_sleep_time = 5 * MIN       # How often the daemon wakes to consider starting a new plot job
-
-# Directories
-tmpdirs = [ '/mnt/tmp/' + d for d in [ '00', '01', '02', '03' ] ]
-tmpdir2 = '/mnt/tmp/a/'
-logdir = '/home/eric/chia/logs'
-dstdirs = [ '/home/eric/chia/plots/000', '/home/eric/chia/plots/001' ]
-
 
 if __name__ == "__main__":
     random.seed()
 
+    print('...reading config file')
+    with open('config.yaml', 'r') as ymlfile:
+        cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)
+
+    dir_cfg = cfg['directories']
+    scheduling_cfg = cfg['scheduling']
+    plotting_cfg = cfg['plotting']
+
     print('...scanning process tables')
-    jobs = Job.get_running_jobs(logdir)
+    jobs = Job.get_running_jobs(dir_cfg['log'])
 
     print('...starting background daemon')
     # TODO: don't start the background daemon automatically; make it user startable/stoppable
     daemon = threading.Thread(target=manager.daemon_thread,
-            args=(logdir, tmpdirs, tmpdir2, dstdirs, tmpdir_stagger, global_stagger, daemon_sleep_time),
+            args=(dir_cfg, scheduling_cfg, plotting_cfg),
             daemon=True)
     daemon.start()
 
@@ -58,7 +47,7 @@ if __name__ == "__main__":
         cmd_line = input('\033[94mplotman> \033[0m')
         if cmd_line:
             # Re-read active jobs
-            jobs = Job.get_running_jobs(logdir)
+            jobs = Job.get_running_jobs(dir_cfg['log'])
 
             cmd_line = cmd_line.split()
             cmd = cmd_line[0]
