@@ -28,6 +28,8 @@ def daemon_thread(dir_cfg, scheduling_cfg, plotting_cfg):
     while True:
         jobs = Job.get_running_jobs(dir_cfg['log'])
 
+        wait_reason = None  # If we don't start a job this iteration, this says why.
+
         # TODO: Factor out some of this complex logic, clean it up, add unit tests
         
         # Identify the most recent time a tmp had a job start (its "age")
@@ -40,13 +42,18 @@ def daemon_thread(dir_cfg, scheduling_cfg, plotting_cfg):
                 tmpdir_age[d] = MAX_AGE
 
         # We should only plot if the youngest tmpdir is old enough
-        if (min(tmpdir_age.values()) > scheduling_cfg['global_stagger_m'] * MIN):
-
+        min_tmpdir_age = min(tmpdir_age.values()) 
+        global_stagger = scheduling_cfg['global_stagger_m'] * MIN
+        if (min_tmpdir_age < global_stagger):
+            wait_reason = 'global stagger (age is %d, not yet %d)' % (min_tmpdir_age, global_stagger)
+        else:
             # Filter too-young tmpdirs
             tmpdir_age = { k:v for k, v in tmpdir_age.items()
                 if v > scheduling_cfg['tmpdir_stagger_m'] * MIN }
 
-            if tmpdir_age:
+            if not tmpdir_age:
+                wait_reason = 'tmpdir stagger period'
+            else:
                 # Plot to oldest tmpdir
                 tmpdir = max(tmpdir_age, key=tmpdir_age.get)
 
@@ -72,6 +79,10 @@ def daemon_thread(dir_cfg, scheduling_cfg, plotting_cfg):
                     stdout=open(logfile, 'w'),
                     stderr=subprocess.STDOUT,
                     start_new_session=True)
+
+        # TODO: report this via a channel that can be polled on demand, so we don't spam the console
+        if wait_reason:
+            print('Daemon not starting job because: ' + wait_reason)
 
         time.sleep(scheduling_cfg['polling_time_m'] * MIN)
 
