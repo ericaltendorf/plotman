@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 from datetime import datetime
-from subprocess import call
 
 import logging
 import os
@@ -10,6 +9,7 @@ import threading
 import time
 import random
 import readline          # For nice CLI
+import subprocess
 import sys
 import texttable as tt   # from somewhere?
 
@@ -22,8 +22,6 @@ HR = 3600   # Seconds
 
 MAX_AGE = 1000_000_000   # Arbitrary large number of seconds
 
-# TODO: This takes lots of positional args.  Once we clean up how config
-# options are done in the main file, we should pass in a config object instead.
 def daemon_thread(dir_cfg, scheduling_cfg, plotting_cfg):
     'Daemon thread for automatically starting jobs and monitoring job status'
 
@@ -66,11 +64,14 @@ def daemon_thread(dir_cfg, scheduling_cfg, plotting_cfg):
                         '-2', dir_cfg['tmp2'],
                         '-d', dstdir ]
 
-                plot_cmd_str = ' '.join(plot_args)
-                full_cmd = '%s > %s 2>&1 &' % (plot_cmd_str, logfile)
+                print('\nDaemon starting new plot job:\n%s\nlogfile: %s' %
+                        (' '.join(plot_args), logfile))
 
-                print('\nDaemon starting new plot job:\n%s' % full_cmd)
-                call(full_cmd, shell=True)
+                # start_new_sessions to make the job independent of this controlling tty.
+                subprocess.run(plot_args,
+                    stdout=open(logfile, 'w'),
+                    stderr=subprocess.STDOUT,
+                    start_new_session=True)
 
         time.sleep(scheduling_cfg['polling_time_m'] * MIN)
 

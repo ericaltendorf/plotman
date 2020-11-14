@@ -80,7 +80,7 @@ if __name__ == "__main__":
                 id_spec = args[0]
                 selected = manager.select_jobs_by_partial_id(jobs, id_spec)
                 if (len(selected) == 0):
-                    print('Error: %s matched no jobs.')
+                    print('Error: %s matched no jobs.' % id_spec)
                     continue
                 elif len(selected) > 1:
                     print('Error: "%s" matched multiple jobs:' % id_spec)

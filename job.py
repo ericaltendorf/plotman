@@ -38,8 +38,7 @@ class Job:
             if proc.name() == 'chia':
                 args = proc.cmdline()
                 # n.b.: args[0]=python, args[1]=chia
-                if args[2] == 'plots' and args[3] == 'create':
-
+                if len(args) >= 4 and args[2] == 'plots' and args[3] == 'create':
                     jobs += [ Job(proc, logroot) ]
         return jobs
 
