@@ -257,6 +257,11 @@ class Job:
 
     def cancel(self):
         'Cancel an already running job'
+        # We typically suspend the job as the first action in killing it, so it
+        # doesn't create more tmp files during death.  However, terminate() won't
+        # complete if the job is supsended, so we also need to resume it.
+        # TODO: check that this is best practice for killing a job.
+        self.proc.resume()
         self.proc.terminate()
 
     def check_status(self, expected_status):

@@ -70,7 +70,7 @@ def daemon_thread(dir_cfg, scheduling_cfg, plotting_cfg):
                 full_cmd = '%s > %s 2>&1 &' % (plot_cmd_str, logfile)
 
                 print('\nDaemon starting new plot job:\n%s' % full_cmd)
-                # call(full_cmd, shell=True)
+                call(full_cmd, shell=True)
 
         time.sleep(scheduling_cfg['polling_time_m'] * MIN)
 
