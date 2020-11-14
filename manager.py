@@ -43,13 +43,13 @@ def daemon_thread(dir_cfg, scheduling_cfg, plotting_cfg):
 
         # We should only plot if the youngest tmpdir is old enough
         min_tmpdir_age = min(tmpdir_age.values()) 
-        global_stagger = scheduling_cfg['global_stagger_m'] * MIN
+        global_stagger = int(scheduling_cfg['global_stagger_m'] * MIN)
         if (min_tmpdir_age < global_stagger):
             wait_reason = 'global stagger (age is %d, not yet %d)' % (min_tmpdir_age, global_stagger)
         else:
             # Filter too-young tmpdirs
             tmpdir_age = { k:v for k, v in tmpdir_age.items()
-                if v > scheduling_cfg['tmpdir_stagger_m'] * MIN }
+                if v > int(scheduling_cfg['tmpdir_stagger_m']) * MIN }
 
             if not tmpdir_age:
                 wait_reason = 'tmpdir stagger period'
@@ -71,20 +71,21 @@ def daemon_thread(dir_cfg, scheduling_cfg, plotting_cfg):
                         '-2', dir_cfg['tmp2'],
                         '-d', dstdir ]
 
-                print('\nDaemon starting new plot job:\n%s\nlogfile: %s' %
+                print('\nDaemon starting new plot job:\n  %s\n  logging to %s' %
                         (' '.join(plot_args), logfile))
 
                 # start_new_sessions to make the job independent of this controlling tty.
-                subprocess.run(plot_args,
+                subprocess.Popen(plot_args,
                     stdout=open(logfile, 'w'),
                     stderr=subprocess.STDOUT,
                     start_new_session=True)
 
         # TODO: report this via a channel that can be polled on demand, so we don't spam the console
+        sleep_m = int(scheduling_cfg['polling_time_m'])
         if wait_reason:
-            print('Daemon not starting job because: ' + wait_reason)
+            print('Daemon not starting job because: %s; sleeping %d m' % (wait_reason, sleep_m))
 
-        time.sleep(scheduling_cfg['polling_time_m'] * MIN)
+        time.sleep(sleep_m * MIN)
 
 def human_format(num, precision):
     magnitude = 0
