@@ -1,11 +1,9 @@
 #!/usr/bin/python3
-#
-# Warning: lsof may block or deadlock if NFS host is unreachable; avoid
-# using this tool if your plotting processes are touching NFS files.
 
 from datetime import datetime
 from subprocess import call
 
+import argparse
 import os
 import re
 import threading
@@ -18,115 +16,115 @@ import yaml
 from job import Job
 import manager
 
+class PlotmanArgParser:
+    def add_idprefix_arg(self, subparser):
+        subparser.add_argument(
+                'idprefix',
+                type=str,
+                nargs='+',
+                help='disambiguating prefix of plot ID')
+
+    def parse_args(self):
+        parser = argparse.ArgumentParser(description='Chia plotting manager.')
+        subparsers = parser.add_subparsers(dest='cmd')
+
+        p_status = subparsers.add_parser('status', help='show current plotting status')
+
+        p_status = subparsers.add_parser('daemon', help='run plotting daemon')
+
+        p_details = subparsers.add_parser('details', help='show details for job')
+        self.add_idprefix_arg(p_details)
+
+        p_files = subparsers.add_parser('files', help='show temp files associated with job')
+        self.add_idprefix_arg(p_files)
+
+        p_kill = subparsers.add_parser('kill', help='kill job (and cleanup temp files)')
+        self.add_idprefix_arg(p_kill)
+
+        p_suspend = subparsers.add_parser('suspend', help='suspend job')
+        self.add_idprefix_arg(p_suspend)
+
+        p_resume = subparsers.add_parser('resume', help='resume suspended job')
+        self.add_idprefix_arg(p_resume)
+
+        args = parser.parse_args()
+        return args
+
 
 if __name__ == "__main__":
     random.seed()
 
+    pm_parser = PlotmanArgParser()
+    args = pm_parser.parse_args()
+    print(args)
+    
     print('...reading config file')
     with open('config.yaml', 'r') as ymlfile:
         cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)
-
     dir_cfg = cfg['directories']
     scheduling_cfg = cfg['scheduling']
     plotting_cfg = cfg['plotting']
 
+    # TODO: not really a daemon now
+    if args.cmd == 'daemon':
+        print('...starting background daemon')
+        # daemon = threading.Thread(target=manager.daemon_thread,
+                # args=(dir_cfg, scheduling_cfg, plotting_cfg),
+                # daemon=True)
+        # daemon.start()
+        manager.daemon_thread(dir_cfg, scheduling_cfg, plotting_cfg)
+        sys.exit(0)
+    
     print('...scanning process tables')
     jobs = Job.get_running_jobs(dir_cfg['log'])
+    job = None
 
-    print('...starting background daemon')
-    # TODO: don't start the background daemon automatically; make it user startable/stoppable
-    daemon = threading.Thread(target=manager.daemon_thread,
-            args=(dir_cfg, scheduling_cfg, plotting_cfg),
-            daemon=True)
-    daemon.start()
+    if args.cmd in [ 'details', 'files', 'kill', 'suspend', 'resume' ]:
+        print(args)
+        # TODO: allow multiple idprefixes, not just take the first
+        selected = manager.select_jobs_by_partial_id(jobs, args.idprefix[0])
+        if (len(selected) == 0):
+            print('Error: %s matched no jobs.' % id_spec)
+        elif len(selected) > 1:
+            print('Error: "%s" matched multiple jobs:' % id_spec)
+            for j in selected:
+                print('  %s' % j.plot_id)
+        else:
+            job = selected[0]
 
-    print('Welcome to PlotMan.  Detected %d active plot jobs.  Type \'h\' for help.' % len(jobs))
+    if args.cmd == 'status':
+        print(manager.status_report(jobs))
 
-    # TODO: use a real CLI library, or make the tool a CLI tool and use argparser.
-    while True:
-        cmd_line = input('\033[94mplotman> \033[0m')
-        if cmd_line:
-            # Re-read active jobs
-            jobs = Job.get_running_jobs(dir_cfg['log'])
+    elif args.cmd == 'details':
+        print(job.status_str_long())
 
-            cmd_line = cmd_line.split()
-            cmd = cmd_line[0]
-            args = cmd_line[1:]
+    elif args.cmd == 'files':
+        temp_files = job.get_temp_files()
+        for f in temp_files:
+            print('  %s' % f)
 
-            if cmd == 'h':
-                print('Commands which reference a job require an unambiguous prefix of the plot id')
-                print('  l            : list current jobs')
-                print('  d <idprefix> : show details for a plot job')
-                print('  f <idprefix> : show temp files for a job')
-                print('  k <idprefix> : kill and cleanup a plot job')
-                print('  p <idprefix> : pause (suspend) a plot job')
-                print('  r <idprefix> : resume a plot job')
-                print('  h            : help info (this message)')
-                print('  x            : exit')
-                continue
+    elif args.cmd == 'kill':
+        # First suspend so job doesn't create new files
+        print('Pausing PID %d, plot id %s' % (job.proc.pid, job.plot_id))
+        job.suspend()
 
-            elif cmd == 'l':
-                print(manager.status_report(jobs))
-                continue
+        temp_files = job.get_temp_files()
+        print('Will kill pid %d, plot id %s' % (job.proc.pid, job.plot_id))
+        print('Will delete %d temp files' % len(temp_files))
+        conf = input('Are you sure? ("y" to confirm): ')
+        if (conf != 'y'):
+            print('canceled.  If you wish to resume the job, do so manually.')
+        else:
+            print('killing...')
+            job.cancel()
+            print('cleaing up temp files...')
+            for f in temp_files:
+                os.remove(f)
 
-            elif cmd == 'x':
-                break
-
-            elif cmd == 'd' or cmd == 'f' or cmd == 'k' or cmd == 'p' or cmd == 'r':
-                if (len(args) != 1):
-                    print('Need to supply job id spec')
-                    continue
-
-                id_spec = args[0]
-                selected = manager.select_jobs_by_partial_id(jobs, id_spec)
-                if (len(selected) == 0):
-                    print('Error: %s matched no jobs.' % id_spec)
-                    continue
-                elif len(selected) > 1:
-                    print('Error: "%s" matched multiple jobs:' % id_spec)
-                    for j in selected:
-                        print('  %s' % j.plot_id)
-                    continue
-                else:
-                    job = selected[0]
-
-                    # Do the real command
-                    if cmd == 'd':
-                        print(job.status_str_long())
-
-                    elif cmd == 'f':
-                        temp_files = job.get_temp_files()
-                        for f in temp_files:
-                            print('  %s' % f)
-
-                    elif cmd == 'k':
-                        # First suspend so job doesn't create new files
-                        print('Pausing PID %d, plot id %s' % (job.proc.pid, job.plot_id))
-                        job.suspend()
-
-                        temp_files = job.get_temp_files()
-                        print('Will kill pid %d, plot id %s' % (job.proc.pid, job.plot_id))
-                        print('Will delete %d temp files' % len(temp_files))
-                        conf = input('Are you sure? ("y" to confirm): ')
-                        if (conf != 'y'):
-                            print('canceled.  If you wish to resume the job, do so manually.')
-                        else:
-                            print('killing...')
-                            job.cancel()
-                            print('cleaing up temp files...')
-                            for f in temp_files:
-                                os.remove(f)
-
-                    elif cmd == 'p':
-                        print('Pausing ' + job.plot_id)
-                        job.suspend()
-                    elif cmd == 'r':
-                        print('Resuming ' + job.plot_id)
-                        job.resume()
-
-            else:
-                print('Unknown command: %s' % cmd)
-                continue 
-
-    sys.exit(0)
+    elif args.cmd == 'suspend':
+        print('Suspending ' + job.plot_id)
+        job.suspend()
+    elif args.cmd == 'resume':
+        print('Resuming ' + job.plot_id)
+        job.resume()
 
