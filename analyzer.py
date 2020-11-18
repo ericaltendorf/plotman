@@ -25,9 +25,22 @@ class LogAnalyzer:
             with open(logfilename, 'r') as f:
                 key = 'x'  # TODO
                 for line in f:
+                    #
+                    # Aggregation specification
+                    #
+
+                    # Starting phase 1/4: Forward Propagation into tmp files... Sun Nov 15 00:35:57 2020
+                    # TODO: This only does by day!!!
+                    m = re.search(r'^Starting phase 1/4.*files.*\d\d (\d\d):\d\d:\d\d \d\d\d\d', line)
+                    if m:
+                        bucketsize = 2
+                        hour = int(m.group(1))
+                        hourbucket = int(hour / bucketsize)
+                        # key += '-%02d-%02d' % (hourbucket * bucketsize, (hourbucket + 1) * bucketsize)
+
                     # Starting plotting progress into temporary dirs: /mnt/tmp/01 and /mnt/tmp/a
                     m = re.search(r'^Starting plotting.*dirs: (.*) and (.*)', line)
-                    if m:
+                    if False and m:
                         tmpdir = m.group(1)
                         # Hack to split data for backing hardware
                         tmpdir_idx = tmpdir[-2:]
@@ -35,6 +48,10 @@ class LogAnalyzer:
                             key += '-wd-raid'
                         if tmpdir_idx in ['02', '03', '04', '05']:
                             key += '-samsung'
+
+                    #
+                    # Data collection
+                    #
 
                     # Time for phase 1 = 22796.7 seconds. CPU (98%) Tue Sep 29 17:57:19 2020
                     for phase in ['1', '2', '3', '4']:

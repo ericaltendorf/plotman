@@ -14,6 +14,7 @@ import yaml
 
 # Plotman libraries
 from job import Job
+import analyzer
 import manager
 
 class PlotmanArgParser:
@@ -47,6 +48,9 @@ class PlotmanArgParser:
         p_resume = subparsers.add_parser('resume', help='resume suspended job')
         self.add_idprefix_arg(p_resume)
 
+        p_analyze = subparsers.add_parser('analyze', help='analyze timing stats of completed jobs')
+        p_analyze.add_argument('logfile', type=str, nargs='+', help='logfile(s) to analyze')
+
         args = parser.parse_args()
         return args
 
@@ -56,7 +60,6 @@ if __name__ == "__main__":
 
     pm_parser = PlotmanArgParser()
     args = pm_parser.parse_args()
-    print(args)
     
     print('...reading config file')
     with open('config.yaml', 'r') as ymlfile:
@@ -65,7 +68,10 @@ if __name__ == "__main__":
     scheduling_cfg = cfg['scheduling']
     plotting_cfg = cfg['plotting']
 
+    #
+    # Stay alive, spawning plot jobs
     # TODO: not really a daemon now
+    #
     if args.cmd == 'daemon':
         print('...starting background daemon')
         # daemon = threading.Thread(target=manager.daemon_thread,
@@ -75,6 +81,16 @@ if __name__ == "__main__":
         manager.daemon_thread(dir_cfg, scheduling_cfg, plotting_cfg)
         sys.exit(0)
     
+    #
+    # Analysis of completed jobs
+    #
+    if args.cmd == 'analyze':
+        analyzer = analyzer.LogAnalyzer()
+        analyzer.analyze(args.logfile)
+    
+    #
+    # Job control commands
+    #
     print('...scanning process tables')
     jobs = Job.get_running_jobs(dir_cfg['log'])
     job = None
