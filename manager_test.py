@@ -41,5 +41,13 @@ class TestManager(unittest.TestCase):
         self.assertFalse(manager.phases_permit_new_job(
             [ (4, 1), (4, 2), (4, 3), (4, 4) ] ))
 
+    def test_tmpdir_phases_str(self):
+        self.assertEqual('/tmp/foo: (1:3, 2:5, 4:1)',
+                manager.tmpdir_phases_str(('/tmp/foo', [(1, 3), (2, 5), (4, 1)])))
+
+    def test_tmpdir_phases_str_sorting(self):
+        self.assertEqual('/tmp/foo: (1:3, 2:5, 4:1)',
+                manager.tmpdir_phases_str(('/tmp/foo', [(2, 5), (4, 1), (1, 3)])))
+
 if __name__ == '__main__':
     unittest.main()

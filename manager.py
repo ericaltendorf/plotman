@@ -47,6 +47,12 @@ def phases_permit_new_job(phases):
 
     return True
 
+def tmpdir_phases_str(tmpdir_phases_pair):
+    tmpdir = tmpdir_phases_pair[0]
+    phases = tmpdir_phases_pair[1]
+    phase_str = ', '.join(['%d:%d' % ph_subph for ph_subph in sorted(phases)])
+    return ('%s: (%s)' % (tmpdir, phase_str))
+
 def daemon_thread(dir_cfg, scheduling_cfg, plotting_cfg):
     'Daemon thread for automatically starting jobs and monitoring job status'
 
@@ -55,21 +61,23 @@ def daemon_thread(dir_cfg, scheduling_cfg, plotting_cfg):
 
         wait_reason = None  # If we don't start a job this iteration, this says why.
 
-        youngest_job_age = min(jobs, key=Job.get_time_wall, default=MAX_AGE)
+        youngest_job_age = min(jobs, key=Job.get_time_wall, default=MAX_AGE).get_time_wall()
         global_stagger = int(scheduling_cfg['global_stagger_m'] * MIN)
         if (youngest_job_age < global_stagger):
             wait_reason = 'global stagger (age is %d, not yet %d)' % (
                     youngest_job_age, global_stagger)
         else:
-            tmp_to_phases = { d : job_phases_for_dir(d, jobs) for d in dir_cfg['tmp'] }
-            eligible = { d : ph for (d, ph) in tmp_to_phases.items()
-                    if phases_permit_new_job(ph) }
+            tmp_to_phases = [ (d, job_phases_for_dir(d, jobs)) for d in dir_cfg['tmp'] ]
+            eligible = [ (d, ph) for (d, ph) in tmp_to_phases if phases_permit_new_job(ph) ]
             
             if not eligible:
-                wait_reason = 'no eligible tempdirs'
+                all_tmpdir_str = ', '.join(map(tmpdir_phases_str, tmp_to_phases))
+                wait_reason = 'no eligible tempdirs: ' + all_tmpdir_str
             else:
                 # Plot to oldest tmpdir
-                tmpdir = max(eligible.items(), key=operator.itemgetter(1))[0]
+                tmpdir = max(eligible, key=operator.itemgetter(1))[0]
+                print('Eligible tmpdirs: ' + str(eligible))
+                print('Selected: ' + tmpdir)
 
                 dstdir = random.choice(dir_cfg['dst'])  # TODO: Pick most empty drive?
                 logfile = os.path.join(dir_cfg['log'],
@@ -88,17 +96,17 @@ def daemon_thread(dir_cfg, scheduling_cfg, plotting_cfg):
                         (' '.join(plot_args), logfile))
 
                 # start_new_sessions to make the job independent of this controlling tty.
-                # subprocess.Popen(plot_args,
-                    # stdout=open(logfile, 'w'),
-                    # stderr=subprocess.STDOUT,
-                    # start_new_session=True)
+                subprocess.Popen(plot_args,
+                    stdout=open(logfile, 'w'),
+                    stderr=subprocess.STDOUT,
+                    start_new_session=True)
 
         # TODO: report this via a channel that can be polled on demand, so we don't spam the console
-        sleep_m = int(scheduling_cfg['polling_time_m'])
+        sleep_s = int(scheduling_cfg['polling_time_s'])
         if wait_reason:
-            print('Daemon not starting job because: %s; sleeping %d m' % (wait_reason, sleep_m))
+            print('...sleeping %d s: %s' % (sleep_s, wait_reason))
 
-        time.sleep(sleep_m * MIN)
+        time.sleep(sleep_s)
 
 def human_format(num, precision):
     magnitude = 0
