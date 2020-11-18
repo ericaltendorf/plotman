@@ -118,10 +118,11 @@ class Job:
         '''Read plot ID and job start time from logfile.  Return true if we
            find the info, false otherwise'''
         assert self.logfile
-        # Try reading a few times; it can take ~5 seconds for the job to get started.
+        # Try reading for a while; it can take a while for the job to get started as it scans
+        # existing plot dirs (especially if they are NFS).
         found_id = False
         found_log = False
-        for attempt_number in range(8):
+        for attempt_number in range(60):
             with open(self.logfile, 'r') as f:
                 for line in f:
                     m = re.match('^ID: ([0-9a-f]*)', line)
@@ -138,7 +139,8 @@ class Job:
             if found_id and found_log:
                 return True  # Stop trying
             else:
-                time.sleep(1)  # Sleep 1 second and try again
+                print('Logfile not ready; retrying: %s' % self.logfile)
+                time.sleep(5)  # Sleep and try again
 
         return False  # Give up!
 
