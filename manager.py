@@ -3,6 +3,7 @@
 from datetime import datetime
 
 import logging
+import operator
 import os
 import re
 import threading
@@ -22,6 +23,30 @@ HR = 3600   # Seconds
 
 MAX_AGE = 1000_000_000   # Arbitrary large number of seconds
 
+def job_phases_for_dir(d, all_jobs):
+    '''Return phase 2-tuples for jobs running on tmpdir d'''
+    return sorted([j.progress() for j in all_jobs if j.tmpdir == d])
+
+def phases_permit_new_job(phases):
+    '''Scheduling logic: return True if it's OK to start a new job on a tmp dir
+       with existing jobs in the provided phases.'''
+    phases = [ ph for (ph, subph) in phases ]
+    num_jobs = len(phases)
+
+    # No more than 3 jobs total on the tmpdir
+    if num_jobs > 3:
+        return False
+
+    # No more than one in phase 2
+    if phases.count(2) > 1:
+        return False
+
+    # Zero in phase 1.
+    if phases.count(1) > 0:
+        return False
+
+    return True
+
 def daemon_thread(dir_cfg, scheduling_cfg, plotting_cfg):
     'Daemon thread for automatically starting jobs and monitoring job status'
 
@@ -30,35 +55,23 @@ def daemon_thread(dir_cfg, scheduling_cfg, plotting_cfg):
 
         wait_reason = None  # If we don't start a job this iteration, this says why.
 
-        # TODO: Factor out some of this complex logic, clean it up, add unit tests
-        
-        # Identify the most recent time a tmp had a job start (its "age")
-        tmpdir_age = {}
-        for d in dir_cfg['tmp']:
-            d_jobs = [j for j in jobs if j.tmpdir == d]
-            if d_jobs:
-                tmpdir_age[d] = min(d_jobs, key=Job.get_time_wall, default=MAX_AGE).get_time_wall()
-            else:
-                tmpdir_age[d] = MAX_AGE
-
-        # We should only plot if the youngest tmpdir is old enough
-        min_tmpdir_age = min(tmpdir_age.values()) 
+        youngest_job_age = min(jobs, key=Job.get_time_wall, default=MAX_AGE)
         global_stagger = int(scheduling_cfg['global_stagger_m'] * MIN)
-        if (min_tmpdir_age < global_stagger):
-            wait_reason = 'global stagger (age is %d, not yet %d)' % (min_tmpdir_age, global_stagger)
+        if (youngest_job_age < global_stagger):
+            wait_reason = 'global stagger (age is %d, not yet %d)' % (
+                    youngest_job_age, global_stagger)
         else:
-            # Filter too-young tmpdirs
-            tmpdir_age = { k:v for k, v in tmpdir_age.items()
-                if v > int(scheduling_cfg['tmpdir_stagger_m']) * MIN }
-
-            if not tmpdir_age:
-                wait_reason = 'tmpdir stagger period'
+            tmp_to_phases = { d : job_phases_for_dir(d, jobs) for d in dir_cfg['tmp'] }
+            eligible = { d : ph for (d, ph) in tmp_to_phases.items()
+                    if phases_permit_new_job(ph) }
+            
+            if not eligible:
+                wait_reason = 'no eligible tempdirs'
             else:
                 # Plot to oldest tmpdir
-                tmpdir = max(tmpdir_age, key=tmpdir_age.get)
+                tmpdir = max(eligible.items(), key=operator.itemgetter(1))[0]
 
                 dstdir = random.choice(dir_cfg['dst'])  # TODO: Pick most empty drive?
-
                 logfile = os.path.join(dir_cfg['log'],
                         datetime.now().strftime('%Y-%m-%d-%H:%M:%S.log'))
 
@@ -75,10 +88,10 @@ def daemon_thread(dir_cfg, scheduling_cfg, plotting_cfg):
                         (' '.join(plot_args), logfile))
 
                 # start_new_sessions to make the job independent of this controlling tty.
-                subprocess.Popen(plot_args,
-                    stdout=open(logfile, 'w'),
-                    stderr=subprocess.STDOUT,
-                    start_new_session=True)
+                # subprocess.Popen(plot_args,
+                    # stdout=open(logfile, 'w'),
+                    # stderr=subprocess.STDOUT,
+                    # start_new_session=True)
 
         # TODO: report this via a channel that can be polled on demand, so we don't spam the console
         sleep_m = int(scheduling_cfg['polling_time_m'])
