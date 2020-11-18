@@ -15,6 +15,8 @@ import psutil      # apt-get install python-psutil
 import random
 import sys
 
+# TODO: be more principled and explicit about what we cache vs. what we look up
+# dynamically from the logfile
 class Job:
     'Represents a plotter job'
     k = 0
@@ -142,6 +144,7 @@ class Job:
 
 
     def progress(self):
+        '''Return a 2-tuple with the job phase and subphase (by reading the logfile)'''
         assert self.logfile
 
         # Map from phase number to step number reached in that phase.
