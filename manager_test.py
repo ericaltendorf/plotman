@@ -23,15 +23,23 @@ class TestManager(unittest.TestCase):
         result = manager.job_phases_for_dir('/tmp2', all_jobs)
         self.assertEqual(result, [(1, 1), (2, 1), (3, 1)])
 
-    def test_permit_new_job_yes(self):
+    def test_permit_new_job_none_in_phase_2(self):
         self.assertTrue(manager.phases_permit_new_job(
             [ (3, 1), (4, 1) ] ))
+
+    def test_permit_new_late_in_phase_2(self):
         self.assertTrue(manager.phases_permit_new_job(
-            [ (2, 1), (3, 1) ] ))
+            [ (2, 5), (3, 1) ] ))
+
+    # Phase 2 subphase 4 is the threshold
+
+    def test_permit_new_job_early_in_phase_2(self):
+        self.assertFalse(manager.phases_permit_new_job(
+            [ (2, 4), (4, 1) ] ))
 
     def test_permit_new_job_multiple_in_phase_2(self):
         self.assertFalse(manager.phases_permit_new_job(
-            [ (2, 1), (2, 1), (3, 1) ] ))
+            [ (2, 7), (2, 8), (3, 1) ] ))
 
     def test_permit_new_job_current_job_in_phase_1(self):
         self.assertFalse(manager.phases_permit_new_job(

@@ -109,7 +109,7 @@ if __name__ == "__main__":
             job = selected[0]
 
     if args.cmd == 'status':
-        print(manager.status_report(jobs))
+        print(manager.status_report(jobs, dir_cfg['tmp']))
 
     elif args.cmd == 'details':
         print(job.status_str_long())

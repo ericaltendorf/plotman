@@ -30,19 +30,16 @@ def job_phases_for_dir(d, all_jobs):
 def phases_permit_new_job(phases):
     '''Scheduling logic: return True if it's OK to start a new job on a tmp dir
        with existing jobs in the provided phases.'''
-    phases = [ ph for (ph, subph) in phases ]
-    num_jobs = len(phases)
+    # Zero in phase 1 or first four subphases of phase 2..
+    if len([p for p in phases if p <= (2, 4)]) > 0:
+        return False
+
+    # No more than one up to phase 3
+    if len([p for p in phases if p <= (3, 0) and p >= (2, 0)]) > 1:
+        return False
 
     # No more than 3 jobs total on the tmpdir
-    if num_jobs > 3:
-        return False
-
-    # No more than one in phase 2
-    if phases.count(2) > 1:
-        return False
-
-    # Zero in phase 1.
-    if phases.count(1) > 0:
+    if len(phases) > 3:
         return False
 
     return True
@@ -51,7 +48,7 @@ def tmpdir_phases_str(tmpdir_phases_pair):
     tmpdir = tmpdir_phases_pair[0]
     phases = tmpdir_phases_pair[1]
     phase_str = ', '.join(['%d:%d' % ph_subph for ph_subph in sorted(phases)])
-    return ('%s: (%s)' % (tmpdir, phase_str))
+    return ('%s (%s)' % (tmpdir, phase_str))
 
 def daemon_thread(dir_cfg, scheduling_cfg, plotting_cfg):
     'Daemon thread for automatically starting jobs and monitoring job status'
@@ -61,7 +58,7 @@ def daemon_thread(dir_cfg, scheduling_cfg, plotting_cfg):
 
         wait_reason = None  # If we don't start a job this iteration, this says why.
 
-        youngest_job_age = min(jobs, key=Job.get_time_wall, default=MAX_AGE).get_time_wall()
+        youngest_job_age = min(jobs, key=Job.get_time_wall).get_time_wall() if jobs else MAX_AGE
         global_stagger = int(scheduling_cfg['global_stagger_m'] * MIN)
         if (youngest_job_age < global_stagger):
             wait_reason = 'global stagger (age is %d, not yet %d)' % (
@@ -121,7 +118,26 @@ def time_format(sec, precision):
     else:
         return '%d:%02d' % (int(sec / 3600), int((sec % 3600) / 60))
 
-def status_report(jobs):
+def status_report(jobs, tmpdirs):
+    result = ''
+
+    tab = tt.Texttable()
+    headings = ['tmpdir', 'used', 'free', 'job phases']
+    tab.header(headings)
+    tab.set_cols_align('r' * (len(headings) - 1) + 'l')
+    for d in sorted(tmpdirs):
+        row = [d,
+               'N/A',
+               'N/A',
+                ', '.join(['%d:%d' % ph_subph for ph_subph in sorted(job_phases_for_dir(d, jobs))])
+               ]
+        tab.add_row(row)
+
+    (rows, columns) = os.popen('stty size', 'r').read().split()
+    tab.set_max_width(int(columns))
+    tab.set_deco(tt.Texttable.BORDER | tt.Texttable.HEADER )
+    result += tab.draw() + '\n'
+
     tab = tt.Texttable()
     headings = ['plot id', 'k', 'tmp dir', 'wall', 'phase', 'tmp', 'pid', 'stat', 'mem', 'user', 'sys', 'io']
     tab.header(headings)
@@ -145,8 +161,10 @@ def status_report(jobs):
     (rows, columns) = os.popen('stty size', 'r').read().split()
     tab.set_max_width(int(columns))
     tab.set_deco(tt.Texttable.BORDER | tt.Texttable.HEADER )
-    return tab.draw()
- 
+    result += tab.draw()
+
+    return result
+
 def select_jobs_by_partial_id(jobs, partial_id):
     selected = []
     for j in jobs:

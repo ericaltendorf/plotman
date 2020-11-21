@@ -90,10 +90,10 @@ class Job:
 
             # Find plot ID and start time.
             if not self.init_from_logfile():
-                # This should rarely if ever happen, but if it does, this object is
-                # left in an uninitialized state and will probably crash things later.
+                # This should rarely if ever happen, but if it does, this object may be
+                # in an unexpected state (e.g., wrong start time)
                 # TODO: handle this error case better.
-                print('WARNING: unable to initialize job info from logfile %s' % self.logfile)
+                print('WARNING: unable to fully initialize job info from logfile %s' % self.logfile)
 
             assert self.logfile
             with open(self.logfile, 'r') as f:
@@ -116,13 +116,13 @@ class Job:
 
     def init_from_logfile(self):
         '''Read plot ID and job start time from logfile.  Return true if we
-           find the info, false otherwise'''
+           find all the info as expected, false otherwise'''
         assert self.logfile
         # Try reading for a while; it can take a while for the job to get started as it scans
         # existing plot dirs (especially if they are NFS).
         found_id = False
         found_log = False
-        for attempt_number in range(60):
+        for attempt_number in range(3):
             with open(self.logfile, 'r') as f:
                 for line in f:
                     m = re.match('^ID: ([0-9a-f]*)', line)
@@ -139,10 +139,13 @@ class Job:
             if found_id and found_log:
                 return True  # Stop trying
             else:
-                print('Logfile not ready; retrying: %s' % self.logfile)
-                time.sleep(5)  # Sleep and try again
+                time.sleep(1)  # Sleep and try again
 
-        return False  # Give up!
+        # If we couldn't find the line in the logfile, the job is probably just getting started
+        # (and being slow about it).  In this case, use the last metadata change as the start time,
+        # but return the warning to the caller.
+        self.start_time = os.path.getctime(self.logfile)
+        return False
 
 
     def progress(self):
