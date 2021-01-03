@@ -40,7 +40,7 @@ class Job:
     logfile = ''
     jobfile = ''
     job_id = 0
-    plot_id = 0
+    plot_id = '--------'
     proc = None   # will get a psutil.Process
 
     # These are dynamic, cached, and need to be udpated periodically
@@ -74,6 +74,7 @@ class Job:
                     # n.b.: args[0]=python, args[1]=chia
                     if len(args) >= 4 and args[2] == 'plots' and args[3] == 'create':
                         jobs.append(Job(proc, logroot))
+
         return jobs
 
  
@@ -124,7 +125,6 @@ class Job:
             # Initialize data that needs to be loaded from the logfile
             self.init_from_logfile()
 
-            assert self.logfile
 
     def init_from_logfile(self):
         '''Read plot ID and job start time from logfile.  Return true if we
@@ -155,6 +155,7 @@ class Job:
 
         # If we couldn't find the line in the logfile, the job is probably just getting started
         # (and being slow about it).  In this case, use the last metadata change as the start time.
+        # TODO: we never come back to this; e.g. plot_id may remain uninitialized.
         if not found_log:
             self.start_time = datetime.fromtimestamp(os.path.getctime(self.logfile))
 
