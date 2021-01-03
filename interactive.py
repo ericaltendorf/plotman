@@ -53,15 +53,15 @@ class Log:
 
 def plotting_status_msg(active, status):
     if active:
-        return status
+        return 'active, ' + status
     else:
-        return '<inactive>'
+        return 'inactive'
 
 def archiving_status_msg(active, status):
     if active:
-        return status
+        return 'active, ' + status
     else:
-        return '<inactive>'
+        return 'inactive'
 
 def curses_main(stdscr):
     # TODO: figure out how to pass the configs in from plotman.py instead of
@@ -137,10 +137,11 @@ def curses_main(stdscr):
                     plotting_status = msg
 
             if archiving_active:
-                # Look for running archive jobs
+                # Look for running archive jobs.  Be robust to finding more than one
+                # even though the scheduler should only run one at a time.
                 arch_jobs = archive.get_running_archive_jobs(dir_cfg['archive'])
                 if arch_jobs:
-                    archiving_status = 'active pids ' + ', '.join(map(str, arch_jobs))
+                    archiving_status = 'pid: ' + ', '.join(map(str, arch_jobs))
                 else:
                     (should_start, status_or_cmd) = archive.archive(dir_cfg, jobs)
                     if not should_start:
@@ -169,10 +170,10 @@ def curses_main(stdscr):
         header_win.addnstr(' %s (refresh %ds/%ds)' %
                 (datetime.datetime.now().strftime("%H:%M:%S"), elapsed, refresh_period),
                 linecap)
-        header_win.addnstr('  |  Plotting (\'p\'): ', linecap, curses.A_BOLD)
+        header_win.addnstr('  |  <P>lotting: ', linecap, curses.A_BOLD)
         header_win.addnstr(
                 plotting_status_msg(plotting_active, plotting_status), linecap)
-        header_win.addnstr(' Archival (\'a\'): ', linecap, curses.A_BOLD)
+        header_win.addnstr(' <A>rchival: ', linecap, curses.A_BOLD)
         header_win.addnstr(
                 archiving_status_msg(archiving_active, archiving_status), linecap) 
         header_win.addnstr('  term size: (%d, %d)' % (n_rows, n_cols), linecap)  # Debuggin
