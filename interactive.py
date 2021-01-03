@@ -39,9 +39,17 @@ class Log:
     def shift_slice_to_end(self):
         self.cur_pos = len(self.entries)
 
+    def get_cur_pos(self):
+        return self.cur_pos
+
     def cur_slice(self, num_entries):
         '''Return num_entries log entries up to the current slice position'''
         return self.entries[max(0, self.cur_pos - num_entries) : self.cur_pos]
+
+    def fill_log(self):
+        '''Add a bunch of stuff to the log.  Useful for testing.'''
+        for i in range(100):
+            self.log('Log line %d' % i)
 
 def plotting_status_msg(active, status):
     if active:
@@ -78,10 +86,6 @@ def curses_main(stdscr):
     dirs_height = 14
     logscreen_height = n_rows - (header_height + jobs_height + dirs_height)
 
-    # For testing. TODO: remove
-    # for i in range(100):
-        # log.log('Log line %d' % i)
-
     header_pos = 0
     jobs_pos = header_pos + header_height
     dirs_pos = jobs_pos + jobs_height
@@ -92,7 +96,8 @@ def curses_main(stdscr):
 
     refresh_period = int(sched_cfg['polling_time_s'])
 
-    stdscr.timeout(5000)  # this doesn't seem to do anything....
+    stdscr.nodelay(True)  # make getch() non-blocking
+    stdscr.timeout(5000)   # this doesn't seem to do anything....
 
     header_win = curses.newwin(header_height, n_cols, header_pos, 0)
     log_win = curses.newwin(logscreen_height, n_cols, logscreen_pos, 0)
@@ -102,12 +107,13 @@ def curses_main(stdscr):
     jobs = Job.get_running_jobs(dir_cfg['log'])
     last_refresh = datetime.datetime.now()
 
+    pressed_key = ''   # For debugging
+
     while True:
 
         # todo: none of this resizing works
         (n_rows, n_cols) = map(int, stdscr.getmaxyx())
         stdscr.clear()
-        curses.resizeterm(n_rows, n_cols)
         linecap = n_cols - 1
         logscreen_height = n_rows - (header_height + jobs_height + dirs_height)
 
@@ -163,13 +169,15 @@ def curses_main(stdscr):
         header_win.addnstr(' %s (refresh %ds/%ds)' %
                 (datetime.datetime.now().strftime("%H:%M:%S"), elapsed, refresh_period),
                 linecap)
-        header_win.addnstr('  |  Plotting: ', linecap, curses.A_BOLD)
+        header_win.addnstr('  |  Plotting (\'p\'): ', linecap, curses.A_BOLD)
         header_win.addnstr(
                 plotting_status_msg(plotting_active, plotting_status), linecap)
-        header_win.addnstr(' Archival: ', linecap, curses.A_BOLD)
+        header_win.addnstr(' Archival (\'a\'): ', linecap, curses.A_BOLD)
         header_win.addnstr(
                 archiving_status_msg(archiving_active, archiving_status), linecap) 
         header_win.addnstr('  term size: (%d, %d)' % (n_rows, n_cols), linecap)  # Debuggin
+        if pressed_key:
+            header_win.addnstr(' (keypress %s)' % str(pressed_key), linecap)
         header_win.addnstr(1, 0, 'Prefixes:', linecap, curses.A_BOLD)
         header_win.addnstr('  tmp=', linecap, curses.A_BOLD)
         header_win.addnstr(tmp_prefix, linecap)
@@ -209,7 +217,6 @@ def curses_main(stdscr):
         tmpwin_12_gutter = 3
         tmpwin_dstwin_gutter = 6
 
-        # gutter = int((n_cols - (tmp_w * 2 + tmpwin_12_gutter) - dst_w) / 3)
         maxtd_h = max([tmp_h, dst_h])
 
         tmpwin_1 = curses.newwin(
@@ -238,9 +245,9 @@ def curses_main(stdscr):
 
         # Log.  Could use a pad here instead of managing scrolling ourselves, but
         # this seems easier.
-        log_win.addnstr(0, 0, 'Log: (<up>/<down> to scroll, <end> to most recent)\n',
+        log_win.addnstr(0, 0, ('Log: %d (<up>/<down>/<end> to scroll)\n' % log.get_cur_pos() ),
                 linecap, curses.A_REVERSE)
-        for i, logline in enumerate(log.tail(logscreen_height - 1)):
+        for i, logline in enumerate(log.cur_slice(logscreen_height - 1)):
             log_win.addnstr(i + 1, 0, logline, linecap)
 
         stdscr.noutrefresh()
@@ -253,24 +260,26 @@ def curses_main(stdscr):
         log_win.noutrefresh()
         curses.doupdate()
 
-
-        # TODO: these keys aren't currently working.
-        # try:
         key = stdscr.getch()
         if key == curses.KEY_UP:
             log.shift_slice(-1)
+            pressed_key = 'up'
         elif key == curses.KEY_DOWN:
             log.shift_slice(1)
-        elif key == curses.KEY_EOL:
+            pressed_key = 'dwn'
+        elif key == curses.KEY_END:
             log.shift_slice_to_end()
-        elif key == ord('q'):
-            break
+            pressed_key = 'end'
         elif key == ord('p'):
             plotting_active = not plotting_active
+            pressed_key = 'p'
         elif key == ord('a'):
             archiving_active = not archiving_active
-        # except curses.error:
-            # pass
+            pressed_key = 'a'
+        elif key == ord('q'):
+            break
+        else:
+            pressed_key = key
 
 
 def run_interactive():
