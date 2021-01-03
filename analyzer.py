@@ -11,14 +11,6 @@ class LogAnalyzer:
     # Map from key (e.g. logdir or the like) to (map from measurement name to list of values)
     all_measures = ['phase 1', 'phase 2', 'phase 3', 'phase 4', 'total time']
 
-    # Helper formatter
-    def human_format(self, num, precision):
-        magnitude = 0
-        while abs(num) >= 1000:
-            magnitude += 1
-            num /= 1000.0
-        return (('%.' + str(precision) + 'f%s') % (num, ['', 'K', 'M', 'G', 'T', 'P'][magnitude]))
-
     def analyze(self, logfilenames):
         data = {}
         for logfilename in logfilenames:
@@ -75,13 +67,12 @@ class LogAnalyzer:
             for measure in self.all_measures:
                 values = data.get(key, {}).get(measure, [])
                 if(len(values) > 1):
-                    row.append('μ=%s σ=%s med=%s' % (
-                        self.human_format(statistics.mean(values), 0),
-                        self.human_format(statistics.stdev(values), 0),
-                        self.human_format(statistics.median(values), 0)
+                    row.append('μ=%s σ=%s' % (
+                        plot_util.human_format(statistics.mean(values), 1),
+                        plot_util.human_format(statistics.stdev(values), 0)
                         ))
                 elif(len(values) == 1):
-                    row.append(self.human_format(values[0], 1))
+                    row.append(plot_util.human_format(values[0], 1))
                 else:
                     row.append('N/A')
             tab.add_row(row)

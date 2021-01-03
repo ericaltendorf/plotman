@@ -8,14 +8,16 @@ import os
 import re
 import threading
 import time
+import psutil
 import random
 import readline          # For nice CLI
 import subprocess
 import sys
-import texttable as tt   # from somewhere?
 
 # Plotman libraries
-from job import Job
+import job
+import plot_util
+import archive # for get_archdir_freebytes(). TODO: move to avoid import loop
 
 # Constants
 MIN = 60    # Seconds
@@ -23,147 +25,98 @@ HR = 3600   # Seconds
 
 MAX_AGE = 1000_000_000   # Arbitrary large number of seconds
 
-def job_phases_for_dir(d, all_jobs):
-    '''Return phase 2-tuples for jobs running on tmpdir d'''
-    return sorted([j.progress() for j in all_jobs if j.tmpdir == d])
+def dstdirs_to_furthest_phase(all_jobs):
+    '''Return a map from dst dir to a phase tuple for the most progressed job
+       that is emitting to that dst dir.'''
+    result = {}
+    for j in all_jobs:
+        if not j.dstdir in result.keys() or result[j.dstdir] < j.progress():
+            result[j.dstdir] = j.progress()
+    return result
 
-def phases_permit_new_job(phases):
+def dstdirs_to_youngest_phase(all_jobs):
+    '''Return a map from dst dir to a phase tuple for the least progressed job
+       that is emitting to that dst dir.'''
+    result = {}
+    for j in all_jobs:
+        if not j.dstdir in result.keys() or result[j.dstdir] > j.progress():
+            result[j.dstdir] = j.progress()
+    return result
+
+def phases_permit_new_job(phases, sched_cfg):
     '''Scheduling logic: return True if it's OK to start a new job on a tmp dir
        with existing jobs in the provided phases.'''
-    # Zero in phase 1 or first four subphases of phase 2..
-    if len([p for p in phases if p <= (2, 4)]) > 0:
+    milestone_1 = ( sched_cfg['tmpdir_stagger_phase_major'],
+                    sched_cfg['tmpdir_stagger_phase_minor'] )
+    # milestone_2 = (4, 0)
+
+    if len([p for p in phases if p < milestone_1]) > 0:
         return False
 
-    # No more than one up to phase 3
-    if len([p for p in phases if p <= (3, 0) and p >= (2, 0)]) > 1:
-        return False
+    # if len([p for p in phases if milestone_1 <= p and p <milestone_2]) > 1:
+        # return False
 
     # No more than 3 jobs total on the tmpdir
-    if len(phases) > 3:
+    if len(phases) >= sched_cfg['tmpdir_max_jobs']:
         return False
 
     return True
 
-def tmpdir_phases_str(tmpdir_phases_pair):
-    tmpdir = tmpdir_phases_pair[0]
-    phases = tmpdir_phases_pair[1]
-    phase_str = ', '.join(['%d:%d' % ph_subph for ph_subph in sorted(phases)])
-    return ('%s (%s)' % (tmpdir, phase_str))
+def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
+    jobs = job.Job.get_running_jobs(dir_cfg['log'])
 
-def daemon_thread(dir_cfg, scheduling_cfg, plotting_cfg):
-    'Daemon thread for automatically starting jobs and monitoring job status'
+    wait_reason = None  # If we don't start a job this iteration, this says why.
 
-    while True:
-        jobs = Job.get_running_jobs(dir_cfg['log'])
-
-        wait_reason = None  # If we don't start a job this iteration, this says why.
-
-        youngest_job_age = min(jobs, key=Job.get_time_wall).get_time_wall() if jobs else MAX_AGE
-        global_stagger = int(scheduling_cfg['global_stagger_m'] * MIN)
-        if (youngest_job_age < global_stagger):
-            wait_reason = 'global stagger (age is %d, not yet %d)' % (
-                    youngest_job_age, global_stagger)
-        else:
-            tmp_to_phases = [ (d, job_phases_for_dir(d, jobs)) for d in dir_cfg['tmp'] ]
-            eligible = [ (d, ph) for (d, ph) in tmp_to_phases if phases_permit_new_job(ph) ]
-            
-            if not eligible:
-                all_tmpdir_str = ', '.join(map(tmpdir_phases_str, tmp_to_phases))
-                wait_reason = 'no eligible tempdirs: ' + all_tmpdir_str
-            else:
-                # Plot to oldest tmpdir
-                tmpdir = max(eligible, key=operator.itemgetter(1))[0]
-                print('Eligible tmpdirs: ' + str(eligible))
-                print('Selected: ' + tmpdir)
-
-                dstdir = random.choice(dir_cfg['dst'])  # TODO: Pick most empty drive?
-                logfile = os.path.join(dir_cfg['log'],
-                        datetime.now().strftime('%Y-%m-%d-%H:%M:%S.log'))
-
-                plot_args = ['chia', 'plots', 'create',
-                        '-k', str(plotting_cfg['k']),
-                        '-r', str(plotting_cfg['n_threads']),
-                        '-u', str(plotting_cfg['n_buckets']),
-                        '-b', str(plotting_cfg['job_buffer']),
-                        '-t', tmpdir,
-                        '-2', dir_cfg['tmp2'],
-                        '-d', dstdir ]
-
-                print('\nDaemon starting new plot job:\n  %s\n  logging to %s' %
-                        (' '.join(plot_args), logfile))
-
-                # start_new_sessions to make the job independent of this controlling tty.
-                subprocess.Popen(plot_args,
-                    stdout=open(logfile, 'w'),
-                    stderr=subprocess.STDOUT,
-                    start_new_session=True)
-
-        # TODO: report this via a channel that can be polled on demand, so we don't spam the console
-        sleep_s = int(scheduling_cfg['polling_time_s'])
-        if wait_reason:
-            print('...sleeping %d s: %s' % (sleep_s, wait_reason))
-
-        time.sleep(sleep_s)
-
-def human_format(num, precision):
-    magnitude = 0
-    while abs(num) >= 1000:
-        magnitude += 1
-        num /= 1000.0
-    return (('%.' + str(precision) + 'f%s') % (num, ['', 'K', 'M', 'G', 'T', 'P'][magnitude]))
-
-def time_format(sec, precision):
-    if sec < 60:
-        return '%ds' % sec
+    youngest_job_age = min(jobs, key=job.Job.get_time_wall).get_time_wall() if jobs else MAX_AGE
+    global_stagger = int(sched_cfg['global_stagger_m'] * MIN)
+    if (youngest_job_age < global_stagger):
+        wait_reason = 'stagger (%ds/%ds)' % (
+                youngest_job_age, global_stagger)
     else:
-        return '%d:%02d' % (int(sec / 3600), int((sec % 3600) / 60))
+        tmp_to_phases = [ (d, job.job_phases_for_tmpdir(d, jobs))
+                for d in dir_cfg['tmp'] ]
+        eligible = [ (d, ph) for (d, ph) in tmp_to_phases
+                if phases_permit_new_job(ph, sched_cfg) ]
+        
+        if not eligible:
+            wait_reason = 'no eligible tempdirs'
+        else:
+            # Plot to oldest tmpdir
+            tmpdir = max(eligible, key=operator.itemgetter(1))[0]
 
-def status_report(jobs, tmpdirs):
-    result = ''
+            # Select the dst dir least recently selected
+            dir2ph = dstdirs_to_youngest_phase(jobs)
+            unused_dirs = [d for d in dir_cfg['dst'] if d not in dir2ph.keys()]
+            dstdir = ''
+            if unused_dirs: 
+                dstdir = random.choice(unused_dirs)
+            else:
+                dstdir = max(dir2ph, key=dir2ph.get)
 
-    tab = tt.Texttable()
-    headings = ['tmpdir', 'used', 'free', 'job phases']
-    tab.header(headings)
-    tab.set_cols_align('r' * (len(headings) - 1) + 'l')
-    for d in sorted(tmpdirs):
-        row = [d,
-               'N/A',
-               'N/A',
-                ', '.join(['%d:%d' % ph_subph for ph_subph in sorted(job_phases_for_dir(d, jobs))])
-               ]
-        tab.add_row(row)
+            logfile = os.path.join(dir_cfg['log'],
+                    datetime.now().strftime('%Y-%m-%d-%H:%M:%S.log'))
 
-    (rows, columns) = os.popen('stty size', 'r').read().split()
-    tab.set_max_width(int(columns))
-    tab.set_deco(tt.Texttable.BORDER | tt.Texttable.HEADER )
-    result += tab.draw() + '\n'
+            plot_args = ['chia', 'plots', 'create',
+                    '-k', str(plotting_cfg['k']),
+                    '-r', str(plotting_cfg['n_threads']),
+                    '-u', str(plotting_cfg['n_buckets']),
+                    '-b', str(plotting_cfg['job_buffer']),
+                    '-t', tmpdir,
+                    '-2', dir_cfg['tmp2'],
+                    '-d', dstdir ]
 
-    tab = tt.Texttable()
-    headings = ['plot id', 'k', 'tmp dir', 'wall', 'phase', 'tmp', 'pid', 'stat', 'mem', 'user', 'sys', 'io']
-    tab.header(headings)
-    tab.set_cols_align('r' * len(headings))
-    for j in sorted(jobs, key=Job.get_time_wall):
-        row = [j.plot_id[:8] + '...',
-               j.k,
-               j.tmpdir,
-               time_format(j.get_time_wall(), 1),
-               '%d:%d' % j.progress(),
-               human_format(j.get_tmp_usage(), 0),
-               j.proc.pid,
-               j.get_run_status(),
-               human_format(j.get_mem_usage(), 1),
-               time_format(j.get_time_user(), 1),
-               time_format(j.get_time_sys(), 1),
-               time_format(j.get_time_iowait(), 1)
-               ]
-        tab.add_row(row)
+            logmsg = ('Starting plot job: %s ; logging to %s' % (' '.join(plot_args), logfile))
 
-    (rows, columns) = os.popen('stty size', 'r').read().split()
-    tab.set_max_width(int(columns))
-    tab.set_deco(tt.Texttable.BORDER | tt.Texttable.HEADER )
-    result += tab.draw()
+            # start_new_sessions to make the job independent of this controlling tty.
+            p = subprocess.Popen(plot_args,
+                stdout=open(logfile, 'w'),
+                stderr=subprocess.STDOUT,
+                start_new_session=True)
 
-    return result
+            psutil.Process(p.pid).nice(15)
+            return (True, logmsg)
+
+    return (False, wait_reason)
 
 def select_jobs_by_partial_id(jobs, partial_id):
     selected = []

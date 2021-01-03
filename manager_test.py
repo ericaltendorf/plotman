@@ -6,6 +6,12 @@ import manager
 import job
 
 class TestManager(unittest.TestCase):
+    def setUp(self):
+        self.sched_cfg = {
+                'tmpdir_stagger_phase_major': 3,
+                'tmpdir_stagger_phase_minor': 0,
+                'tmpdir_max_jobs': 3 }
+
     @patch('job.Job')
     def job_w_tmpdir_phase(self, tmpdir, phase, MockJob):
         j = MockJob()
@@ -13,49 +19,47 @@ class TestManager(unittest.TestCase):
         j.tmpdir = tmpdir
         return j
 
-    def test_job_phases_for_dir_filter_and_sort(self):
-        all_jobs = [ self.job_w_tmpdir_phase('/tmp1', (1, 5)),
-                     self.job_w_tmpdir_phase('/tmp2', (1, 1)),
-                     self.job_w_tmpdir_phase('/tmp2', (3, 1)),
-                     self.job_w_tmpdir_phase('/tmp2', (2, 1)),
-                     self.job_w_tmpdir_phase('/tmp3', (4, 1)) ]
-        
-        result = manager.job_phases_for_dir('/tmp2', all_jobs)
-        self.assertEqual(result, [(1, 1), (2, 1), (3, 1)])
+    @patch('job.Job')
+    def job_w_dstdir_phase(self, dstdir, phase, MockJob):
+        j = MockJob()
+        j.progress.return_value = phase
+        j.dstdir = dstdir
+        return j
 
-    def test_permit_new_job_none_in_phase_2(self):
+    def test_permit_new_job_post_milestone(self):
         self.assertTrue(manager.phases_permit_new_job(
-            [ (3, 1), (4, 1) ] ))
+            [ (3, 8), (4, 1) ], self.sched_cfg ))
 
-    def test_permit_new_late_in_phase_2(self):
-        self.assertTrue(manager.phases_permit_new_job(
-            [ (2, 5), (3, 1) ] ))
-
-    # Phase 2 subphase 4 is the threshold
-
-    def test_permit_new_job_early_in_phase_2(self):
+    def test_permit_new_job_pre_milestone(self):
         self.assertFalse(manager.phases_permit_new_job(
-            [ (2, 4), (4, 1) ] ))
+            [ (2, 3), (4, 1) ], self.sched_cfg ))
 
-    def test_permit_new_job_multiple_in_phase_2(self):
+    def test_permit_new_job_too_many_jobs(self):
         self.assertFalse(manager.phases_permit_new_job(
-            [ (2, 7), (2, 8), (3, 1) ] ))
-
-    def test_permit_new_job_current_job_in_phase_1(self):
-        self.assertFalse(manager.phases_permit_new_job(
-            [ (1, 1), (4, 1) ] ))
-
-    def test_permit_new_job_too_many_total_jobs(self):
-        self.assertFalse(manager.phases_permit_new_job(
-            [ (4, 1), (4, 2), (4, 3), (4, 4) ] ))
+            [ (3, 1), (3, 2), (3, 3) ], self.sched_cfg ))
 
     def test_tmpdir_phases_str(self):
-        self.assertEqual('/tmp/foo: (1:3, 2:5, 4:1)',
+        self.assertEqual('/tmp/foo (1:3, 2:5, 4:1)',
                 manager.tmpdir_phases_str(('/tmp/foo', [(1, 3), (2, 5), (4, 1)])))
 
     def test_tmpdir_phases_str_sorting(self):
-        self.assertEqual('/tmp/foo: (1:3, 2:5, 4:1)',
+        self.assertEqual('/tmp/foo (1:3, 2:5, 4:1)',
                 manager.tmpdir_phases_str(('/tmp/foo', [(2, 5), (4, 1), (1, 3)])))
+
+
+    def test_dstdirs_to_furthest_phase(self):
+        all_jobs = [ self.job_w_dstdir_phase('/plots1', (1, 5)),
+                     self.job_w_dstdir_phase('/plots2', (1, 1)),
+                     self.job_w_dstdir_phase('/plots2', (3, 1)),
+                     self.job_w_dstdir_phase('/plots2', (2, 1)),
+                     self.job_w_dstdir_phase('/plots3', (4, 1)) ]
+
+        self.assertEqual(
+                { '/plots1' : (1, 5),
+                  '/plots2' : (3, 1),
+                  '/plots3' : (4, 1) },
+                manager.dstdirs_to_furthest_phase(all_jobs))
+
 
 if __name__ == '__main__':
     unittest.main()

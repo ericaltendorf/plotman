@@ -15,10 +15,20 @@ import psutil      # apt-get install python-psutil
 import random
 import sys
 
+def job_phases_for_tmpdir(d, all_jobs):
+    '''Return phase 2-tuples for jobs running on tmpdir d'''
+    return sorted([j.progress() for j in all_jobs if j.tmpdir == d])
+
+def job_phases_for_dstdir(d, all_jobs):
+    '''Return phase 2-tuples for jobs outputting to dstdir d'''
+    return sorted([j.progress() for j in all_jobs if j.dstdir == d])
+
 # TODO: be more principled and explicit about what we cache vs. what we look up
 # dynamically from the logfile
 class Job:
     'Represents a plotter job'
+
+    # These are constants, not updated during a run.
     k = 0
     r = 0
     u = 0
@@ -32,18 +42,41 @@ class Job:
     job_id = 0
     plot_id = 0
     proc = None   # will get a psutil.Process
-    initialized = False  # Set to true once data structures are fully initialized
+
+    # These are dynamic, cached, and need to be udpated periodically
+    phase = (None, None)   # Phase/subphase
 
     def get_running_jobs(logroot):
+        '''Return the list of running plot jobs, reading the process table from scratch.'''
         jobs = []
         for proc in psutil.process_iter(['pid', 'name']):
             if proc.name() == 'chia':
                 args = proc.cmdline()
                 # n.b.: args[0]=python, args[1]=chia
                 if len(args) >= 4 and args[2] == 'plots' and args[3] == 'create':
-                    jobs += [ Job(proc, logroot) ]
+                    jobs.append(Job(proc, logroot))
         return jobs
 
+    def get_running_jobs_w_cache(logroot, existing_jobs):
+        '''Return the list of running plot jobs, returning previous jobs if they still exist, and
+           new jobs intialized.  Does not update info on existing jobs, which means information in
+           the list of jobs will be from different times.  Use this when calling frequent updates,
+           and use get_running_jobs() to force a full refresh.'''
+        jobs = []
+        existing_jobs_by_pid = { j.proc.pid: j for j in existing_jobs }
+
+        for proc in psutil.process_iter(['pid', 'name']):
+            if proc.name() == 'chia':
+                if proc.pid in existing_jobs_by_pid.keys():
+                    jobs.append(existing_jobs_by_pid[proc.pid])  # Copy from cache
+                else:
+                    args = proc.cmdline()
+                    # n.b.: args[0]=python, args[1]=chia
+                    if len(args) >= 4 and args[2] == 'plots' and args[3] == 'create':
+                        jobs.append(Job(proc, logroot))
+        return jobs
+
+ 
     def __init__(self, proc, logroot):
         '''Initialize from an existing psutil.Process object.  must know logroot in order to understand open files'''
         self.proc = proc
@@ -88,31 +121,10 @@ class Job:
                         self.logfile = f.path
                     break
 
-            # Find plot ID and start time.
-            if not self.init_from_logfile():
-                # This should rarely if ever happen, but if it does, this object may be
-                # in an unexpected state (e.g., wrong start time)
-                # TODO: handle this error case better.
-                print('WARNING: unable to fully initialize job info from logfile %s' % self.logfile)
+            # Initialize data that needs to be loaded from the logfile
+            self.init_from_logfile()
 
             assert self.logfile
-            with open(self.logfile, 'r') as f:
-                found_id = False
-                found_log = False
-                for line in f:
-                    m = re.match('^ID: ([0-9a-f]*)', line)
-                    if m:
-                        self.plot_id = m.group(1)
-                        found_id = True
-                    m = re.match(r'^Starting phase 1/4:.*\.\.\. (.*)', line)
-                    if m:
-                        # Mon Nov  2 08:39:53 2020
-                        # TODO: If you read this logfile in the first 5 or so seconds of the job running,
-                        # this line will not have been logged yet and we won't initialize the start time.
-                        # Should correct this.
-                        self.start_time = datetime.strptime(m.group(1), '%a %b  %d %H:%M:%S %Y')
-                        found_log = True
-                        break
 
     def init_from_logfile(self):
         '''Read plot ID and job start time from logfile.  Return true if we
@@ -137,27 +149,30 @@ class Job:
                         break  # Stop reading lines in file
 
             if found_id and found_log:
-                return True  # Stop trying
+                break  # Stop trying
             else:
                 time.sleep(1)  # Sleep and try again
 
         # If we couldn't find the line in the logfile, the job is probably just getting started
-        # (and being slow about it).  In this case, use the last metadata change as the start time,
-        # but return the warning to the caller.
-        self.start_time = os.path.getctime(self.logfile)
-        return False
+        # (and being slow about it).  In this case, use the last metadata change as the start time.
+        if not found_log:
+            self.start_time = datetime.fromtimestamp(os.path.getctime(self.logfile))
 
+        # Load things from logfile that are dynamic
+        self.update_from_logfile()
 
-    def progress(self):
-        '''Return a 2-tuple with the job phase and subphase (by reading the logfile)'''
+    def update_from_logfile(self):
+        self.set_phase_from_logfile()
+
+    def set_phase_from_logfile(self):
         assert self.logfile
 
-        # Map from phase number to step number reached in that phase.
-        # Phase 1 steps are <started>, table1, table2, ...
-        # Phase 2 steps are <started>, table7, table6, ...
-        # Phase 3 steps are <started>, tables1&2, tables2&3, ...
-        # Phase 4 steps are <started>
-        phase_steps = {}
+        # Map from phase number to subphase number reached in that phase.
+        # Phase 1 subphases are <started>, table1, table2, ...
+        # Phase 2 subphases are <started>, table7, table6, ...
+        # Phase 3 subphases are <started>, tables1&2, tables2&3, ...
+        # Phase 4 subphases are <started>
+        phase_subphases = {}
 
         with open(self.logfile, 'r') as f:
             for line in f:
@@ -165,22 +180,22 @@ class Job:
                 m = re.match(r'^Starting phase (\d).*', line)
                 if m:
                     phase = int(m.group(1))
-                    phase_steps[phase] = 0
+                    phase_subphases[phase] = 0
 
                 # Phase 1: "Computing table 2"
                 m = re.match(r'^Computing table (\d).*', line)
                 if m:
-                    phase_steps[1] = max(phase_steps[1], int(m.group(1)))
+                    phase_subphases[1] = max(phase_subphases[1], int(m.group(1)))
 
                 # Phase 2: "Backpropagating on table 2"
                 m = re.match(r'^Backpropagating on table (\d).*', line)
                 if m:
-                    phase_steps[2] = max(phase_steps[2], 7 - int(m.group(1)))
+                    phase_subphases[2] = max(phase_subphases[2], 7 - int(m.group(1)))
 
                 # Phase 3: "Compressing tables 4 and 5"
                 m = re.match(r'^Compressing tables (\d) and (\d).*', line)
                 if m:
-                    phase_steps[3] = max(phase_steps[3], int(m.group(1)))
+                    phase_subphases[3] = max(phase_subphases[3], int(m.group(1)))
 
                 # TODO also collect timing info:
 
@@ -194,15 +209,23 @@ class Job:
                 # if m:
                     # data.setdefault(key, {}).setdefault('total time', []).append(float(m.group(1)))
 
-        phase = max(phase_steps.keys())
-        step = phase_steps[phase]
-            
-        return (phase, step)
+        self.phase = (max(phase_subphases.keys()), phase_subphases[phase])
+
+    def progress(self):
+        '''Return a 2-tuple with the job phase and subphase (by reading the logfile)'''
+        return self.phase
+
+    def plot_id_prefix(self):
+        return self.plot_id[:8]
 
     # TODO: make this more useful and complete, and/or make it configurable
     def status_str_long(self):
-        return '{plot_id}\npid:{pid}\ntmp:{tmp}\ntmp2:{tmp2}\ndst:{dst}\nlogfile:{logfile}'.format(
+        return '{plot_id}\nk={k} r={r} b={b} u={u}\npid:{pid}\ntmp:{tmp}\ntmp2:{tmp2}\ndst:{dst}\nlogfile:{logfile}'.format(
             plot_id = self.plot_id,
+            k = self.k,
+            r = self.r,
+            b = self.b,
+            u = self.u,
             pid = self.proc.pid,
             tmp = self.tmpdir,
             tmp2 = self.tmp2dir,
@@ -219,7 +242,11 @@ class Job:
         with os.scandir(self.tmpdir) as it:
             for entry in it:
                 if self.plot_id in entry.name:
-                    total_bytes += entry.stat().st_size
+                    try:
+                        total_bytes += entry.stat().st_size
+                    except FileNotFoundError:
+                        # The file might disappear; this being an estimate we don't care
+                        pass
         return total_bytes
 
     def get_run_status(self):
