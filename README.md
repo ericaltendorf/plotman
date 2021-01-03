@@ -32,6 +32,10 @@ temporary buffer space for generated plots.
   `rsyncd` module, and to be entirely populated with plots.  These are known as
 the `archive` directories.
 
+- Plot jobs are run with STDOUT/STDERR redirected to a log file in a configured
+directory.  This allows analysis of progress (plot phase) as well as timing
+(e.g. for analyzing performance).
+
 ## Functionality
 
 Plotman tools are stateless.  Rather than keep an internal record of what jobs
