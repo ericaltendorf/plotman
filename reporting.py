@@ -20,7 +20,13 @@ def phases_str(phases):
 def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
     '''height, if provided, will limit the number of rows in the table,
        showing first and last rows, row numbers and an elipsis in the middle.'''
+    abbreviate_jobs_list = False
+    n_begin_rows = 0
+    n_end_rows = 0
     if height and height < len(jobs) + 1:  # One row for header
+        abbreviate_jobs_list = True
+
+    if abbreviate_jobs_list:
         n_rows = height - 2  # One for header, one for elipsis
         n_begin_rows = int(n_rows / 2)
         n_end_rows = n_rows - n_begin_rows
@@ -36,10 +42,10 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
     tab.set_header_align('r' * len(headings))
     for i, j in enumerate(sorted(jobs, key=job.Job.get_time_wall)):
         # Elipsis row
-        if height and i == n_begin_rows:
+        if abbreviate_jobs_list and i == n_begin_rows:
             row = ['...'] + ([''] * 13)
         # Omitted row
-        elif height and i > n_begin_rows and i < (len(jobs) - n_end_rows):
+        elif abbreviate_jobs_list and i > n_begin_rows and i < (len(jobs) - n_end_rows):
             continue
 
         # Regular row

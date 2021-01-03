@@ -210,7 +210,11 @@ class Job:
                 # if m:
                     # data.setdefault(key, {}).setdefault('total time', []).append(float(m.group(1)))
 
-        self.phase = (max(phase_subphases.keys()), phase_subphases[phase])
+        if phase_subphases:
+            phase = max(phase_subphases.keys())
+            self.phase = (phase, phase_subphases[phase])
+        else:
+            self.phase = (0, 0)
 
     def progress(self):
         '''Return a 2-tuple with the job phase and subphase (by reading the logfile)'''
