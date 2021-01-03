@@ -53,15 +53,15 @@ class Log:
 
 def plotting_status_msg(active, status):
     if active:
-        return 'active, ' + status
+        return '(active) ' + status
     else:
-        return 'inactive'
+        return '(inactive) ' + status
 
 def archiving_status_msg(active, status):
     if active:
-        return 'active, ' + status
+        return '(active) ' + status
     else:
-        return 'inactive'
+        return '(inactive) ' + status
 
 def curses_main(stdscr):
     # TODO: figure out how to pass the configs in from plotman.py instead of
@@ -176,9 +176,11 @@ def curses_main(stdscr):
         header_win.addnstr(' <A>rchival: ', linecap, curses.A_BOLD)
         header_win.addnstr(
                 archiving_status_msg(archiving_active, archiving_status), linecap) 
-        header_win.addnstr('  term size: (%d, %d)' % (n_rows, n_cols), linecap)  # Debuggin
-        if pressed_key:
-            header_win.addnstr(' (keypress %s)' % str(pressed_key), linecap)
+
+        # These are useful for debugging.
+        # header_win.addnstr('  term size: (%d, %d)' % (n_rows, n_cols), linecap)  # Debuggin
+        # if pressed_key:
+            # header_win.addnstr(' (keypress %s)' % str(pressed_key), linecap)
         header_win.addnstr(1, 0, 'Prefixes:', linecap, curses.A_BOLD)
         header_win.addnstr('  tmp=', linecap, curses.A_BOLD)
         header_win.addnstr(tmp_prefix, linecap)
