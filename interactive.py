@@ -124,8 +124,11 @@ def curses_main(stdscr):
 
         else:
             # Full refresh
-            jobs = Job.get_running_jobs(dir_cfg['log'])
             last_refresh = datetime.datetime.now()
+            jobs = Job.get_running_jobs(dir_cfg['log'])
+            # Look for running archive jobs.  Be robust to finding more than one
+            # even though the scheduler should only run one at a time.
+            arch_jobs = archive.get_running_archive_jobs(dir_cfg['archive'])
 
             if plotting_active:
                 (started, msg) = manager.maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg)
@@ -137,9 +140,6 @@ def curses_main(stdscr):
                     plotting_status = msg
 
             if archiving_active:
-                # Look for running archive jobs.  Be robust to finding more than one
-                # even though the scheduler should only run one at a time.
-                arch_jobs = archive.get_running_archive_jobs(dir_cfg['archive'])
                 if arch_jobs:
                     archiving_status = 'pid: ' + ', '.join(map(str, arch_jobs))
                 else:
