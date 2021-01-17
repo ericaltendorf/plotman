@@ -208,6 +208,8 @@ def curses_main(stdscr):
             jobs, dir_cfg['dst'], n_cols, dst_prefix)
         arch_report = reporting.arch_dir_report(
             archive.get_archdir_freebytes(dir_cfg['archive']), n_cols, arch_prefix)
+        if not arch_report:
+            arch_report = '<no archive dir info>'
         tmp_h = max(len(tmp_report_1.splitlines()),
                     len(tmp_report_2.splitlines()))
         tmp_w = len(max(tmp_report_1.splitlines() +
