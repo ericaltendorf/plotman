@@ -50,7 +50,7 @@ class Job:
         '''Return the list of running plot jobs, reading the process table from scratch.'''
         jobs = []
         for proc in psutil.process_iter(['pid', 'name']):
-            if proc.name() == 'chia':
+            if os.path.basename(proc.name()) == 'chia':
                 args = proc.cmdline()
                 # n.b.: args[0]=python, args[1]=chia
                 if len(args) >= 4 and args[2] == 'plots' and args[3] == 'create':
@@ -66,7 +66,7 @@ class Job:
         existing_jobs_by_pid = { j.proc.pid: j for j in existing_jobs }
 
         for proc in psutil.process_iter(['pid', 'name']):
-            if proc.name() == 'chia':
+            if os.path.basename(proc.name()) == 'chia':
                 if proc.pid in existing_jobs_by_pid.keys():
                     jobs.append(existing_jobs_by_pid[proc.pid])  # Copy from cache
                 else:
@@ -90,9 +90,9 @@ class Job:
             assert 'chia' in args[1]
             assert 'plots' == args[2]
             assert 'create' == args[3]
-            for i in range(4, len(args), 2):
-                arg = args[i]
-                val = args[i + 1]
+            args_iter = iter(args[4:])
+            for arg in args_iter:
+                val = None if arg in ['-e'] else next(args_iter)
                 if arg == '-k':
                     self.k = val
                 elif arg == '-r':
@@ -109,6 +109,9 @@ class Job:
                     self.dstdir = val
                 elif arg == '-n':
                     self.n = val
+                elif arg == '-e':
+                    pass
+                    # TODO: keep track of -e
                 else:
                     print('Warning: unrecognized args: %s %s' % (arg, val))
 
