@@ -81,7 +81,9 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
         if not eligible:
             wait_reason = 'no eligible tempdirs'
         else:
-            # Plot to oldest tmpdir
+            # Plot to oldest tmpdir.  TODO: this is broken; it appears to prioritize
+            # tmpdirs that have *some* plots started, so an eligible (old-enough)
+            # tmpdir will still win out over a "virgin" tmpdir with no jobs at all.
             tmpdir = max(eligible, key=operator.itemgetter(1))[0]
 
             # Select the dst dir least recently selected
@@ -102,10 +104,12 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
                     '-u', str(plotting_cfg['n_buckets']),
                     '-b', str(plotting_cfg['job_buffer']),
                     '-t', tmpdir,
-                    '-2', dir_cfg['tmp2'],
                     '-d', dstdir ]
-            if plotting_cfg['e']:
+            if 'e' in plotting_cfg and plotting_cfg['e']:
                 plot_args.append('-e')
+            if 'tmp2' in dir_cfg:
+                plot_args.append('-2')
+                plot_args.appent(dir_cfg['tmp2'])
 
             logmsg = ('Starting plot job: %s ; logging to %s' % (' '.join(plot_args), logfile))
 
