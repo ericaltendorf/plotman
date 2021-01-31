@@ -109,7 +109,7 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
                 plot_args.append('-e')
             if 'tmp2' in dir_cfg:
                 plot_args.append('-2')
-                plot_args.appent(dir_cfg['tmp2'])
+                plot_args.append(dir_cfg['tmp2'])
 
             logmsg = ('Starting plot job: %s ; logging to %s' % (' '.join(plot_args), logfile))
 
