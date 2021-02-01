@@ -46,6 +46,9 @@ def dstdirs_to_youngest_phase(all_jobs):
 def phases_permit_new_job(phases, sched_cfg):
     '''Scheduling logic: return True if it's OK to start a new job on a tmp dir
        with existing jobs in the provided phases.'''
+    if len(phases) == 0:
+        return True
+
     milestone_1 = ( sched_cfg['tmpdir_stagger_phase_major'],
                     sched_cfg['tmpdir_stagger_phase_minor'] )
     # milestone_2 = (4, 0)
@@ -73,18 +76,18 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
         wait_reason = 'stagger (%ds/%ds)' % (
                 youngest_job_age, global_stagger)
     else:
-        tmp_to_phases = [ (d, job.job_phases_for_tmpdir(d, jobs))
+        tmp_to_all_phases = [ (d, job.job_phases_for_tmpdir(d, jobs))
                 for d in dir_cfg['tmp'] ]
-        eligible = [ (d, ph) for (d, ph) in tmp_to_phases
-                if phases_permit_new_job(ph, sched_cfg) ]
+        eligible = [ (d, phases) for (d, phases) in tmp_to_all_phases
+                if phases_permit_new_job(phases, sched_cfg) ]
+        rankable = [ (d, phases[0]) if phases else (d, (999, 999))
+                for (d, phases) in eligible ]
         
         if not eligible:
             wait_reason = 'no eligible tempdirs'
         else:
-            # Plot to oldest tmpdir.  TODO: this is broken; it appears to prioritize
-            # tmpdirs that have *some* plots started, so an eligible (old-enough)
-            # tmpdir will still win out over a "virgin" tmpdir with no jobs at all.
-            tmpdir = max(eligible, key=operator.itemgetter(1))[0]
+            # Plot to oldest tmpdir.
+            tmpdir = max(rankable, key=operator.itemgetter(1))[0]
 
             # Select the dst dir least recently selected
             dir2ph = dstdirs_to_youngest_phase(jobs)
