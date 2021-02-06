@@ -57,6 +57,13 @@ class Job:
                     jobs.append(Job(proc, logroot))
         return jobs
 
+    def is_plotting_cmdline(cmdline):
+        return (len(cmdline) >= 4 and
+            'python' in cmdline[0] and
+            'venv/bin/chia' in cmdline[1] and
+            'plots' == cmdline[2] and
+            'create' == cmdline[3])
+
     def get_running_jobs_w_cache(logroot, existing_jobs):
         '''Return the list of running plot jobs, returning previous jobs if they still exist, and
            new jobs intialized.  Does not update info on existing jobs, which means information in
@@ -65,15 +72,12 @@ class Job:
         jobs = []
         existing_jobs_by_pid = { j.proc.pid: j for j in existing_jobs }
 
-        for proc in psutil.process_iter(['pid', 'name']):
-            if os.path.basename(proc.name()) == 'chia':
+        for proc in psutil.process_iter(['pid', 'cmdline']):
+            if is_plotting_cmdline(proc.cmdline()):
                 if proc.pid in existing_jobs_by_pid.keys():
                     jobs.append(existing_jobs_by_pid[proc.pid])  # Copy from cache
                 else:
-                    args = proc.cmdline()
-                    # n.b.: args[0]=python, args[1]=chia
-                    if len(args) >= 4 and args[2] == 'plots' and args[3] == 'create':
-                        jobs.append(Job(proc, logroot))
+                    jobs.append(Job(proc, logroot))
 
         return jobs
 
