@@ -26,6 +26,42 @@ def phases_str(phases, max_num=None):
             " [+%d] " % n_elided +
             ' '.join(['%d:%d' % pair for pair in phases[n_first + n_elided:]]))
 
+
+def n_at_ph(jobs, ph):
+    return len([j for j in jobs if j.progress() == ph])
+
+def n_to_char(n):
+    if n == 0:
+        return ' '
+    elif n == 1:
+        return '.'
+    elif n == 2:
+        return ':'
+    elif n == 3:
+        return ';'
+    elif n >= 4:
+        return '!'
+    else:
+        return 'X'  # Should never be negative
+
+def job_viz(jobs):
+    # TODO: Rewrite this in a way that ensures we count every job
+    # even if the reported phases don't line up with expectations.
+    result = ''
+    result += '1'
+    for i in range(0, 8):
+        result += n_to_char(n_at_ph(jobs, (1, i)))
+    result += '2'
+    for i in range(0, 8):
+        result += n_to_char(n_at_ph(jobs, (2, i)))
+    result += '3'
+    for i in range(0, 7):
+        result += n_to_char(n_at_ph(jobs, (3, i)))
+    result += '4'
+    result += n_to_char(n_at_ph(jobs, (4, 0)))
+    return result
+    
+
 def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
     '''height, if provided, will limit the number of rows in the table,
        showing first and last rows, row numbers and an elipsis in the middle.'''
