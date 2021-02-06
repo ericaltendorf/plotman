@@ -73,7 +73,7 @@ class Job:
         existing_jobs_by_pid = { j.proc.pid: j for j in existing_jobs }
 
         for proc in psutil.process_iter(['pid', 'cmdline']):
-            if is_plotting_cmdline(proc.cmdline()):
+            if Job.is_plotting_cmdline(proc.cmdline()):
                 if proc.pid in existing_jobs_by_pid.keys():
                     jobs.append(existing_jobs_by_pid[proc.pid])  # Copy from cache
                 else:
