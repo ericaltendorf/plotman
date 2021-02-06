@@ -1,62 +1,74 @@
-# Where to plot and log
+# Where to plot and log.
 directories:
-        # One directory for logs
+        # One directory in which to store all plot job logs (the STDOUT/
+        # STDERR of all plot jobs).  In order to monitor progress, plotman
+        # reads these logs on a regular basis, so using a fast drive is
+        # recommended.
         log: /home/chia/chia/logs
 
-        # One or more directories; the scheduler will use all of them
+        # One or more directories to use as tmp dirs for plotting.  The
+        # scheduler will use all of them and distribute jobs among them.
+        # It assumes that IO is independent for each one (i.e., that each
+        # one is on a different physical device).
+        #
+        # If multiple directories share a common prefix, reports will
+        # abbreviate and show just the uniquely identifying suffix.
         tmp:
                 - /mnt/tmp/00
                 - /mnt/tmp/01
                 - /mnt/tmp/02
                 - /mnt/tmp/03
-                - /mnt/tmp/04
-                - /mnt/tmp/05
-                - /mnt/tmp/06
-                - /mnt/tmp/07
-                - /mnt/tmp/08
-                - /mnt/tmp/09
-                - /mnt/tmp/10
-                - /mnt/tmp/11
 
-        # One directory (TODO: support distributing across multiple tmp2 dirs)
-        tmp2: /mnt/tmp/a
+        # Optional: tmp2 directory.  If specified, will be passed to
+        # chia plots create as -2.  Only one tmp2 directory is supported.
+        # tmp2: /mnt/tmp/a
 
-        # One or more directories; the scheduler will use all of them 
+        # One or more directories; the scheduler will use all of them.
+        # These again are presumed to be on independent physical devices,
+        # so writes (plot jobs) and reads (archivals) can be scheduled
+        # to minimize IO contention.
         dst:
-                - /home/chia/chia/plots/000
-                - /home/chia/chia/plots/001
-                - /home/chia/chia/plots/002
-                - /home/chia/chia/plots/003
+                - /mnt/dst/00
+                - /mnt/dst/01
 
-        # Archival
+        # Archival configuration.  Optional.
+        #
+        # Currently archival depends on an rsync daemon running on the remote
+        # host, and that the module is configured to match the local path.
+        # See code for details.
         archive:
                 rsyncd_module: plots
                 rsyncd_path: /plots
-                rsyncd_bwlimit: 100000  # In KB/s
-                rsyncd_host: farmer
+                rsyncd_bwlimit: 80000  # Bandwidth limit in KB/s
+                rsyncd_host: myfarmer
                 rsyncd_user: chia
 
 
 # Plotting scheduling parameters
 scheduling:
-        # Don't run a job on a particular temp dir more often than this.
-        # (obsolete)
-        # tmpdir_stagger_m: 300
+        # Don't run a job on a particular temp dir until all existing jobs
+        # have progresed at least this far.  Phase major corresponds to the
+        # plot phase, phase minor corresponds to the table or table pair
+        # in sequence.
         tmpdir_stagger_phase_major: 2
-        tmpdir_stagger_phase_minor: 5
+        tmpdir_stagger_phase_minor: 1
+
+        # Don't run more than this many jobs at a time on a single temp dir.
         tmpdir_max_jobs: 3
 
-        # Global min; don't run any jobs more often than this.
+        # Don't run any jobs (across all temp dirs) more often than this.
         global_stagger_m: 30
 
         # How often the daemon wakes to consider starting a new plot job
         polling_time_s: 20
 
-# Plotting parameters
+
+# Plotting parameters.  These are pass-through parameters to chia plots create.
+# See documentation at
+# https://github.com/Chia-Network/chia-blockchain/wiki/CLI-Commands-Reference#create
 plotting:
         k: 32
+        e: True              # Use -e plotting option
         n_threads: 8         # Threads per job
-        # n_buckets: 64        # Number of buckets to split data into
-        # job_buffer: 9200     # Per job memory
         n_buckets: 128       # Number of buckets to split data into
-        job_buffer: 4580     # Per job memory
+        job_buffer: 4520     # Per job memory
