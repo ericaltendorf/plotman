@@ -5,6 +5,7 @@ import psutil
 import archive
 import job
 import manager
+import math
 import plot_util
 
 def abbr_path(path, putative_prefix):
@@ -13,9 +14,17 @@ def abbr_path(path, putative_prefix):
     else:
         return path
 
-def phases_str(phases):
+def phases_str(phases, max_num=None):
     '''Take a list of phase-subphase pairs and return them as a compact string'''
-    return ', '.join(['%d:%d' % ph_subph for ph_subph in phases])
+    if not max_num or len(phases) <= max_num:
+        return ' '.join(['%d:%d' % pair for pair in phases])
+    else:
+        n_first = math.floor(max_num / 2)
+        n_last = max_num - n_first
+        n_elided = len(phases) - (n_first + n_last)
+        return (' '.join(['%d:%d' % pair for pair in phases[:n_first]]) +
+            " [+%d] " % n_elided +
+            ' '.join(['%d:%d' % pair for pair in phases[n_first + n_elided:]]))
 
 def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
     '''height, if provided, will limit the number of rows in the table,
@@ -103,7 +112,7 @@ def dst_dir_report(jobs, dstdirs, width, prefix=''):
     tab = tt.Texttable()
     dir2oldphase = manager.dstdirs_to_furthest_phase(jobs)
     dir2newphase = manager.dstdirs_to_youngest_phase(jobs)
-    headings = ['dst', 'plots', 'GB free', 'phases', 'priority']
+    headings = ['dst', 'plots', 'GBfree', 'inbnd phases', 'pri']
     tab.header(headings)
     tab.set_cols_dtype('t' * len(headings))
 
@@ -117,7 +126,8 @@ def dst_dir_report(jobs, dstdirs, width, prefix=''):
         gb_free = int(plot_util.df_b(d) / plot_util.GB)
         n_plots = len(dir_plots)
         priority = archive.compute_priority(eldest_ph, gb_free, n_plots) 
-        row = [abbr_path(d, prefix), n_plots, gb_free, phases_str(phases), priority]
+        row = [abbr_path(d, prefix), n_plots, gb_free,
+                phases_str(phases, 5), priority]
         tab.add_row(row)
     tab.set_max_width(width)
     tab.set_deco(tt.Texttable.BORDER | tt.Texttable.HEADER )
