@@ -11,12 +11,6 @@ import archive
 import manager
 import reporting
 
-def window_width(window):
-    return window.getmaxyx()[1]
-
-def window_height(window):
-    return window.getmaxyx()[0]
-
 class Log:
     entries = []
     cur_pos = 0
@@ -81,7 +75,7 @@ def curses_main(stdscr):
 
     # Page layout.  Currently requires at least ~40 rows.
     # TODO: make everything dynamically resize to best use available space
-    header_height = 2
+    header_height = 3
     jobs_height = 10
     dirs_height = 14
     logscreen_height = n_rows - (header_height + jobs_height + dirs_height)
@@ -97,7 +91,7 @@ def curses_main(stdscr):
     refresh_period = int(sched_cfg['polling_time_s'])
 
     stdscr.nodelay(True)  # make getch() non-blocking
-    stdscr.timeout(5000)   # this doesn't seem to do anything....
+    stdscr.timeout(2000)
 
     header_win = curses.newwin(header_height, n_cols, header_pos, 0)
     log_win = curses.newwin(logscreen_height, n_cols, logscreen_pos, 0)
@@ -111,18 +105,24 @@ def curses_main(stdscr):
 
     while True:
 
-        # todo: none of this resizing works
-        (n_rows, n_cols) = map(int, stdscr.getmaxyx())
+        # TODO: handle resizing.  Need to (1) figure out how to reliably get
+        # the terminal size -- the recommended method doesn't seem to work
+        #    (n_rows, n_cols) = map(int, stdscr.getmaxyx()) ...doesn't work
+        #    ...map(int, os.popen('stty size', 'r').read().split() ...may work
+        # and then (2) implement the logic to resize all the subwindows as above
+
         stdscr.clear()
         linecap = n_cols - 1
         logscreen_height = n_rows - (header_height + jobs_height + dirs_height)
 
         elapsed = (datetime.datetime.now() - last_refresh).total_seconds() 
+        full_refresh = False
         if (elapsed < refresh_period):
             # Lightweight; does virtually no work if there are no new jobs.
             jobs = Job.get_running_jobs_w_cache(dir_cfg['log'], jobs)
 
         else:
+            full_refresh = True
             # Full refresh
             last_refresh = datetime.datetime.now()
             jobs = Job.get_running_jobs(dir_cfg['log'])
@@ -134,7 +134,7 @@ def curses_main(stdscr):
                 (started, msg) = manager.maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg)
                 if (started):
                     log.log(msg)
-                    plotting_status = '<just started plot>'
+                    plotting_status = '<just started job>'
                     jobs = Job.get_running_jobs_w_cache(dir_cfg['log'], jobs)
                 else:
                     plotting_status = msg
@@ -162,14 +162,11 @@ def curses_main(stdscr):
         dst_prefix = os.path.commonpath(dir_cfg['dst'])
         arch_prefix = dir_cfg['archive']['rsyncd_path']
 
-        # Render
-        stdscr.clear()
-
         # Header
         header_win.addnstr(0, 0, 'Plotman', linecap, curses.A_BOLD)
-        header_win.addnstr(' %s (refresh %ds/%ds)' %
-                (datetime.datetime.now().strftime("%H:%M:%S"), elapsed, refresh_period),
-                linecap)
+        timestamp = datetime.datetime.now().strftime("%H:%M:%S")
+        refresh_msg = "now" if full_refresh else ('%ds/%ds' % (elapsed, refresh_period))
+        header_win.addnstr(' %s (refresh %s)' % (timestamp, refresh_msg), linecap)
         header_win.addnstr('  |  <P>lotting: ', linecap, curses.A_BOLD)
         header_win.addnstr(
                 plotting_status_msg(plotting_active, plotting_status), linecap)
@@ -177,11 +174,15 @@ def curses_main(stdscr):
         header_win.addnstr(
                 archiving_status_msg(archiving_active, archiving_status), linecap) 
 
+        # Oneliner progress display
+        header_win.addnstr(1, 0, 'Jobs (%d): ' % len(jobs), linecap)
+        header_win.addnstr('[' + reporting.job_viz(jobs) + ']', linecap)
+
         # These are useful for debugging.
         # header_win.addnstr('  term size: (%d, %d)' % (n_rows, n_cols), linecap)  # Debuggin
         # if pressed_key:
             # header_win.addnstr(' (keypress %s)' % str(pressed_key), linecap)
-        header_win.addnstr(1, 0, 'Prefixes:', linecap, curses.A_BOLD)
+        header_win.addnstr(2, 0, 'Prefixes:', linecap, curses.A_BOLD)
         header_win.addnstr('  tmp=', linecap, curses.A_BOLD)
         header_win.addnstr(tmp_prefix, linecap)
         header_win.addnstr('  dst=', linecap, curses.A_BOLD)
