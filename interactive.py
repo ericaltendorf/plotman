@@ -12,8 +12,9 @@ import manager
 import reporting
 
 class Log:
-    entries = []
-    cur_pos = 0
+    def __init__(self):
+        self.entries = []
+        self.cur_pos = 0
 
     # TODO: store timestamp as actual timestamp indexing the messages
     def log(self, msg):
@@ -106,9 +107,10 @@ def curses_main(stdscr):
     while True:
 
         # TODO: handle resizing.  Need to (1) figure out how to reliably get
-        # the terminal size -- the recommended method doesn't seem to work
-        #    (n_rows, n_cols) = map(int, stdscr.getmaxyx()) ...doesn't work
-        #    ...map(int, os.popen('stty size', 'r').read().split() ...may work
+        # the terminal size -- the recommended method doesn't seem to work:
+        #    (n_rows, n_cols) = [int(v) for v in stdscr.getmaxyx()]
+        # Consider instead:
+        #    ...[int(v) for v in os.popen('stty size', 'r').read().split()]
         # and then (2) implement the logic to resize all the subwindows as above
 
         stdscr.clear()
@@ -116,14 +118,16 @@ def curses_main(stdscr):
         logscreen_height = n_rows - (header_height + jobs_height + dirs_height)
 
         elapsed = (datetime.datetime.now() - last_refresh).total_seconds() 
-        full_refresh = False
-        if (elapsed < refresh_period):
-            # Lightweight; does virtually no work if there are no new jobs.
+
+        # A full refresh scans for and reads info for running jobs from
+        # scratch (i.e., reread their logfiles).  Otherwise we'll only
+        # initialize new jobs, and mostly rely on cached info.
+        do_full_refresh = elapsed >= refresh_period
+
+        if not do_full_refresh:
             jobs = Job.get_running_jobs_w_cache(dir_cfg['log'], jobs)
 
         else:
-            full_refresh = True
-            # Full refresh
             last_refresh = datetime.datetime.now()
             jobs = Job.get_running_jobs(dir_cfg['log'])
             # Look for running archive jobs.  Be robust to finding more than one
@@ -165,8 +169,8 @@ def curses_main(stdscr):
         # Header
         header_win.addnstr(0, 0, 'Plotman', linecap, curses.A_BOLD)
         timestamp = datetime.datetime.now().strftime("%H:%M:%S")
-        refresh_msg = "now" if full_refresh else ('%ds/%ds' % (elapsed, refresh_period))
-        header_win.addnstr(' %s (refresh %s)' % (timestamp, refresh_msg), linecap)
+        refresh_msg = "now" if do_full_refresh else f"{elapsed}s/{refresh_period}"
+        header_win.addnstr(f" {timestamp} (refresh {refresh_msg})", linecap)
         header_win.addnstr('  |  <P>lotting: ', linecap, curses.A_BOLD)
         header_win.addnstr(
                 plotting_status_msg(plotting_active, plotting_status), linecap)

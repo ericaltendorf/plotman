@@ -22,27 +22,23 @@ def phases_str(phases, max_num=None):
         n_first = math.floor(max_num / 2)
         n_last = max_num - n_first
         n_elided = len(phases) - (n_first + n_last)
-        return (' '.join(['%d:%d' % pair for pair in phases[:n_first]]) +
-            " [+%d] " % n_elided +
-            ' '.join(['%d:%d' % pair for pair in phases[n_first + n_elided:]]))
-
+        first = ' '.join(['%d:%d' % pair for pair in phases[:n_first]])
+        elided = " [+%d] " % n_elided
+        last = ' '.join(['%d:%d' % pair for pair in phases[n_first + n_elided:]])
+        return first + elided + last
 
 def n_at_ph(jobs, ph):
-    return len([j for j in jobs if j.progress() == ph])
+    return sum([1 for j in jobs if j.progress() == ph])
 
 def n_to_char(n):
-    if n == 0:
-        return ' '
-    elif n == 1:
-        return '.'
-    elif n == 2:
-        return ':'
-    elif n == 3:
-        return ';'
-    elif n >= 4:
-        return '!'
-    else:
+    n_to_char_map = dict(enumerate(" .:;!"))
+    
+    if n < 0:
         return 'X'  # Should never be negative
+    elif n >= len(n_to_char_map):
+        n = len(n_to_char_map) - 1
+    
+    return n_to_char_map[n]
 
 def job_viz(jobs):
     # TODO: Rewrite this in a way that ensures we count every job
