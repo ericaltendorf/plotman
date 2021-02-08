@@ -52,11 +52,14 @@ def plotting_status_msg(active, status):
     else:
         return '(inactive) ' + status
 
-def archiving_status_msg(active, status):
-    if active:
-        return '(active) ' + status
+def archiving_status_msg(configured, active, status):
+    if configured:
+        if active:
+            return '(active) ' + status
+        else:
+            return '(inactive) ' + status
     else:
-        return '(inactive) ' + status
+        return '(not configured)'
 
 def curses_main(stdscr):
     # TODO: figure out how to pass the configs in from plotman.py instead of
@@ -178,7 +181,8 @@ def curses_main(stdscr):
                 plotting_status_msg(plotting_active, plotting_status), linecap)
         header_win.addnstr(' <A>rchival: ', linecap, curses.A_BOLD)
         header_win.addnstr(
-                archiving_status_msg(archiving_active, archiving_status), linecap) 
+                archiving_status_msg(archiving_configured,
+                    archiving_active, archiving_status), linecap) 
 
         # Oneliner progress display
         header_win.addnstr(1, 0, 'Jobs (%d): ' % len(jobs), linecap)
