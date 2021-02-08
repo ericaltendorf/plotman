@@ -23,6 +23,15 @@ def job_phases_for_dstdir(d, all_jobs):
     '''Return phase 2-tuples for jobs outputting to dstdir d'''
     return sorted([j.progress() for j in all_jobs if j.dstdir == d])
 
+def is_plotting_cmdline(cmdline):
+    return (
+        len(cmdline) >= 4
+        and 'python' in cmdline[0]
+        and 'venv/bin/chia' in cmdline[1]
+        and 'plots' == cmdline[2]
+        and 'create' == cmdline[3]
+    )
+
 # TODO: be more principled and explicit about what we cache vs. what we look up
 # dynamically from the logfile
 class Job:
@@ -65,15 +74,12 @@ class Job:
         jobs = []
         existing_jobs_by_pid = { j.proc.pid: j for j in existing_jobs }
 
-        for proc in psutil.process_iter(['pid', 'name']):
-            if os.path.basename(proc.name()) == 'chia':
+        for proc in psutil.process_iter(['pid', 'cmdline']):
+            if is_plotting_cmdline(proc.cmdline()):
                 if proc.pid in existing_jobs_by_pid.keys():
                     jobs.append(existing_jobs_by_pid[proc.pid])  # Copy from cache
                 else:
-                    args = proc.cmdline()
-                    # n.b.: args[0]=python, args[1]=chia
-                    if len(args) >= 4 and args[2] == 'plots' and args[3] == 'create':
-                        jobs.append(Job(proc, logroot))
+                    jobs.append(Job(proc, logroot))
 
         return jobs
 

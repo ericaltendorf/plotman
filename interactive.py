@@ -11,15 +11,10 @@ import archive
 import manager
 import reporting
 
-def window_width(window):
-    return window.getmaxyx()[1]
-
-def window_height(window):
-    return window.getmaxyx()[0]
-
 class Log:
-    entries = []
-    cur_pos = 0
+    def __init__(self):
+        self.entries = []
+        self.cur_pos = 0
 
     # TODO: store timestamp as actual timestamp indexing the messages
     def log(self, msg):
@@ -57,11 +52,14 @@ def plotting_status_msg(active, status):
     else:
         return '(inactive) ' + status
 
-def archiving_status_msg(active, status):
-    if active:
-        return '(active) ' + status
+def archiving_status_msg(configured, active, status):
+    if configured:
+        if active:
+            return '(active) ' + status
+        else:
+            return '(inactive) ' + status
     else:
-        return '(inactive) ' + status
+        return '(not configured)'
 
 def curses_main(stdscr):
     # TODO: figure out how to pass the configs in from plotman.py instead of
@@ -75,13 +73,14 @@ def curses_main(stdscr):
     log = Log()
 
     plotting_active = True
-    archiving_active = True
+    archiving_configured = 'archive' in dir_cfg
+    archiving_active = archiving_configured
 
     (n_rows, n_cols) = map(int, stdscr.getmaxyx())
 
     # Page layout.  Currently requires at least ~40 rows.
     # TODO: make everything dynamically resize to best use available space
-    header_height = 2
+    header_height = 3
     jobs_height = 10
     dirs_height = 14
     logscreen_height = n_rows - (header_height + jobs_height + dirs_height)
@@ -97,7 +96,7 @@ def curses_main(stdscr):
     refresh_period = int(sched_cfg['polling_time_s'])
 
     stdscr.nodelay(True)  # make getch() non-blocking
-    stdscr.timeout(5000)   # this doesn't seem to do anything....
+    stdscr.timeout(2000)
 
     header_win = curses.newwin(header_height, n_cols, header_pos, 0)
     log_win = curses.newwin(logscreen_height, n_cols, logscreen_pos, 0)
@@ -111,35 +110,44 @@ def curses_main(stdscr):
 
     while True:
 
-        # todo: none of this resizing works
-        (n_rows, n_cols) = map(int, stdscr.getmaxyx())
+        # TODO: handle resizing.  Need to (1) figure out how to reliably get
+        # the terminal size -- the recommended method doesn't seem to work:
+        #    (n_rows, n_cols) = [int(v) for v in stdscr.getmaxyx()]
+        # Consider instead:
+        #    ...[int(v) for v in os.popen('stty size', 'r').read().split()]
+        # and then (2) implement the logic to resize all the subwindows as above
+
         stdscr.clear()
         linecap = n_cols - 1
         logscreen_height = n_rows - (header_height + jobs_height + dirs_height)
 
         elapsed = (datetime.datetime.now() - last_refresh).total_seconds() 
-        if (elapsed < refresh_period):
-            # Lightweight; does virtually no work if there are no new jobs.
+
+        # A full refresh scans for and reads info for running jobs from
+        # scratch (i.e., reread their logfiles).  Otherwise we'll only
+        # initialize new jobs, and mostly rely on cached info.
+        do_full_refresh = elapsed >= refresh_period
+
+        if not do_full_refresh:
             jobs = Job.get_running_jobs_w_cache(dir_cfg['log'], jobs)
 
         else:
-            # Full refresh
             last_refresh = datetime.datetime.now()
             jobs = Job.get_running_jobs(dir_cfg['log'])
-            # Look for running archive jobs.  Be robust to finding more than one
-            # even though the scheduler should only run one at a time.
-            arch_jobs = archive.get_running_archive_jobs(dir_cfg['archive'])
 
             if plotting_active:
                 (started, msg) = manager.maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg)
                 if (started):
                     log.log(msg)
-                    plotting_status = '<just started plot>'
+                    plotting_status = '<just started job>'
                     jobs = Job.get_running_jobs_w_cache(dir_cfg['log'], jobs)
                 else:
                     plotting_status = msg
 
-            if archiving_active:
+            if archiving_configured and archiving_active:
+                # Look for running archive jobs.  Be robust to finding more than one
+                # even though the scheduler should only run one at a time.
+                arch_jobs = archive.get_running_archive_jobs(dir_cfg['archive'])
                 if arch_jobs:
                     archiving_status = 'pid: ' + ', '.join(map(str, arch_jobs))
                 else:
@@ -160,34 +168,38 @@ def curses_main(stdscr):
         # Directory prefixes, for abbreviation
         tmp_prefix = os.path.commonpath(dir_cfg['tmp'])
         dst_prefix = os.path.commonpath(dir_cfg['dst'])
-        arch_prefix = dir_cfg['archive']['rsyncd_path']
-
-        # Render
-        stdscr.clear()
+        if archiving_configured:
+            arch_prefix = dir_cfg['archive']['rsyncd_path']
 
         # Header
         header_win.addnstr(0, 0, 'Plotman', linecap, curses.A_BOLD)
-        header_win.addnstr(' %s (refresh %ds/%ds)' %
-                (datetime.datetime.now().strftime("%H:%M:%S"), elapsed, refresh_period),
-                linecap)
+        timestamp = datetime.datetime.now().strftime("%H:%M:%S")
+        refresh_msg = "now" if do_full_refresh else f"{int(elapsed)}s/{refresh_period}"
+        header_win.addnstr(f" {timestamp} (refresh {refresh_msg})", linecap)
         header_win.addnstr('  |  <P>lotting: ', linecap, curses.A_BOLD)
         header_win.addnstr(
                 plotting_status_msg(plotting_active, plotting_status), linecap)
         header_win.addnstr(' <A>rchival: ', linecap, curses.A_BOLD)
         header_win.addnstr(
-                archiving_status_msg(archiving_active, archiving_status), linecap) 
+                archiving_status_msg(archiving_configured,
+                    archiving_active, archiving_status), linecap) 
+
+        # Oneliner progress display
+        header_win.addnstr(1, 0, 'Jobs (%d): ' % len(jobs), linecap)
+        header_win.addnstr('[' + reporting.job_viz(jobs) + ']', linecap)
 
         # These are useful for debugging.
         # header_win.addnstr('  term size: (%d, %d)' % (n_rows, n_cols), linecap)  # Debuggin
         # if pressed_key:
             # header_win.addnstr(' (keypress %s)' % str(pressed_key), linecap)
-        header_win.addnstr(1, 0, 'Prefixes:', linecap, curses.A_BOLD)
+        header_win.addnstr(2, 0, 'Prefixes:', linecap, curses.A_BOLD)
         header_win.addnstr('  tmp=', linecap, curses.A_BOLD)
         header_win.addnstr(tmp_prefix, linecap)
         header_win.addnstr('  dst=', linecap, curses.A_BOLD)
         header_win.addnstr(dst_prefix, linecap)
-        header_win.addnstr('  archive=', linecap, curses.A_BOLD)
-        header_win.addnstr(arch_prefix, linecap)
+        if archiving_configured:
+            header_win.addnstr('  archive=', linecap, curses.A_BOLD)
+            header_win.addnstr(arch_prefix, linecap)
         header_win.addnstr(' (remote)', linecap)
         
 
@@ -206,10 +218,15 @@ def curses_main(stdscr):
 
         dst_report = reporting.dst_dir_report(
             jobs, dir_cfg['dst'], n_cols, dst_prefix)
-        arch_report = reporting.arch_dir_report(
-            archive.get_archdir_freebytes(dir_cfg['archive']), n_cols, arch_prefix)
-        if not arch_report:
-            arch_report = '<no archive dir info>'
+
+        if archiving_configured:
+            arch_report = reporting.arch_dir_report(
+                archive.get_archdir_freebytes(dir_cfg['archive']), n_cols, arch_prefix)
+            if not arch_report:
+                arch_report = '<no archive dir info>'
+        else:
+            arch_report = '<archiving not configured>'
+            
         tmp_h = max(len(tmp_report_1.splitlines()),
                     len(tmp_report_2.splitlines()))
         tmp_w = len(max(tmp_report_1.splitlines() +

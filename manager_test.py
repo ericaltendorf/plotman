@@ -38,15 +38,6 @@ class TestManager(unittest.TestCase):
         self.assertFalse(manager.phases_permit_new_job(
             [ (3, 1), (3, 2), (3, 3) ], self.sched_cfg ))
 
-    def test_tmpdir_phases_str(self):
-        self.assertEqual('/tmp/foo (1:3, 2:5, 4:1)',
-                manager.tmpdir_phases_str(('/tmp/foo', [(1, 3), (2, 5), (4, 1)])))
-
-    def test_tmpdir_phases_str_sorting(self):
-        self.assertEqual('/tmp/foo (1:3, 2:5, 4:1)',
-                manager.tmpdir_phases_str(('/tmp/foo', [(2, 5), (4, 1), (1, 3)])))
-
-
     def test_dstdirs_to_furthest_phase(self):
         all_jobs = [ self.job_w_dstdir_phase('/plots1', (1, 5)),
                      self.job_w_dstdir_phase('/plots2', (1, 1)),
