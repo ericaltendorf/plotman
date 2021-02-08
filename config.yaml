@@ -31,7 +31,8 @@ directories:
                 - /mnt/dst/00
                 - /mnt/dst/01
 
-        # Archival configuration.  Optional.
+        # Archival configuration.  Optional; if you do not wish to run the
+        # archiving operation, comment this section out.
         #
         # Currently archival depends on an rsync daemon running on the remote
         # host, and that the module is configured to match the local path.

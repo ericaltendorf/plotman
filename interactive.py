@@ -70,7 +70,8 @@ def curses_main(stdscr):
     log = Log()
 
     plotting_active = True
-    archiving_active = True
+    archiving_configured = 'archive' in dir_cfg
+    archiving_active = archiving_configured
 
     (n_rows, n_cols) = map(int, stdscr.getmaxyx())
 
@@ -130,9 +131,6 @@ def curses_main(stdscr):
         else:
             last_refresh = datetime.datetime.now()
             jobs = Job.get_running_jobs(dir_cfg['log'])
-            # Look for running archive jobs.  Be robust to finding more than one
-            # even though the scheduler should only run one at a time.
-            arch_jobs = archive.get_running_archive_jobs(dir_cfg['archive'])
 
             if plotting_active:
                 (started, msg) = manager.maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg)
@@ -143,7 +141,10 @@ def curses_main(stdscr):
                 else:
                     plotting_status = msg
 
-            if archiving_active:
+            if archiving_configured and archiving_active:
+                # Look for running archive jobs.  Be robust to finding more than one
+                # even though the scheduler should only run one at a time.
+                arch_jobs = archive.get_running_archive_jobs(dir_cfg['archive'])
                 if arch_jobs:
                     archiving_status = 'pid: ' + ', '.join(map(str, arch_jobs))
                 else:
@@ -164,7 +165,8 @@ def curses_main(stdscr):
         # Directory prefixes, for abbreviation
         tmp_prefix = os.path.commonpath(dir_cfg['tmp'])
         dst_prefix = os.path.commonpath(dir_cfg['dst'])
-        arch_prefix = dir_cfg['archive']['rsyncd_path']
+        if archiving_configured:
+            arch_prefix = dir_cfg['archive']['rsyncd_path']
 
         # Header
         header_win.addnstr(0, 0, 'Plotman', linecap, curses.A_BOLD)
@@ -191,8 +193,9 @@ def curses_main(stdscr):
         header_win.addnstr(tmp_prefix, linecap)
         header_win.addnstr('  dst=', linecap, curses.A_BOLD)
         header_win.addnstr(dst_prefix, linecap)
-        header_win.addnstr('  archive=', linecap, curses.A_BOLD)
-        header_win.addnstr(arch_prefix, linecap)
+        if archiving_configured:
+            header_win.addnstr('  archive=', linecap, curses.A_BOLD)
+            header_win.addnstr(arch_prefix, linecap)
         header_win.addnstr(' (remote)', linecap)
         
 
@@ -211,10 +214,15 @@ def curses_main(stdscr):
 
         dst_report = reporting.dst_dir_report(
             jobs, dir_cfg['dst'], n_cols, dst_prefix)
-        arch_report = reporting.arch_dir_report(
-            archive.get_archdir_freebytes(dir_cfg['archive']), n_cols, arch_prefix)
-        if not arch_report:
-            arch_report = '<no archive dir info>'
+
+        if archiving_configured:
+            arch_report = reporting.arch_dir_report(
+                archive.get_archdir_freebytes(dir_cfg['archive']), n_cols, arch_prefix)
+            if not arch_report:
+                arch_report = '<no archive dir info>'
+        else:
+            arch_report = '<archiving not configured>'
+            
         tmp_h = max(len(tmp_report_1.splitlines()),
                     len(tmp_report_2.splitlines()))
         tmp_w = len(max(tmp_report_1.splitlines() +
