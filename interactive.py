@@ -174,7 +174,7 @@ def curses_main(stdscr):
         # Header
         header_win.addnstr(0, 0, 'Plotman', linecap, curses.A_BOLD)
         timestamp = datetime.datetime.now().strftime("%H:%M:%S")
-        refresh_msg = "now" if do_full_refresh else f"{elapsed}s/{refresh_period}"
+        refresh_msg = "now" if do_full_refresh else f"{int(elapsed)}s/{refresh_period}"
         header_win.addnstr(f" {timestamp} (refresh {refresh_msg})", linecap)
         header_win.addnstr('  |  <P>lotting: ', linecap, curses.A_BOLD)
         header_win.addnstr(
