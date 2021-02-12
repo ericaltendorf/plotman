@@ -98,10 +98,14 @@ def curses_main(stdscr):
     stdscr.nodelay(True)  # make getch() non-blocking
     stdscr.timeout(2000)
 
-    header_win = curses.newwin(header_height, n_cols, header_pos, 0)
-    log_win = curses.newwin(logscreen_height, n_cols, logscreen_pos, 0)
-    jobs_win = curses.newwin(jobs_height, n_cols, jobs_pos, 0)
-    dirs_win = curses.newwin(dirs_height, n_cols, dirs_pos, 0)
+    try:
+        header_win = curses.newwin(header_height, n_cols, header_pos, 0)
+        log_win = curses.newwin(logscreen_height, n_cols, logscreen_pos, 0)
+        jobs_win = curses.newwin(jobs_height, n_cols, jobs_pos, 0)
+        dirs_win = curses.newwin(dirs_height, n_cols, dirs_pos, 0)
+    except Exception:
+        raise Exception('Failed to initialize curses windows, try a larger '
+                        'terminal window.')
 
     jobs = Job.get_running_jobs(dir_cfg['log'])
     last_refresh = datetime.datetime.now()
