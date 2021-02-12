@@ -6,6 +6,7 @@ from enum import Enum, auto
 from subprocess import call
 import argparse
 
+import contextlib
 import logging
 import os
 import re
@@ -55,31 +56,22 @@ class Job:
     # These are dynamic, cached, and need to be udpated periodically
     phase = (None, None)   # Phase/subphase
 
-    def get_running_jobs(logroot):
-        '''Return the list of running plot jobs, reading the process table from scratch.'''
+    def get_running_jobs(logroot, cached_jobs=()):
+        '''Return a list of running plot jobs.  If a cache of preexisting jobs is provided,
+           reuse those previous jobs without updating their information.  Always look for
+           new jobs not already in the cache.'''
         jobs = []
-        for proc in psutil.process_iter(['pid', 'name']):
-            if os.path.basename(proc.name()) == 'chia':
-                args = proc.cmdline()
-                # n.b.: args[0]=python, args[1]=chia
-                if len(args) >= 4 and args[2] == 'plots' and args[3] == 'create':
-                    jobs.append(Job(proc, logroot))
-        return jobs
-
-    def get_running_jobs_w_cache(logroot, existing_jobs):
-        '''Return the list of running plot jobs, returning previous jobs if they still exist, and
-           new jobs intialized.  Does not update info on existing jobs, which means information in
-           the list of jobs will be from different times.  Use this when calling frequent updates,
-           and use get_running_jobs() to force a full refresh.'''
-        jobs = []
-        existing_jobs_by_pid = { j.proc.pid: j for j in existing_jobs }
+        cached_jobs_by_pid = { j.proc.pid: j for j in cached_jobs }
 
         for proc in psutil.process_iter(['pid', 'cmdline']):
-            if is_plotting_cmdline(proc.cmdline()):
-                if proc.pid in existing_jobs_by_pid.keys():
-                    jobs.append(existing_jobs_by_pid[proc.pid])  # Copy from cache
-                else:
-                    jobs.append(Job(proc, logroot))
+            # Ignore processes which most likely have terminated between the time of
+            # iteration and data access.
+            with contextlib.suppress(psutil.NoSuchProcess):
+                if is_plotting_cmdline(proc.cmdline()):
+                    if proc.pid in cached_jobs_by_pid.keys():
+                        jobs.append(cached_jobs_by_pid[proc.pid])  # Copy from cache
+                    else:
+                        jobs.append(Job(proc, logroot))
 
         return jobs
 
@@ -318,4 +310,3 @@ class Job:
         else:
             print('Expected status %s, actual %s', expected_status, self.status)
             return 0
-

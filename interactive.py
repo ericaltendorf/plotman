@@ -129,7 +129,7 @@ def curses_main(stdscr):
         do_full_refresh = elapsed >= refresh_period
 
         if not do_full_refresh:
-            jobs = Job.get_running_jobs_w_cache(dir_cfg['log'], jobs)
+            jobs = Job.get_running_jobs(dir_cfg['log'], cached_jobs=jobs)
 
         else:
             last_refresh = datetime.datetime.now()
@@ -140,7 +140,7 @@ def curses_main(stdscr):
                 if (started):
                     log.log(msg)
                     plotting_status = '<just started job>'
-                    jobs = Job.get_running_jobs_w_cache(dir_cfg['log'], jobs)
+                    jobs = Job.get_running_jobs(dir_cfg['log'], cached_jobs=jobs)
                 else:
                     plotting_status = msg
 
