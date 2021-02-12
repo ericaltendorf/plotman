@@ -55,7 +55,7 @@ class Job:
     # These are dynamic, cached, and need to be udpated periodically
     phase = (None, None)   # Phase/subphase
 
-    def get_running_jobs(logroot, cached_jobs=None):
+    def get_running_jobs(logroot, cached_jobs=()):
         '''Return a list of running plot jobs.  If a cache of preexisting jobs is provided,
            reuse those previous jobs without updating their information.  Always look for
            new jobs not already in the cache.'''
