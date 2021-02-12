@@ -1,6 +1,7 @@
 import curses
 import datetime
 import locale
+import math
 import os
 import subprocess
 import threading
@@ -78,11 +79,16 @@ def curses_main(stdscr):
 
     (n_rows, n_cols) = map(int, stdscr.getmaxyx())
 
-    # Page layout.  Currently requires at least ~40 rows.
-    # TODO: make everything dynamically resize to best use available space
+    # Page layout.
+    if (n_rows < 24):
+        raise Exception(f'Terminal has only {n_rows} lines; requires 24.  '
+                         'Try a larger terminal window.')
+    if (n_cols < 80):
+        raise Exception(f'Terminal has only {n_cols} lines; requires 80.  '
+                         'Try a larger terminal window.')
     header_height = 3
-    jobs_height = 10
-    dirs_height = 14
+    jobs_height = max(7, math.floor(n_rows * 0.3))
+    dirs_height = max(7, math.floor(n_rows * 0.3))
     logscreen_height = n_rows - (header_height + jobs_height + dirs_height)
 
     header_pos = 0
