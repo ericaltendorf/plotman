@@ -6,6 +6,7 @@ from enum import Enum, auto
 from subprocess import call
 import argparse
 
+import contextlib
 import logging
 import os
 import re
@@ -60,15 +61,14 @@ class Job:
            reuse those previous jobs without updating their information.  Always look for
            new jobs not already in the cache.'''
         jobs = []
-        if cached_jobs:
-            cached_jobs_by_pid = { j.proc.pid: j for j in cached_jobs }
+        cached_jobs_by_pid = { j.proc.pid: j for j in cached_jobs }
 
         for proc in psutil.process_iter(['pid', 'cmdline']):
             # Ignore processes which most likely have terminated between the time of
             # iteration and data access.
             with contextlib.suppress(psutil.NoSuchProcess):
                 if is_plotting_cmdline(proc.cmdline()):
-                    if cached_jobs and proc.pid in cached_jobs_by_pid.keys():
+                    if proc.pid in cached_jobs_by_pid.keys():
                         jobs.append(cached_jobs_by_pid[proc.pid])  # Copy from cache
                     else:
                         jobs.append(Job(proc, logroot))
