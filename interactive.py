@@ -86,9 +86,14 @@ def curses_main(stdscr):
     if (n_cols < 80):
         raise Exception(f'Terminal has only {n_cols} lines; requires 80.  '
                          'Try a larger terminal window.')
+
+    n_tmpdirs = len(dir_cfg['tmp']) 
+    n_tmpdirs_half = int(n_tmpdirs / 2)
+
     header_height = 3
-    jobs_height = max(7, math.floor(n_rows * 0.3))
-    dirs_height = max(7, math.floor(n_rows * 0.3))
+    dirs_height = n_tmpdirs_half + 8  # arch dirs & headers
+    remainder = n_rows - (header_height + dirs_height)
+    jobs_height = max(5, math.floor(remainder * 0.6))
     logscreen_height = n_rows - (header_height + jobs_height + dirs_height)
 
     header_pos = 0
@@ -219,8 +224,6 @@ def curses_main(stdscr):
         jobs_win.chgat(0, 0, curses.A_REVERSE)
 
         # Dirs.  Collect reports as strings, then lay out.
-        n_tmpdirs = len(dir_cfg['tmp']) 
-        n_tmpdirs_half = int(n_tmpdirs / 2)
         tmp_report_1 = reporting.tmp_dir_report(
             jobs, dir_cfg['tmp'], sched_cfg, n_cols, 0, n_tmpdirs_half, tmp_prefix)
         tmp_report_2 = reporting.tmp_dir_report(
