@@ -64,17 +64,14 @@ class Job:
             cached_jobs_by_pid = { j.proc.pid: j for j in cached_jobs }
 
         for proc in psutil.process_iter(['pid', 'cmdline']):
-            try:
+            # Ignore processes which most likely have terminated between the time of
+            # iteration and data access.
+            with contextlib.suppress(psutil.NoSuchProcess):
                 if is_plotting_cmdline(proc.cmdline()):
                     if cached_jobs and proc.pid in cached_jobs_by_pid.keys():
                         jobs.append(cached_jobs_by_pid[proc.pid])  # Copy from cache
                     else:
                         jobs.append(Job(proc, logroot))
-            except psutil.NoSuchProcess:
-                # Generally this is a no-op; the process in question terminated
-                # after it was returned from the iter but before we got a
-                # chance to inspect its info.
-                pass
 
         return jobs
 
@@ -313,4 +310,3 @@ class Job:
         else:
             print('Expected status %s, actual %s', expected_status, self.status)
             return 0
-
