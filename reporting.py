@@ -92,7 +92,7 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
         # Regular row
         else:
             try:
-                row = [j.plot_id[:8] + '...',
+                row = [j.plot_id[:8],
                     j.k,
                     abbr_path(j.tmpdir, tmp_prefix),
                     abbr_path(j.dstdir, dst_prefix),
@@ -108,7 +108,7 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
                     ]
             except psutil.NoSuchProcess:
                 # In case the job has disappeared
-                row = [j.plot_id[:8] + '...'] + (['--'] * 12)
+                row = [j.plot_id[:8]] + (['--'] * 12)
 
             if height:
                 row.insert(0, '%3d' % i)
