@@ -110,6 +110,12 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
                     '-d', dstdir ]
             if 'e' in plotting_cfg and plotting_cfg['e']:
                 plot_args.append('-e')
+            if 'farmer_pk' in plotting_cfg and plotting_cfg['farmer_pk']:
+                plot_args.append('-f')
+                plot_args.append(plotting_cfg['farmer_pk'])
+            if 'pool_pk' in plotting_cfg and plotting_cfg['pool_pk']:
+                plot_args.append('-p')
+                plot_args.append(plotting_cfg['pool_pk'])
             if 'tmp2' in dir_cfg:
                 plot_args.append('-2')
                 plot_args.append(dir_cfg['tmp2'])

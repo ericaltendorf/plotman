@@ -107,9 +107,9 @@ class Job:
                     self.dstdir = val
                 elif arg == '-n':
                     self.n = val
-                elif arg == '-e':
+                elif arg == '-e' or arg == '-f' or arg == '-p':
                     pass
-                    # TODO: keep track of -e
+                    # TODO: keep track of these
                 else:
                     print('Warning: unrecognized args: %s %s' % (arg, val))
 

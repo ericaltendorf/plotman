@@ -73,3 +73,6 @@ plotting:
         n_threads: 8         # Threads per job
         n_buckets: 128       # Number of buckets to split data into
         job_buffer: 4520     # Per job memory
+        # If specified, pass through to the -f and -p options.  See CLI reference.
+        # +        # farmer_pk: ...
+        # +        # pool_pk: ...
