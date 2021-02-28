@@ -43,6 +43,15 @@ directories:
                 rsyncd_bwlimit: 80000  # Bandwidth limit in KB/s
                 rsyncd_host: myfarmer
                 rsyncd_user: chia
+                # Optional index.  If omitted or set to 0, plotman will archive
+                # to the first archive dir with free space.  If specified,
+                # plotman will skip forward up to 'index' drives (if they exist).
+                # This can be useful to reduce io contention on a drive on the
+                # archive host if you have multiple plotters (simultaneous io
+                # can still happen at the time a drive fills up.)  E.g., if you
+                # have four plotters, you could set this to 0, 1, 2, and 3, on
+                # the 4 machines, or 0, 1, 0, 1.
+                #   index: 0
 
 
 # Plotting scheduling parameters
