@@ -7,7 +7,7 @@ GB = 1_000_000_000
 def df_b(d):
     'Return free space for directory (in bytes)'
     stat = os.statvfs(d)
-    return stat.f_frsize * stat.f_bfree 
+    return stat.f_frsize * stat.f_bavail
 
 def get_k32_plotsize():
     return 108 * GB
