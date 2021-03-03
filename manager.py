@@ -49,17 +49,11 @@ def phases_permit_new_job(phases, sched_cfg):
     if len(phases) == 0:
         return True
 
-    milestone_1 = ( sched_cfg['tmpdir_stagger_phase_major'],
-                    sched_cfg['tmpdir_stagger_phase_minor'] )
-    # milestone_2 = (4, 0)
-
-    if len([p for p in phases if p < milestone_1]) > 0:
+    milestone = ( sched_cfg['tmpdir_stagger_phase_major'],
+                  sched_cfg['tmpdir_stagger_phase_minor'] )
+    if len([p for p in phases if p < milestone]) > 0:
         return False
 
-    # if len([p for p in phases if milestone_1 <= p and p <milestone_2]) > 1:
-        # return False
-
-    # No more than 3 jobs total on the tmpdir
     if len(phases) >= sched_cfg['tmpdir_max_jobs']:
         return False
 
