@@ -25,6 +25,15 @@ HR = 3600   # Seconds
 
 MAX_AGE = 1000_000_000   # Arbitrary large number of seconds
 
+def dstdirs_to_furthest_phase(all_jobs):
+    '''Return a map from dst dir to a phase tuple for the most progressed job
+       that is emitting to that dst dir.'''
+    result = {}
+    for j in all_jobs:
+        if not j.dstdir in result.keys() or result[j.dstdir] < j.progress():
+            result[j.dstdir] = j.progress()
+    return result
+
 def dstdirs_to_youngest_phase(all_jobs):
     '''Return a map from dst dir to a phase tuple for the least progressed job
        that is emitting to that dst dir.'''
