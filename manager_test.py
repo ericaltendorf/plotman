@@ -38,7 +38,7 @@ class TestManager(unittest.TestCase):
         self.assertFalse(manager.phases_permit_new_job(
             [ (3, 1), (3, 2), (3, 3) ], self.sched_cfg ))
 
-    def test_dstdirs_to_furthest_phase(self):
+    def test_dstdirs_to_youngest_phase(self):
         all_jobs = [ self.job_w_dstdir_phase('/plots1', (1, 5)),
                      self.job_w_dstdir_phase('/plots2', (1, 1)),
                      self.job_w_dstdir_phase('/plots2', (3, 1)),
@@ -47,9 +47,9 @@ class TestManager(unittest.TestCase):
 
         self.assertEqual(
                 { '/plots1' : (1, 5),
-                  '/plots2' : (3, 1),
+                  '/plots2' : (1, 1),
                   '/plots3' : (4, 1) },
-                manager.dstdirs_to_furthest_phase(all_jobs))
+                manager.dstdirs_to_youngest_phase(all_jobs))
 
 
 if __name__ == '__main__':
