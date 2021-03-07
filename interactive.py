@@ -123,6 +123,8 @@ def curses_main(stdscr):
 
     pressed_key = ''   # For debugging
 
+    arch_report = '<initializing>'
+
     while True:
 
         # TODO: handle resizing.  Need to (1) figure out how to reliably get
@@ -232,13 +234,14 @@ def curses_main(stdscr):
         dst_report = reporting.dst_dir_report(
             jobs, dir_cfg['dst'], n_cols, dst_prefix)
 
-        if archiving_configured:
-            arch_report = reporting.arch_dir_report(
-                archive.get_archdir_freebytes(dir_cfg['archive']), n_cols, arch_prefix)
-            if not arch_report:
-                arch_report = '<no archive dir info>'
-        else:
-            arch_report = '<archiving not configured>'
+        if do_full_refresh:
+            if archiving_configured:
+                arch_report = reporting.arch_dir_report(
+                    archive.get_archdir_freebytes(dir_cfg['archive']), n_cols, arch_prefix)
+                if not arch_report:
+                    arch_report = '<no archive dir info>'
+            else:
+                arch_report = '<archiving not configured>'
             
         tmp_h = max(len(tmp_report_1.splitlines()),
                     len(tmp_report_2.splitlines()))
