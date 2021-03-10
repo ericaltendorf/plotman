@@ -34,12 +34,15 @@ def dstdirs_to_furthest_phase(all_jobs):
             result[j.dstdir] = j.progress()
     return result
 
-def dstdirs_to_youngest_phase(all_jobs):
+def dstdirs_to_youngest_phase(all_jobs, dest_dirs_filter=None):
     '''Return a map from dst dir to a phase tuple for the least progressed job
        that is emitting to that dst dir.'''
     result = {}
     for j in all_jobs:
         if not j.dstdir in result.keys() or result[j.dstdir] > j.progress():
+            if dest_dirs_filter and j.dstdir not in dest_dirs_filter:
+                continue
+
             result[j.dstdir] = j.progress()
     return result
 
@@ -82,7 +85,7 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
                 if phases_permit_new_job(phases, sched_cfg) ]
         rankable = [ (d, phases[0]) if phases else (d, (999, 999))
                 for (d, phases) in eligible ]
-        
+
         if not eligible:
             wait_reason = 'no eligible tempdirs'
         else:
@@ -90,11 +93,14 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
             tmpdir = max(rankable, key=operator.itemgetter(1))[0]
 
             # Select the dst dir least recently selected
-            dir2ph = dstdirs_to_youngest_phase(jobs)
+            dir2ph = dstdirs_to_youngest_phase(jobs, dest_dirs_filter=dir_cfg['dst'])
             unused_dirs = [d for d in dir_cfg['dst'] if d not in dir2ph.keys()]
+
             dstdir = ''
-            if unused_dirs: 
+            if unused_dirs:
                 dstdir = random.choice(unused_dirs)
+            elif len(dir2ph) == 0:
+                dstdir = random.choice(dir_cfg['dst'])
             else:
                 dstdir = max(dir2ph, key=dir2ph.get)
 
