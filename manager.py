@@ -43,7 +43,7 @@ def dstdirs_to_youngest_phase(all_jobs):
             result[j.dstdir] = j.progress()
     return result
 
-def phases_permit_new_job(phases, sched_cfg):
+def phases_permit_new_job(phases, d, sched_cfg, dir_cfg):
     '''Scheduling logic: return True if it's OK to start a new job on a tmp dir
        with existing jobs in the provided phases.'''
     if len(phases) == 0:
@@ -59,8 +59,13 @@ def phases_permit_new_job(phases, sched_cfg):
     # if len([p for p in phases if milestone_1 <= p and p <milestone_2]) > 1:
         # return False
 
-    # No more than 3 jobs total on the tmpdir
-    if len(phases) >= sched_cfg['tmpdir_max_jobs']:
+    # Limit the total number of jobs per tmp dir. Default to the overall max jobs configuration,
+    # but restrict to any configured overrides.
+    max_plots = sched_cfg['tmpdir_max_jobs']
+    tmp_sizes = dir_cfg['tmp_sizes']
+    if tmp_sizes is not None and d in tmp_sizes:
+        max_plots = tmp_sizes[d]
+    if len(phases) >= max_plots:
         return False
 
     return True
@@ -79,7 +84,7 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
         tmp_to_all_phases = [ (d, job.job_phases_for_tmpdir(d, jobs))
                 for d in dir_cfg['tmp'] ]
         eligible = [ (d, phases) for (d, phases) in tmp_to_all_phases
-                if phases_permit_new_job(phases, sched_cfg) ]
+                if phases_permit_new_job(phases, d, sched_cfg, dir_cfg) ]
         rankable = [ (d, phases[0]) if phases else (d, (999, 999))
                 for (d, phases) in eligible ]
         

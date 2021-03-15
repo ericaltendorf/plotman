@@ -225,9 +225,9 @@ def curses_main(stdscr):
 
         # Dirs.  Collect reports as strings, then lay out.
         tmp_report_1 = reporting.tmp_dir_report(
-            jobs, dir_cfg['tmp'], sched_cfg, n_cols, 0, n_tmpdirs_half, tmp_prefix)
+            jobs, dir_cfg, sched_cfg, n_cols, 0, n_tmpdirs_half, tmp_prefix)
         tmp_report_2 = reporting.tmp_dir_report(
-            jobs, dir_cfg['tmp'], sched_cfg, n_cols, n_tmpdirs_half, n_tmpdirs, tmp_prefix)
+            jobs, dir_cfg, sched_cfg, n_cols, n_tmpdirs_half, n_tmpdirs, tmp_prefix)
 
         dst_report = reporting.dst_dir_report(
             jobs, dir_cfg['dst'], n_cols, dst_prefix)

@@ -120,18 +120,19 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
     # return ('tmp dir prefix: %s ; dst dir prefix: %s\n' % (tmp_prefix, dst_prefix)
     return tab.draw()
 
-def tmp_dir_report(jobs, tmpdirs, sched_cfg, width, start_row=None, end_row=None, prefix=''):
+def tmp_dir_report(jobs, dir_cfg, sched_cfg, width, start_row=None, end_row=None, prefix=''):
     '''start_row, end_row let you split the table up if you want'''
     tab = tt.Texttable()
     headings = ['tmp', 'ready', 'phases']
     tab.header(headings)
     tab.set_cols_dtype('t' * len(headings))
     tab.set_cols_align('r' * (len(headings) - 1) + 'l')
+    tmpdirs = dir_cfg['tmp']
     for i, d in enumerate(sorted(tmpdirs)):
         if (start_row and i < start_row) or (end_row and i >= end_row):
             continue
         phases = sorted(job.job_phases_for_tmpdir(d, jobs))
-        ready = manager.phases_permit_new_job(phases, sched_cfg)
+        ready = manager.phases_permit_new_job(phases, d, sched_cfg, dir_cfg)
         row = [abbr_path(d, prefix), 'OK' if ready else '--', phases_str(phases)]
         tab.add_row(row)
 
@@ -186,7 +187,7 @@ def dirs_report(jobs, dir_cfg, sched_cfg, width):
     tmpdirs = dir_cfg['tmp']
     dstdirs = dir_cfg['dst']
     arch_cfg = dir_cfg['archive']
-    return (tmp_dir_report(jobs, tmpdirs, sched_cfg, width) + '\n' +
+    return (tmp_dir_report(jobs, dir_cfg, sched_cfg, width) + '\n' +
             dst_dir_report(jobs, dstdirs, width) + '\n' +
             'archive dirs free space:\n' +
             arch_dir_report(archive.get_archdir_freebytes(arch_cfg), width) + '\n')
