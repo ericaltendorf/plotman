@@ -289,10 +289,11 @@ class Job:
         self.proc.resume()
 
     def get_temp_files(self):
-        temp_files = []
+        # Prevent duplicate file paths by using set.
+        temp_files = set([])
         for f in self.proc.open_files():
             if self.tmpdir in f.path or self.tmp2dir in f.path or self.dstdir in f.path:
-                temp_files.append(f.path)
+                temp_files.add(f.path)
         return temp_files
 
     def cancel(self):

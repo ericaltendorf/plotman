@@ -168,7 +168,7 @@ There are many bugs and TODOs.
 
 ## Installation
 
-This program requires `psutil`, `pyfakefs`, and `texttable`.
+This program requires `psutil`, `pyfakefs`, `pyyaml` and `texttable`.
 
 Installation for Ubuntu 20.04:
 
@@ -176,7 +176,5 @@ Installation for Ubuntu 20.04:
 # Install Python package system
 sudo apt-get install python3-pip
 
-python3 -m pip install psutil
-python3 -m pip install pyfakefs
-python3 -m pip install texttable
+python3 -m pip install psutil pyfakefs pyyaml texttable
 ```
