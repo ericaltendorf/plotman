@@ -53,6 +53,15 @@ directories:
                 rsyncd_bwlimit: 80000  # Bandwidth limit in KB/s
                 rsyncd_host: myfarmer
                 rsyncd_user: chia
+                # Optional index.  If omitted or set to 0, plotman will archive
+                # to the first archive dir with free space.  If specified,
+                # plotman will skip forward up to 'index' drives (if they exist).
+                # This can be useful to reduce io contention on a drive on the
+                # archive host if you have multiple plotters (simultaneous io
+                # can still happen at the time a drive fills up.)  E.g., if you
+                # have four plotters, you could set this to 0, 1, 2, and 3, on
+                # the 4 machines, or 0, 1, 0, 1.
+                #   index: 0
 
 
 # Plotting scheduling parameters
@@ -66,6 +75,9 @@ scheduling:
 
         # Don't run more than this many jobs at a time on a single temp dir.
         tmpdir_max_jobs: 3
+
+        # Don't run more than this many jobs at a time in total.
+        global_max_jobs: 12
 
         # Don't run any jobs (across all temp dirs) more often than this.
         global_stagger_m: 30
@@ -83,3 +95,6 @@ plotting:
         n_threads: 8         # Threads per job
         n_buckets: 128       # Number of buckets to split data into
         job_buffer: 4520     # Per job memory
+        # If specified, pass through to the -f and -p options.  See CLI reference.
+        # +        # farmer_pk: ...
+        # +        # pool_pk: ...

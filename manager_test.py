@@ -64,6 +64,19 @@ class TestManager(unittest.TestCase):
                   '/plots3' : (4, 1) },
                 manager.dstdirs_to_furthest_phase(all_jobs))
 
+    def test_dstdirs_to_youngest_phase(self):
+        all_jobs = [ self.job_w_dstdir_phase('/plots1', (1, 5)),
+                     self.job_w_dstdir_phase('/plots2', (1, 1)),
+                     self.job_w_dstdir_phase('/plots2', (3, 1)),
+                     self.job_w_dstdir_phase('/plots2', (2, 1)),
+                     self.job_w_dstdir_phase('/plots3', (4, 1)) ]
+
+        self.assertEqual(
+                { '/plots1' : (1, 5),
+                  '/plots2' : (1, 1),
+                  '/plots3' : (4, 1) },
+                manager.dstdirs_to_youngest_phase(all_jobs))
+
 
 if __name__ == '__main__':
     unittest.main()

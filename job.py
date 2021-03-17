@@ -107,9 +107,9 @@ class Job:
                     self.dstdir = val
                 elif arg == '-n':
                     self.n = val
-                elif arg == '-e':
+                elif arg == '-e' or arg == '-f' or arg == '-p':
                     pass
-                    # TODO: keep track of -e
+                    # TODO: keep track of these
                 else:
                     print('Warning: unrecognized args: %s %s' % (arg, val))
 
@@ -289,10 +289,11 @@ class Job:
         self.proc.resume()
 
     def get_temp_files(self):
-        temp_files = []
+        # Prevent duplicate file paths by using set.
+        temp_files = set([])
         for f in self.proc.open_files():
             if self.tmpdir in f.path or self.tmp2dir in f.path or self.dstdir in f.path:
-                temp_files.append(f.path)
+                temp_files.add(f.path)
         return temp_files
 
     def cancel(self):
