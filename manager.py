@@ -70,7 +70,7 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
         wait_reason = 'stagger (%ds/%ds)' % (
                 youngest_job_age, global_stagger)
     elif ('global_max_jobs' in sched_cfg and
-            len(jobs) > sched_cfg['global_max_jobs']):
+            len(jobs) >= sched_cfg['global_max_jobs']):
         wait_reason = 'max jobs (%d)' % sched_cfg['global_max_jobs']
     else:
         tmp_to_all_phases = [ (d, job.job_phases_for_tmpdir(d, jobs))
