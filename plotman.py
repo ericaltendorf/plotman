@@ -70,6 +70,14 @@ class PlotmanArgParser:
         args = parser.parse_args()
         return args
 
+def get_term_width():
+    columns = 0
+    try:
+        (rows, columns) = os.popen('stty size', 'r').read().split()
+        columns = int(columns)
+    except:
+        columns = 120  # 80 is typically too narrow.  TODO: make a command line arg.
+    return columns
 
 if __name__ == "__main__":
     random.seed()
@@ -111,13 +119,11 @@ if __name__ == "__main__":
 
         # Status report
         if args.cmd == 'status':
-            (rows, columns) = os.popen('stty size', 'r').read().split()
-            print(reporting.status_report(jobs, int(columns)))
+            print(reporting.status_report(jobs, get_term_width()))
 
         # Directories report
         elif args.cmd == 'dirs':
-            (rows, columns) = os.popen('stty size', 'r').read().split()
-            print(reporting.dirs_report(jobs, dir_cfg, sched_cfg, int(columns)))
+            print(reporting.dirs_report(jobs, dir_cfg, sched_cfg, get_term_width()))
 
         elif args.cmd == 'interactive':
             interactive.run_interactive()
