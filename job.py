@@ -71,7 +71,11 @@ class Job:
                     if proc.pid in cached_jobs_by_pid.keys():
                         jobs.append(cached_jobs_by_pid[proc.pid])  # Copy from cache
                     else:
-                        jobs.append(Job(proc, logroot))
+                        try:
+                            jobs.append(Job(proc, logroot))
+                        except:
+                            # e.g. unexpected "plots create" invocation ("chia plots create -h")
+                            pass
 
         return jobs
 
