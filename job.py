@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 # TODO do we use all these?
 from datetime import datetime
 from enum import Enum, auto
