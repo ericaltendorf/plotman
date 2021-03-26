@@ -1,0 +1,79 @@
+#!/bin/bash
+#must run with bash or <<< redirections won't work
+#created by @scry
+if [[ $@ == *"-h"* || $@ == *"--help"* ]]; then
+	echo 'listlogs <wildcard for group of logs>'
+	echo ' '
+	echo 'example: listlogs 2021-03-17-*'
+	echo ' '
+	echo 'listlogs lists complete chia plot log times and filenames'
+	echo ' -h  --help	This screen'
+	echo ' -d       	List just filenames'
+	echo ' -t       	List just total times'
+	echo ' -T       	List just phase 1 times'
+	echo ' -s       	Sum of total times'
+	echo ' -S       	Sum of phase 1 times'
+	echo ' -c       	Return the count of logs with total times'
+	echo ' -a       	Return average of total times'
+	echo ' -A       	Return average of phase 1 times'
+	exit
+fi
+if [[ $@ == *"-A"* ]]; then
+	opt="-A"
+	in=${@#"$opt"}
+	sum=$(grep -iR "Time for phase 1" $in | cut -d' ' -f6 | paste -sd+ - | bc)
+	len=$(grep -iR "Time for phase 1" $in | wc -l)
+	bc <<< "scale=2; $sum/$len"
+	exit
+fi
+if [[ $@ == *"-a"* ]]; then
+	opt="-a"
+	foo=${@#"$opt"}
+	sum=$(grep -iR "Total time" $foo | cut -d' ' -f4 | paste -sd+ - | bc)
+	len=$(grep -iR "Total time" $foo | wc -l)
+	bc <<< "scale=2; $sum/$len"
+	exit
+fi
+if [[ $@ == *"-C"* ]]; then
+	opt="-C"
+	in=${@#"$opt"}
+	grep -iR "Time for phase 1" $in | wc -l
+	exit
+fi
+if [[ $@ == *"-c"* ]]; then
+	opt="-c"
+	in=${@#"$opt"}
+	grep -iR "Total time" $in | wc -l
+	exit
+fi
+if [[ $@ == *"-S"* ]]; then
+	opt="-S"
+	in=${@#"$opt"}
+	grep -iR "Time for phase 1" $in | cut -d' ' -f6 | paste -sd+ - | bc
+	exit
+fi
+if [[ $@ == *"-s"* ]]; then
+	opt="-s"
+	in=${@#"$opt"}
+	grep -iR "Total time" $in | cut -d' ' -f4 | paste -sd+ - | bc
+	exit
+fi
+if [[ $@ == *"-T"* ]]; then
+	opt="-T"
+	in=${@#"$opt"}
+	grep -iR "Time for phase 1" $in | cut -d' ' -f6
+	exit
+fi
+if [[ $@ == *"-t"* ]]; then
+	opt="-t"
+	in=${@#"$opt"}
+	grep -iR "Total time" $in | cut -d' ' -f4
+	exit
+fi
+if [[ $@ == *"-d"* ]]; then
+	opt="-d"
+	in=${@#"$opt"}
+	grep -iR "Total time" $in | cut -d: -f1,2,3 | cut -d/ -f3
+	exit
+fi
+grep -iR "Total time" $@
