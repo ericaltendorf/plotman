@@ -19,11 +19,14 @@ directories:
                 - /mnt/tmp/02
                 - /mnt/tmp/03
 
-       # Optional: Allows overriding some characteristics of certain tmp
-       # directories. This contains a map of tmp directory names to
-       # attributes. If a tmp directory and attribute is not listed here,
-       # it uses the default attribute setting from the main configuration.
-       tmp_overrides:
+        # Optional: Allows overriding some characteristics of certain tmp
+        # directories. This contains a map of tmp directory names to
+        # attributes. If a tmp directory and attribute is not listed here,
+        # it uses the default attribute setting from the main configuration.
+        #
+        # Currently support override parameters:
+        #     - tmpdir_max_jobs
+        tmp_overrides:
                 # In this example, /mnt/tmp/00 is larger than the other tmp
                 # dirs and it can hold more plots than the default.
                 "/mnt/tmp/00":
@@ -96,5 +99,5 @@ plotting:
         n_buckets: 128       # Number of buckets to split data into
         job_buffer: 4520     # Per job memory
         # If specified, pass through to the -f and -p options.  See CLI reference.
-        # +        # farmer_pk: ...
-        # +        # pool_pk: ...
+        #   farmer_pk: ...
+        #   pool_pk: ...
