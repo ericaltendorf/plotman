@@ -11,6 +11,10 @@ class TestManager(unittest.TestCase):
                 'tmpdir_stagger_phase_major': 3,
                 'tmpdir_stagger_phase_minor': 0,
                 'tmpdir_max_jobs': 3 }
+        self.dir_cfg = {
+                'tmp_overrides': {
+                        '/mnt/tmp/04': {
+                                'tmpdir_max_jobs': 4 }}}
 
     @patch('job.Job')
     def job_w_tmpdir_phase(self, tmpdir, phase, MockJob):
@@ -28,15 +32,24 @@ class TestManager(unittest.TestCase):
 
     def test_permit_new_job_post_milestone(self):
         self.assertTrue(manager.phases_permit_new_job(
-            [ (3, 8), (4, 1) ], self.sched_cfg ))
+            [ (3, 8), (4, 1) ], '/mnt/tmp/00', self.sched_cfg, self.dir_cfg))
 
     def test_permit_new_job_pre_milestone(self):
         self.assertFalse(manager.phases_permit_new_job(
-            [ (2, 3), (4, 1) ], self.sched_cfg ))
+            [ (2, 3), (4, 1) ], '/mnt/tmp/00', self.sched_cfg, self.dir_cfg))
 
     def test_permit_new_job_too_many_jobs(self):
         self.assertFalse(manager.phases_permit_new_job(
-            [ (3, 1), (3, 2), (3, 3) ], self.sched_cfg ))
+            [ (3, 1), (3, 2), (3, 3) ], '/mnt/tmp/00', self.sched_cfg,
+            self.dir_cfg))
+
+    def test_permit_new_job_override_tmp_dir(self):
+        self.assertTrue(manager.phases_permit_new_job(
+            [ (3, 1), (3, 2), (3, 3) ], '/mnt/tmp/04', self.sched_cfg,
+            self.dir_cfg))
+        self.assertFalse(manager.phases_permit_new_job(
+            [ (3, 1), (3, 2), (3, 3), (3, 6) ], '/mnt/tmp/04', self.sched_cfg,
+            self.dir_cfg))
 
     def test_dstdirs_to_furthest_phase(self):
         all_jobs = [ self.job_w_dstdir_phase('/plots1', (1, 5)),
