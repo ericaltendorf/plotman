@@ -163,9 +163,6 @@ def curses_main(stdscr):
         stdscr.resize(n_rows, n_cols)
         curses.resize_term(n_rows, n_cols)
 
-        # test
-        arch_report = '\n'.join(['000: 500GB  ' * ((n_cols - 1) // 12)] * 15)
-
         #
         # Obtain and measure content
         #
