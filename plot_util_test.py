@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from plot_util import GB
 
 import os
