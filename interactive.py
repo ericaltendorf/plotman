@@ -96,7 +96,7 @@ def curses_main(stdscr):
 
     pressed_key = ''   # For debugging
 
-    arch_report = '<initializing>'
+    archdir_freebytes = None
 
     while True:
         elapsed = (datetime.datetime.now() - last_refresh).total_seconds() 
@@ -122,35 +122,29 @@ def curses_main(stdscr):
                 else:
                     plotting_status = msg
 
-            if archiving_configured and archiving_active:
-                # Look for running archive jobs.  Be robust to finding more than one
-                # even though the scheduler should only run one at a time.
-                arch_jobs = archive.get_running_archive_jobs(dir_cfg['archive'])
-                if arch_jobs:
-                    archiving_status = 'pid: ' + ', '.join(map(str, arch_jobs))
-                else:
-                    (should_start, status_or_cmd) = archive.archive(dir_cfg, jobs)
-                    if not should_start:
-                        archiving_status = status_or_cmd
-                    else:
-                        cmd = status_or_cmd
-                        log.log('Starting archive: ' + cmd)
-
-                        # TODO: do something useful with output instead of DEVNULL
-                        p = subprocess.Popen(cmd,
-                                shell=True,
-                                stdout=subprocess.DEVNULL,
-                                stderr=subprocess.STDOUT,
-                                start_new_session=True)
-
-            # Archive reports involve remote ssh, only do them on full refresh
             if archiving_configured:
-                arch_report = reporting.arch_dir_report(
-                    archive.get_archdir_freebytes(dir_cfg['archive']), n_cols, arch_prefix)
-                if not arch_report:
-                    arch_report = '<no archive dir info>'
-            else:
-                arch_report = '<archiving not configured>'
+                if archiving_active:
+                    # Look for running archive jobs.  Be robust to finding more than one
+                    # even though the scheduler should only run one at a time.
+                    arch_jobs = archive.get_running_archive_jobs(dir_cfg['archive'])
+                    if arch_jobs:
+                        archiving_status = 'pid: ' + ', '.join(map(str, arch_jobs))
+                    else:
+                        (should_start, status_or_cmd) = archive.archive(dir_cfg, jobs)
+                        if not should_start:
+                            archiving_status = status_or_cmd
+                        else:
+                            cmd = status_or_cmd
+                            log.log('Starting archive: ' + cmd)
+
+                            # TODO: do something useful with output instead of DEVNULL
+                            p = subprocess.Popen(cmd,
+                                    shell=True,
+                                    stdout=subprocess.DEVNULL,
+                                    stderr=subprocess.STDOUT,
+                                    start_new_session=True)
+
+                archdir_freebytes = archive.get_archdir_freebytes(dir_cfg['archive'])
 
 
         # Get terminal size.  Recommended method is stdscr.getmaxyx(), but this
@@ -183,6 +177,12 @@ def curses_main(stdscr):
             jobs, dir_cfg, sched_cfg, n_cols, n_tmpdirs_half, n_tmpdirs, tmp_prefix)
         dst_report = reporting.dst_dir_report(
             jobs, dir_cfg['dst'], n_cols, dst_prefix)
+        if archiving_configured:
+            arch_report = reporting.arch_dir_report(archdir_freebytes, n_cols, arch_prefix)
+            if not arch_report:
+                arch_report = '<no archive dir info>'
+        else:
+            arch_report = '<archiving not configured>'
 
         #
         # Layout
