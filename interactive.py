@@ -92,7 +92,7 @@ def curses_main(stdscr):
     dirs_win = curses.newwin(1, 1, 1, 0)
 
     jobs = Job.get_running_jobs(dir_cfg['log'])
-    last_refresh = datetime.datetime.now()
+    last_refresh = datetime.datetime.utcfromtimestamp(0)  # Beginning of time
 
     pressed_key = ''   # For debugging
 
@@ -114,7 +114,8 @@ def curses_main(stdscr):
             jobs = Job.get_running_jobs(dir_cfg['log'])
 
             if plotting_active:
-                (started, msg) = manager.maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg)
+                (started, msg) = manager.maybe_start_new_plot(
+                        dir_cfg, sched_cfg, plotting_cfg)
                 if (started):
                     log.log(msg)
                     plotting_status = '<just started job>'

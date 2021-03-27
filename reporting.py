@@ -68,7 +68,7 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
         abbreviate_jobs_list = True
 
     if abbreviate_jobs_list:
-        n_rows = height - 2  # One for header, one for elipsis
+        n_rows = height - 2  # Minus one for header, one for elipsis
         n_begin_rows = int(n_rows / 2)
         n_end_rows = n_rows - n_begin_rows
 
