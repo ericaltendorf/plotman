@@ -41,8 +41,7 @@ def test_columns():
               [ 1 ],
               [ 2 ] ] )
 
-# fs is a fake filesystem fixture magically supplied by pyfakefs
-def test_list_k32_plots(fs):
+def test_list_k32_plots(fs: pyfakefs.fake_filesystem.FakeFilesystem):
     fs.create_file('/t/plot-k32-0.plot', st_size=108 * GB)
     fs.create_file('/t/plot-k32-1.plot', st_size=108 * GB)
     fs.create_file('/t/.plot-k32-2.plot', st_size=108 * GB)
