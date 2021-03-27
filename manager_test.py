@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # TODO: migrate away from unittest patch
 from unittest.mock import patch
 
@@ -76,4 +74,3 @@ def test_dstdirs_to_youngest_phase():
             { '/plots1' : (1, 5),
               '/plots2' : (1, 1),
               '/plots3' : (4, 1) } )
-
