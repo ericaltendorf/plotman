@@ -55,7 +55,7 @@ def phases_permit_new_job(phases, d, sched_cfg, dir_cfg):
     # Limit the total number of jobs per tmp dir. Default to the overall max
     # jobs configuration, but restrict to any configured overrides.
     max_plots = sched_cfg['tmpdir_max_jobs']
-    tmp_overrides = dir_cfg['tmp_overrides']
+    tmp_overrides = dir_cfg.get('tmp_overrides', None)
     if tmp_overrides is not None and d in tmp_overrides:
         overrides = tmp_overrides[d]
         if 'tmpdir_max_jobs' in overrides:
