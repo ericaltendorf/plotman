@@ -44,6 +44,9 @@ def dstdirs_to_youngest_phase(all_jobs):
 def phases_permit_new_job(phases, d, sched_cfg, dir_cfg):
     '''Scheduling logic: return True if it's OK to start a new job on a tmp dir
        with existing jobs in the provided phases.'''
+    # Filter unknown-phase jobs
+    phases = [ph for ph in phases if ph[0] and ph[1]]
+
     if len(phases) == 0:
         return True
 
