@@ -52,7 +52,11 @@ def phases_permit_new_job(phases, d, sched_cfg, dir_cfg):
 
     milestone = ( sched_cfg['tmpdir_stagger_phase_major'],
                   sched_cfg['tmpdir_stagger_phase_minor'] )
-    if len([p for p in phases if p < milestone]) > 0:
+    # 1 is the default value.
+    max_allowed_before_milestone = 1
+    if 'tmpdir_stagger_phase_limit' in sched_cfg:
+        max_allowed_before_milestone = sched_cfg['tmpdir_stagger_phase_limit']
+    if len([p for p in phases if p < milestone]) >= max_allowed_before_milestone:
         return False
 
     # Limit the total number of jobs per tmp dir. Default to the overall max
