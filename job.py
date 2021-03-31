@@ -31,6 +31,16 @@ def is_plotting_cmdline(cmdline):
         and 'create' == cmdline[3]
     )
 
+# This is a cmdline argument fix for https://github.com/ericaltendorf/plotman/issues/41
+def cmdline_argfix(cmdline):
+    known_keys = 'krbut2dne'
+    for i in cmdline:
+        if i[0]=='-' and i[1] in known_keys and len(i)>2:
+            yield i[0:2]
+            yield i[2:]
+        else:
+            yield i
+
 # TODO: be more principled and explicit about what we cache vs. what we look up
 # dynamically from the logfile
 class Job:
@@ -86,7 +96,7 @@ class Job:
             assert 'chia' in args[1]
             assert 'plots' == args[2]
             assert 'create' == args[3]
-            args_iter = iter(args[4:])
+            args_iter = iter(cmdline_argfix(args[4:]))
             for arg in args_iter:
                 val = None if arg in ['-e'] else next(args_iter)
                 if arg == '-k':
