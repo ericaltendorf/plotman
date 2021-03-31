@@ -14,8 +14,7 @@ from subprocess import call
 import yaml
 
 # Plotman libraries
-from plotman import (analyzer, archive, interactive, manager, plot_util,
-                     reporting)
+from plotman import analyzer, archive, interactive, manager, plot_util, reporting
 from plotman.job import Job
 
 

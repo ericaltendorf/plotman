@@ -1,5 +1,4 @@
-import archive
-import manager
+from plotman import archive, manager
 
 
 def test_compute_priority():

@@ -1,9 +1,9 @@
 # TODO: migrate away from unittest patch
 from unittest.mock import patch
 
-import job
-import manager
 import pytest
+
+from plotman import job, manager
 
 
 @pytest.fixture
