@@ -1,18 +1,19 @@
 # TODO do we use all these?
-from datetime import datetime
-from enum import Enum, auto
-from subprocess import call
 import argparse
-
 import contextlib
 import logging
 import os
+import random
 import re
+import sys
 import threading
 import time
-import psutil      # apt-get install python-psutil
-import random
-import sys
+from datetime import datetime
+from enum import Enum, auto
+from subprocess import call
+
+import psutil  # apt-get install python-psutil
+
 
 def job_phases_for_tmpdir(d, all_jobs):
     '''Return phase 2-tuples for jobs running on tmpdir d'''

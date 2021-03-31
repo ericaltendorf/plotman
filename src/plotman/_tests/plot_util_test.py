@@ -1,9 +1,9 @@
-from plot_util import GB
-
 import os
-import pyfakefs
 
 import plot_util
+import pyfakefs
+from plot_util import GB
+
 
 def test_human_format():
     assert (plot_util.human_format(3442000000, 0) == '3G')

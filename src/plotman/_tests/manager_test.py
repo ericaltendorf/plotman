@@ -1,9 +1,10 @@
 # TODO: migrate away from unittest patch
 from unittest.mock import patch
 
-import pytest
-import manager
 import job
+import manager
+import pytest
+
 
 @pytest.fixture
 def sched_cfg():

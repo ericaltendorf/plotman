@@ -1,6 +1,7 @@
 import archive
 import manager
 
+
 def test_compute_priority():
     assert (archive.compute_priority( (3, 1), 1000, 10) >
             archive.compute_priority( (3, 6), 1000, 10) )

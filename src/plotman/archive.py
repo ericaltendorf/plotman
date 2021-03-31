@@ -1,17 +1,16 @@
-from datetime import datetime
-import subprocess
 import argparse
 import math
 import os
-import psutil
-import re
 import random
+import re
+import subprocess
 import sys
+from datetime import datetime
 
+import psutil
 import texttable as tt
 
-from plotman import manager
-from plotman import plot_util
+from plotman import manager, plot_util
 
 # TODO : write-protect and delete-protect archived plots
 

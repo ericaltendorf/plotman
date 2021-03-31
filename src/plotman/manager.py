@@ -1,21 +1,21 @@
-from datetime import datetime
-
 import logging
 import operator
 import os
-import re
-import threading
-import time
-import psutil
 import random
-import readline          # For nice CLI
+import re
+import readline  # For nice CLI
 import subprocess
 import sys
+import threading
+import time
+from datetime import datetime
+
+import psutil
 
 # Plotman libraries
-from plotman import job
-from plotman import plot_util
-from plotman import archive # for get_archdir_freebytes(). TODO: move to avoid import loop
+from plotman import \
+    archive  # for get_archdir_freebytes(). TODO: move to avoid import loop
+from plotman import job, plot_util
 
 # Constants
 MIN = 60    # Seconds

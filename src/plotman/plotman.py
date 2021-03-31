@@ -1,26 +1,23 @@
 #!/usr/bin/env python3
 
+import argparse
+import os
+import random
+import re
+import readline  # For nice CLI
+import sys
+import threading
+import time
 from datetime import datetime
 from subprocess import call
 
-import argparse
-import os
-import re
-import threading
-import random
-import readline          # For nice CLI
-import sys
-import time
 import yaml
 
 # Plotman libraries
+from plotman import (analyzer, archive, interactive, manager, plot_util,
+                     reporting)
 from plotman.job import Job
-from plotman import analyzer
-from plotman import archive
-from plotman import interactive
-from plotman import manager
-from plotman import plot_util
-from plotman import reporting
+
 
 class PlotmanArgParser:
     def add_idprefix_arg(self, subparser):

@@ -1,9 +1,9 @@
 # TODO: migrate away from unittest patch
+import os
 from unittest.mock import patch
 
-import os
-
 import reporting
+
 
 def test_phases_str():
     assert(reporting.phases_str([(1,2), (2,3), (3,4), (4,0)]) ==
