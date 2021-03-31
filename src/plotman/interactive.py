@@ -7,10 +7,10 @@ import subprocess
 import threading
 import yaml
 
-from job import Job
-import archive
-import manager
-import reporting
+from plotman.job import Job
+from plotman import archive
+from plotman import manager
+from plotman import reporting
 
 class Log:
     def __init__(self):

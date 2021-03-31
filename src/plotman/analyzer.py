@@ -4,7 +4,7 @@ import statistics
 import sys
 import texttable as tt
 
-import plot_util
+from plotman import plot_util
 
 class LogAnalyzer:
     # Map from key (e.g. logdir or the like) to (map from measurement name to list of values)

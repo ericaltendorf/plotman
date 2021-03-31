@@ -14,13 +14,13 @@ import time
 import yaml
 
 # Plotman libraries
-from job import Job
-import analyzer
-import archive
-import interactive
-import manager
-import plot_util
-import reporting
+from plotman.job import Job
+from plotman import analyzer
+from plotman import archive
+from plotman import interactive
+from plotman import manager
+from plotman import plot_util
+from plotman import reporting
 
 class PlotmanArgParser:
     def add_idprefix_arg(self, subparser):
@@ -79,7 +79,7 @@ def get_term_width():
         columns = 120  # 80 is typically too narrow.  TODO: make a command line arg.
     return columns
 
-if __name__ == "__main__":
+def main():
     random.seed()
 
     pm_parser = PlotmanArgParser()
@@ -202,3 +202,5 @@ if __name__ == "__main__":
                     print('Resuming ' + job.plot_id)
                     job.resume()
 
+if __name__ == "__main__":
+    main()

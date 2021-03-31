@@ -10,8 +10,8 @@ import sys
 
 import texttable as tt
 
-import manager
-import plot_util
+from plotman import manager
+from plotman import plot_util
 
 # TODO : write-protect and delete-protect archived plots
 
