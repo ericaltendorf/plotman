@@ -35,9 +35,14 @@ def is_plotting_cmdline(cmdline):
 def cmdline_argfix(cmdline):
     known_keys = 'krbut2dne'
     for i in cmdline:
+        # If the argument starts with dash and a known key and is longer than 2,
+        # then an argument is passed with no space between its key and value.
+        # This is POSIX compliant but the arg parser was tripping over it.
+        # In these cases, splitting that item up in separate key and value
+        # elements results in a `cmdline` list that is correctly formatted.
         if i[0]=='-' and i[1] in known_keys and len(i)>2:
-            yield i[0:2]
-            yield i[2:]
+            yield i[0:2]  # key
+            yield i[2:]  # value
         else:
             yield i
 
