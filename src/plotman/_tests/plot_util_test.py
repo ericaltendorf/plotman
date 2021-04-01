@@ -2,7 +2,8 @@ import os
 
 import plot_util
 import pyfakefs
-from plot_util import GB
+
+from plotman.plot_util import GB
 
 
 def test_human_format():
