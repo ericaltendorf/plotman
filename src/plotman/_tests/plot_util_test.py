@@ -1,8 +1,8 @@
 import os
 
-import plot_util
 import pyfakefs
 
+from plotman import plot_util
 from plotman.plot_util import GB
 
 
