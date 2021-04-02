@@ -1,6 +1,7 @@
 import curses
 import datetime
 import locale
+import math
 import os
 import subprocess
 import threading
@@ -78,11 +79,21 @@ def curses_main(stdscr):
 
     (n_rows, n_cols) = map(int, stdscr.getmaxyx())
 
-    # Page layout.  Currently requires at least ~40 rows.
-    # TODO: make everything dynamically resize to best use available space
+    # Page layout.
+    if (n_rows < 24):
+        raise Exception(f'Terminal has only {n_rows} lines; requires 24.  '
+                         'Try a larger terminal window.')
+    if (n_cols < 80):
+        raise Exception(f'Terminal has only {n_cols} lines; requires 80.  '
+                         'Try a larger terminal window.')
+
+    n_tmpdirs = len(dir_cfg['tmp']) 
+    n_tmpdirs_half = int(n_tmpdirs / 2)
+
     header_height = 3
-    jobs_height = 10
-    dirs_height = 14
+    dirs_height = n_tmpdirs_half + 8  # arch dirs & headers
+    remainder = n_rows - (header_height + dirs_height)
+    jobs_height = max(5, math.floor(remainder * 0.6))
     logscreen_height = n_rows - (header_height + jobs_height + dirs_height)
 
     header_pos = 0
@@ -98,15 +109,21 @@ def curses_main(stdscr):
     stdscr.nodelay(True)  # make getch() non-blocking
     stdscr.timeout(2000)
 
-    header_win = curses.newwin(header_height, n_cols, header_pos, 0)
-    log_win = curses.newwin(logscreen_height, n_cols, logscreen_pos, 0)
-    jobs_win = curses.newwin(jobs_height, n_cols, jobs_pos, 0)
-    dirs_win = curses.newwin(dirs_height, n_cols, dirs_pos, 0)
+    try:
+        header_win = curses.newwin(header_height, n_cols, header_pos, 0)
+        log_win = curses.newwin(logscreen_height, n_cols, logscreen_pos, 0)
+        jobs_win = curses.newwin(jobs_height, n_cols, jobs_pos, 0)
+        dirs_win = curses.newwin(dirs_height, n_cols, dirs_pos, 0)
+    except Exception:
+        raise Exception('Failed to initialize curses windows, try a larger '
+                        'terminal window.')
 
     jobs = Job.get_running_jobs(dir_cfg['log'])
     last_refresh = datetime.datetime.now()
 
     pressed_key = ''   # For debugging
+
+    arch_report = '<initializing>'
 
     while True:
 
@@ -209,23 +226,22 @@ def curses_main(stdscr):
         jobs_win.chgat(0, 0, curses.A_REVERSE)
 
         # Dirs.  Collect reports as strings, then lay out.
-        n_tmpdirs = len(dir_cfg['tmp']) 
-        n_tmpdirs_half = int(n_tmpdirs / 2)
         tmp_report_1 = reporting.tmp_dir_report(
-            jobs, dir_cfg['tmp'], sched_cfg, n_cols, 0, n_tmpdirs_half, tmp_prefix)
+            jobs, dir_cfg, sched_cfg, n_cols, 0, n_tmpdirs_half, tmp_prefix)
         tmp_report_2 = reporting.tmp_dir_report(
-            jobs, dir_cfg['tmp'], sched_cfg, n_cols, n_tmpdirs_half, n_tmpdirs, tmp_prefix)
+            jobs, dir_cfg, sched_cfg, n_cols, n_tmpdirs_half, n_tmpdirs, tmp_prefix)
 
         dst_report = reporting.dst_dir_report(
             jobs, dir_cfg['dst'], n_cols, dst_prefix)
 
-        if archiving_configured:
-            arch_report = reporting.arch_dir_report(
-                archive.get_archdir_freebytes(dir_cfg['archive']), n_cols, arch_prefix)
-            if not arch_report:
-                arch_report = '<no archive dir info>'
-        else:
-            arch_report = '<archiving not configured>'
+        if do_full_refresh:
+            if archiving_configured:
+                arch_report = reporting.arch_dir_report(
+                    archive.get_archdir_freebytes(dir_cfg['archive']), n_cols, arch_prefix)
+                if not arch_report:
+                    arch_report = '<no archive dir info>'
+            else:
+                arch_report = '<archiving not configured>'
             
         tmp_h = max(len(tmp_report_1.splitlines()),
                     len(tmp_report_2.splitlines()))

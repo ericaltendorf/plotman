@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 # TODO do we use all these?
 from datetime import datetime
 from enum import Enum, auto
@@ -107,9 +105,9 @@ class Job:
                     self.dstdir = val
                 elif arg == '-n':
                     self.n = val
-                elif arg == '-e':
+                elif arg == '-e' or arg == '-f' or arg == '-p':
                     pass
-                    # TODO: keep track of -e
+                    # TODO: keep track of these
                 else:
                     print('Warning: unrecognized args: %s %s' % (arg, val))
 
@@ -123,8 +121,15 @@ class Job:
                         self.logfile = f.path
                     break
 
-            # Initialize data that needs to be loaded from the logfile
-            self.init_from_logfile()
+            if self.logfile:
+                # Initialize data that needs to be loaded from the logfile
+                self.init_from_logfile()
+            else:
+                print('Found plotting process PID {pid}, but could not find '
+                        'logfile in its open files:'.format(pid = self.proc.pid))
+                for f in self.proc.open_files():
+                    print(f.path)
+
 
 
     def init_from_logfile(self):
@@ -157,6 +162,7 @@ class Job:
         # If we couldn't find the line in the logfile, the job is probably just getting started
         # (and being slow about it).  In this case, use the last metadata change as the start time.
         # TODO: we never come back to this; e.g. plot_id may remain uninitialized.
+        # TODO: should we just use the process start time instead?
         if not found_log:
             self.start_time = datetime.fromtimestamp(os.path.getctime(self.logfile))
 
@@ -270,7 +276,8 @@ class Job:
             return self.proc.status()
 
     def get_time_wall(self):
-        return int((datetime.now() - self.start_time).total_seconds())
+        create_time = datetime.fromtimestamp(self.proc.create_time())
+        return int((datetime.now() - create_time).total_seconds())
 
     def get_time_user(self):
         return int(self.proc.cpu_times().user)
@@ -289,10 +296,11 @@ class Job:
         self.proc.resume()
 
     def get_temp_files(self):
-        temp_files = []
+        # Prevent duplicate file paths by using set.
+        temp_files = set([])
         for f in self.proc.open_files():
             if self.tmpdir in f.path or self.tmp2dir in f.path or self.dstdir in f.path:
-                temp_files.append(f.path)
+                temp_files.add(f.path)
         return temp_files
 
     def cancel(self):

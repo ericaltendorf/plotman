@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 from datetime import datetime
 from subprocess import call
@@ -64,12 +64,26 @@ class PlotmanArgParser:
 
         p_analyze = sp.add_parser('analyze',
                 help='analyze timing stats of completed jobs')
+        p_analyze.add_argument('--bytmp',
+                action='store_true',
+                help='slice by tmp dirs')
+        p_analyze.add_argument('--bybitfield',
+                action='store_true',
+                help='slice by bitfield/non-bitfield sorting')
         p_analyze.add_argument('logfile', type=str, nargs='+',
                 help='logfile(s) to analyze')
 
         args = parser.parse_args()
         return args
 
+def get_term_width():
+    columns = 0
+    try:
+        (rows, columns) = os.popen('stty size', 'r').read().split()
+        columns = int(columns)
+    except:
+        columns = 120  # 80 is typically too narrow.  TODO: make a command line arg.
+    return columns
 
 if __name__ == "__main__":
     random.seed()
@@ -103,7 +117,7 @@ if __name__ == "__main__":
     #
     elif args.cmd == 'analyze':
         analyzer = analyzer.LogAnalyzer()
-        analyzer.analyze(args.logfile)
+        analyzer.analyze(args.logfile, args.bytmp, args.bybitfield)
 
     else:
         # print('...scanning process tables')
@@ -111,13 +125,11 @@ if __name__ == "__main__":
 
         # Status report
         if args.cmd == 'status':
-            (rows, columns) = os.popen('stty size', 'r').read().split()
-            print(reporting.status_report(jobs, int(columns)))
+            print(reporting.status_report(jobs, get_term_width()))
 
         # Directories report
         elif args.cmd == 'dirs':
-            (rows, columns) = os.popen('stty size', 'r').read().split()
-            print(reporting.dirs_report(jobs, dir_cfg, sched_cfg, int(columns)))
+            print(reporting.dirs_report(jobs, dir_cfg, sched_cfg, get_term_width()))
 
         elif args.cmd == 'interactive':
             interactive.run_interactive()

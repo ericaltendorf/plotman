@@ -19,6 +19,19 @@ directories:
                 - /mnt/tmp/02
                 - /mnt/tmp/03
 
+        # Optional: Allows overriding some characteristics of certain tmp
+        # directories. This contains a map of tmp directory names to
+        # attributes. If a tmp directory and attribute is not listed here,
+        # it uses the default attribute setting from the main configuration.
+        #
+        # Currently support override parameters:
+        #     - tmpdir_max_jobs
+        tmp_overrides:
+                # In this example, /mnt/tmp/00 is larger than the other tmp
+                # dirs and it can hold more plots than the default.
+                "/mnt/tmp/00":
+                        tmpdir_max_jobs: 5
+
         # Optional: tmp2 directory.  If specified, will be passed to
         # chia plots create as -2.  Only one tmp2 directory is supported.
         # tmp2: /mnt/tmp/a
@@ -54,18 +67,36 @@ directories:
                 rsyncd_host: myfarmer  # # ignored in local mode
                 rsyncd_user: chia  # # ignored in local mode
 
+                # Optional index.  If omitted or set to 0, plotman will archive
+                # to the first archive dir with free space.  If specified,
+                # plotman will skip forward up to 'index' drives (if they exist).
+                # This can be useful to reduce io contention on a drive on the
+                # archive host if you have multiple plotters (simultaneous io
+                # can still happen at the time a drive fills up.)  E.g., if you
+                # have four plotters, you could set this to 0, 1, 2, and 3, on
+                # the 4 machines, or 0, 1, 0, 1.
+                #   index: 0
+
+
 
 # Plotting scheduling parameters
 scheduling:
-        # Don't run a job on a particular temp dir until all existing jobs
-        # have progresed at least this far.  Phase major corresponds to the
-        # plot phase, phase minor corresponds to the table or table pair
-        # in sequence.
+        # Run a job on a particular temp dir only if the number of existing jobs
+        # before tmpdir_stagger_phase_major tmpdir_stagger_phase_minor
+        # is less than tmpdir_stagger_phase_limit.
+        # Phase major corresponds to the plot phase, phase minor corresponds to
+        # the table or table pair in sequence, phase limit corresponds to
+        # the number of plots allowed before [phase major, phase minor]
         tmpdir_stagger_phase_major: 2
         tmpdir_stagger_phase_minor: 1
+        # Optional: default is 1
+        tmpdir_stagger_phase_limit: 1
 
         # Don't run more than this many jobs at a time on a single temp dir.
         tmpdir_max_jobs: 3
+
+        # Don't run more than this many jobs at a time in total.
+        global_max_jobs: 12
 
         # Don't run any jobs (across all temp dirs) more often than this.
         global_stagger_m: 30
@@ -83,3 +114,6 @@ plotting:
         n_threads: 8         # Threads per job
         n_buckets: 128       # Number of buckets to split data into
         job_buffer: 4520     # Per job memory
+        # If specified, pass through to the -f and -p options.  See CLI reference.
+        #   farmer_pk: ...
+        #   pool_pk: ...
