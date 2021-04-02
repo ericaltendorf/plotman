@@ -39,11 +39,20 @@ directories:
         # See code for details.
         archive:
                 mode: remote  # remote or local
-                rsyncd_module: plots
+                rsyncd_module: plots  # ignored in local mode
+
+                # Note for local mode:
+                # This path should be the directory *in which* your archive disks
+                # are mounted. For example, if your archive disks are
+                # /mnt/archive1 and /mnt/archive2, the path should be /mnt.
+                # Note that *all* mounted drives within that path will be
+                # considered - so if you have other things mounted as well,
+                # make sure you mount all Chia archive drives to some custom
+                # directory that only contains Chia archive mountpoints.
                 rsyncd_path: /plots
                 rsyncd_bwlimit: 80000  # Bandwidth limit in KB/s
-                rsyncd_host: myfarmer  # only required for remote mode
-                rsyncd_user: chia  # only required for remote mode
+                rsyncd_host: myfarmer  # # ignored in local mode
+                rsyncd_user: chia  # # ignored in local mode
 
 
 # Plotting scheduling parameters
