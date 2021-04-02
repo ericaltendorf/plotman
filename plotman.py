@@ -64,6 +64,12 @@ class PlotmanArgParser:
 
         p_analyze = sp.add_parser('analyze',
                 help='analyze timing stats of completed jobs')
+        p_analyze.add_argument('--bytmp',
+                action='store_true',
+                help='slice by tmp dirs')
+        p_analyze.add_argument('--bybitfield',
+                action='store_true',
+                help='slice by bitfield/non-bitfield sorting')
         p_analyze.add_argument('logfile', type=str, nargs='+',
                 help='logfile(s) to analyze')
 
@@ -111,7 +117,7 @@ if __name__ == "__main__":
     #
     elif args.cmd == 'analyze':
         analyzer = analyzer.LogAnalyzer()
-        analyzer.analyze(args.logfile)
+        analyzer.analyze(args.logfile, args.bytmp, args.bybitfield)
 
     else:
         # print('...scanning process tables')

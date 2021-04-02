@@ -7,38 +7,44 @@ import texttable as tt
 import plot_util
 
 class LogAnalyzer:
-    # Map from key (e.g. logdir or the like) to (map from measurement name to list of values)
     all_measures = ['phase 1', 'phase 2', 'phase 3', 'phase 4', 'total time']
 
-    def analyze(self, logfilenames):
+    def analyze(self, logfilenames, bytmp, bybitfield):
         data = {}
         for logfilename in logfilenames:
             with open(logfilename, 'r') as f:
-                key = 'x'  # TODO
+                sl = 'x'         # slice
+                phase_time = {}  # Map from phase index to time
+
                 for line in f:
                     #
                     # Aggregation specification
                     #
 
                     # Starting phase 1/4: Forward Propagation into tmp files... Sun Nov 15 00:35:57 2020
-                    # TODO: This only does by day!!!
-                    m = re.search(r'^Starting phase 1/4.*files.*\d\d (\d\d):\d\d:\d\d \d\d\d\d', line)
-                    if m:
-                        bucketsize = 2
-                        hour = int(m.group(1))
-                        hourbucket = int(hour / bucketsize)
-                        # key += '-%02d-%02d' % (hourbucket * bucketsize, (hourbucket + 1) * bucketsize)
+                    # This could be used to slice by time (hour, day, etc.)
+                    #    m = re.search(r'^Starting phase 1/4.*files.*\d\d (\d\d):\d\d:\d\d \d\d\d\d', line)
+                    #    if m:
+                    #        bucketsize = 2
+                    #        hour = int(m.group(1))
+                    #        hourbucket = int(hour / bucketsize)
+                    #        sl += '-%02d-%02d' % (hourbucket * bucketsize, (hourbucket + 1) * bucketsize)
 
                     # Starting plotting progress into temporary dirs: /mnt/tmp/01 and /mnt/tmp/a
                     m = re.search(r'^Starting plotting.*dirs: (.*) and (.*)', line)
-                    if False and m:
+                    if bytmp and m:
                         tmpdir = m.group(1)
-                        # Hack to split data for backing hardware
-                        tmpdir_idx = tmpdir[-2:]
-                        if tmpdir_idx in ['00', '01']:
-                            key += '-wd-raid'
-                        if tmpdir_idx in ['02', '03', '04', '05']:
-                            key += '-samsung'
+                        sl += '-' + tmpdir
+
+                    # Starting phase 2/4: Backpropagation without bitfield into tmp files... Mon Mar  1 03:56:11 2021
+                    #   or
+                    # Starting phase 2/4: Backpropagation into tmp files... Fri Apr  2 03:17:32 2021
+                    m = re.search(r'^Starting phase 2/4: Backpropagation', line)
+                    if bybitfield and m:
+                        if 'without bitfield' in line:
+                            sl += '-nobitfield'
+                        else:
+                            sl += '-bitfield'
 
                     #
                     # Data collection
@@ -48,23 +54,28 @@ class LogAnalyzer:
                     for phase in ['1', '2', '3', '4']:
                         m = re.search(r'^Time for phase ' + phase + ' = (\d+.\d+) seconds..*', line)
                         if m:
-                            data.setdefault(key, {}).setdefault('phase ' + phase, []).append(float(m.group(1)))
+                            phase_time[phase] = float(m.group(1))
+
+                    #
+                    # Final time collection, and write to sliced data store
+                    #
 
                     # Total time = 49487.1 seconds. CPU (97.26%) Wed Sep 30 01:22:10 2020
                     m = re.search(r'^Total time = (\d+.\d+) seconds.*', line)
                     if m:
-                        data.setdefault(key, {}).setdefault('total time', []).append(float(m.group(1)))
+                        data.setdefault(sl, {}).setdefault('total time', []).append(float(m.group(1)))
+                        for phase in ['1', '2', '3', '4']:
+                            data.setdefault(sl, {}).setdefault('phase ' + phase, []).append(phase_time[phase])
 
         # Prepare report
         tab = tt.Texttable()
         headings = ['Key'] + self.all_measures
         tab.header(headings)
 
-        #for logdir in logdirs:
-        for key in data.keys():
-            row = [key]
+        for sl in data.keys():
+            row = [sl]
             for measure in self.all_measures:
-                values = data.get(key, {}).get(measure, [])
+                values = data.get(sl, {}).get(measure, [])
                 if(len(values) > 1):
                     row.append('μ=%s σ=%s' % (
                         plot_util.human_format(statistics.mean(values), 1),
