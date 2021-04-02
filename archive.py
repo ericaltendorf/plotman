@@ -49,8 +49,16 @@ def compute_priority(phase, gb_free, n_plots):
 
 def get_archdir_freebytes(arch_cfg):
     archdir_freebytes = { }
-    df_cmd = ('ssh %s@%s df -BK | grep " %s/"' %
-        (arch_cfg['rsyncd_user'], arch_cfg['rsyncd_host'], arch_cfg['rsyncd_path']) )
+    arch_mode = arch_cfg.get('mode', 'remote')
+    print('> mode is', arch_mode)
+    if arch_mode == 'remote':
+        df_cmd = ('ssh %s@%s df -BK | grep " %s/"' %
+            (arch_cfg['rsyncd_user'], arch_cfg['rsyncd_host'], arch_cfg['rsyncd_path']) )
+    elif arch_mode == 'local':
+        df_cmd = ('df -BK | grep " %s/"' % arch_cfg['rsyncd_path'] )
+    else:
+        raise KeyError(f'Archive mode must be "remote" or "local" ("{arch_mode}" given). Please inspect config.yaml.')
+    print('> df_cmd is', df_cmd)
     with subprocess.Popen(df_cmd, shell=True, stdout=subprocess.PIPE) as proc:
         for line in proc.stdout.readlines():
             fields = line.split()
@@ -60,11 +68,18 @@ def get_archdir_freebytes(arch_cfg):
     return archdir_freebytes
 
 def rsync_dest(arch_cfg, arch_dir):
-    rsync_path = arch_dir.replace(arch_cfg['rsyncd_path'], arch_cfg['rsyncd_module'])
-    if rsync_path.startswith('/'):
-        rsync_path = rsync_path[1:]  # Avoid dup slashes.  TODO use path join?
-    rsync_url = 'rsync://%s@%s:12000/%s' % (
-            arch_cfg['rsyncd_user'], arch_cfg['rsyncd_host'], rsync_path)
+    arch_mode = arch_cfg.get('mode', 'remote')
+    if arch_mode == 'remote':
+        rsync_path = arch_dir.replace(arch_cfg['rsyncd_path'], arch_cfg['rsyncd_module'])
+        if rsync_path.startswith('/'):
+            rsync_path = rsync_path[1:]  # Avoid dup slashes.  TODO use path join?
+        rsync_url = 'rsync://%s@%s:12000/%s' % (
+                arch_cfg['rsyncd_user'], arch_cfg['rsyncd_host'], rsync_path)
+    elif arch_mode == 'local':
+        rsync_url = arch_cfg['rsyncd_path']
+    else:
+        raise KeyError(f'Archive mode must be "remote" or "local" ("{arch_mode}" given). Please inspect config.yaml.')
+    print('> rsync_url is', rsync_url)
     return rsync_url
 
 # TODO: maybe consolidate with similar code in job.py?
