@@ -161,6 +161,7 @@ def curses_main(stdscr):
         #     https://stackoverflow.com/questions/33906183#33906270
         # Alternative option is to call out to `stty size`.  For now, we
         # support both strategies, selected by a config option.
+        # TODO: also try shutil.get_terminal_size()
         n_rows: int
         n_cols: int
         if 'use_stty_size' in ui_cfg and ui_cfg['use_stty_size']:
