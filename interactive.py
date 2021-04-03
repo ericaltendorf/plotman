@@ -153,7 +153,9 @@ def curses_main(stdscr):
         # having to do with registering sigwinch handlers in multithreaded
         # environments.  See e.g.
         #     https://stackoverflow.com/questions/33906183#33906270
-        (n_rows, n_cols) = [int(v) for v in os.popen('stty size', 'r').read().split()]
+        completed_process = subprocess.run(['stty', 'size'], check=True, encoding='utf-8', stdout=subprocess.PIPE)
+        elements = completed_process.stdout.split()
+        (n_rows, n_cols) = (int(v) for v in elements]
         stdscr.clear()
         stdscr.resize(n_rows, n_cols)
         curses.resize_term(n_rows, n_cols)
