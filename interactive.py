@@ -93,19 +93,24 @@ def curses_main(stdscr):
     dirs_win = curses.newwin(1, 1, 1, 0)
 
     jobs = Job.get_running_jobs(dir_cfg['log'])
-    last_refresh = datetime.datetime.utcfromtimestamp(0)  # Beginning of time
+    last_refresh = None
 
     pressed_key = ''   # For debugging
 
     archdir_freebytes = None
 
     while True:
-        elapsed = (datetime.datetime.now() - last_refresh).total_seconds() 
 
         # A full refresh scans for and reads info for running jobs from
         # scratch (i.e., reread their logfiles).  Otherwise we'll only
         # initialize new jobs, and mostly rely on cached info.
-        do_full_refresh = elapsed >= refresh_period
+        do_full_refresh = False
+        elapsed = 0    # Time since last refresh, or zero if no prev. refresh
+        if last_refresh is None:
+            do_full_refresh = True
+        else:
+            elapsed = (datetime.datetime.now() - last_refresh).total_seconds() 
+            do_full_refresh = elapsed >= refresh_period
 
         if not do_full_refresh:
             jobs = Job.get_running_jobs(dir_cfg['log'], cached_jobs=jobs)
