@@ -67,6 +67,7 @@ def curses_main(stdscr):
     # duplicating the code here.
     with open('config.yaml', 'r') as ymlfile:
         cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)
+    ui_cfg = cfg['user_interface']
     dir_cfg = cfg['directories']
     sched_cfg = cfg['scheduling']
     plotting_cfg = cfg['plotting']
@@ -149,13 +150,22 @@ def curses_main(stdscr):
 
 
         # Get terminal size.  Recommended method is stdscr.getmaxyx(), but this
-        # does not seem to work.  It may be a bug in Python curses, maybe
-        # having to do with registering sigwinch handlers in multithreaded
-        # environments.  See e.g.
+        # does not seem to work on some systems.  It may be a bug in Python
+        # curses, maybe having to do with registering sigwinch handlers in
+        # multithreaded environments.  See e.g.
         #     https://stackoverflow.com/questions/33906183#33906270
-        completed_process = subprocess.run(['stty', 'size'], check=True, encoding='utf-8', stdout=subprocess.PIPE)
-        elements = completed_process.stdout.split()
-        (n_rows, n_cols) = (int(v) for v in elements]
+        # Alternative option is to call out to `stty size`.  For now, we
+        # support both strategies, selected by a config option.
+        n_rows: int
+        n_cols: int
+        if 'use_stty_size' in ui_cfg and ui_cfg['use_stty_size']:
+            completed_process = subprocess.run(['stty', 'size'], check=True,
+                    encoding='utf-8', stdout=subprocess.PIPE)
+            elements = completed_process.stdout.split()
+            (n_rows, n_cols) = [int(v) for v in elements]
+        else:
+            (n_rows, n_cols) = map(int, stdscr.getmaxyx())
+
         stdscr.clear()
         stdscr.resize(n_rows, n_cols)
         curses.resize_term(n_rows, n_cols)

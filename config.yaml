@@ -1,3 +1,12 @@
+# Options for display and rendering
+user_interface:
+        # Call out to the `stty` program to determine terminal size, instead of
+        # relying on what is reported by the curses library.   In some cases,
+        # the curses library fails to update on SIGWINCH signals.  If the
+        # `plotman interactive` curses interface does not properly adjust when
+        # you resize the terminal window, you can try setting this to True. 
+        use_stty_size: True
+
 # Where to plot and log.
 directories:
         # One directory in which to store all plot job logs (the STDOUT/
