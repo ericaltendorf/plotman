@@ -88,24 +88,24 @@ class Job:
             assert 'create' == args[3]
             args_iter = iter(args[4:])
             for arg in args_iter:
-                val = None if arg in ['-e'] else next(args_iter)
-                if arg == '-k':
+                val = None if arg in {'-e', '--nobitfield'} else next(args_iter)
+                if arg in {'-k', '--size'}:
                     self.k = val
-                elif arg == '-r':
+                elif arg in {'-r', '--num_threads'}:
                     self.r = val
-                elif arg == '-b':
+                elif arg in {'-b', '--buffer'}:
                     self.b = val
-                elif arg == '-u':
+                elif arg in {'-u', '--buckets'}:
                     self.u = val
-                elif arg == '-t':
+                elif arg in {'-t', '--tmp_dir'}:
                     self.tmpdir = val
-                elif arg == '-2':
+                elif arg in {'-2', '--tmp2_dir'}:
                     self.tmp2dir = val
-                elif arg == '-d':
+                elif arg in {'-d', '--final_dir'}:
                     self.dstdir = val
-                elif arg == '-n':
+                elif arg in {'-n', '--num'}:
                     self.n = val
-                elif arg == '-e' or arg == '-f' or arg == '-p':
+                elif arg in {'-e', '--nobitfield', '-f', '--farmer_public_key', '-p', '--pool_public_key'}:
                     pass
                     # TODO: keep track of these
                 else:
