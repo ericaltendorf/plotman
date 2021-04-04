@@ -15,7 +15,8 @@ def abbr_path(path, putative_prefix):
     
 def phase_str(phase_pair):
     (ph, subph) = phase_pair
-    return ((str(ph) if ph else '?') + ':' + (str(subph) if subph else '?'))
+    return ((str(ph) if ph is not None else '?') + ':'
+            + (str(subph) if subph is not None else '?'))
 
 def phases_str(phases, max_num=None):
     '''Take a list of phase-subphase pairs and return them as a compact string'''

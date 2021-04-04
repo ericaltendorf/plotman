@@ -30,6 +30,14 @@ def test_permit_new_job_too_many_jobs(sched_cfg, dir_cfg):
     assert not manager.phases_permit_new_job(
         [ (3, 1), (3, 2), (3, 3) ], '/mnt/tmp/00', sched_cfg, dir_cfg)
 
+def test_permit_new_job_too_many_jobs_zerophase(sched_cfg, dir_cfg):
+    assert not manager.phases_permit_new_job(
+        [ (3, 0), (3, 1), (3, 3) ], '/mnt/tmp/00', sched_cfg, dir_cfg)
+
+def test_permit_new_job_too_many_jobs_nonephase(sched_cfg, dir_cfg):
+    assert manager.phases_permit_new_job(
+        [ (None, None), (3, 1), (3, 3) ], '/mnt/tmp/00', sched_cfg, dir_cfg)
+
 def test_permit_new_job_override_tmp_dir(sched_cfg, dir_cfg):
     assert manager.phases_permit_new_job(
         [ (3, 1), (3, 2), (3, 3) ], '/mnt/tmp/04', sched_cfg, dir_cfg)
