@@ -30,6 +30,8 @@ class PlotmanArgParser:
         parser = argparse.ArgumentParser(description='Chia plotting manager.')
         sp = parser.add_subparsers(dest='cmd')
 
+        p_status = sp.add_parser('version', help='print the version')
+
         p_status = sp.add_parser('status', help='show current plotting status')
  
         p_dirs = sp.add_parser('dirs', help='show directories info')
@@ -86,6 +88,11 @@ def main():
 
     pm_parser = PlotmanArgParser()
     args = pm_parser.parse_args()
+
+    if args.cmd == 'version':
+        import pkg_resources
+        print(pkg_resources.get_distribution('plotman'))
+        exit()
     
     with open('config.yaml', 'r') as ymlfile:
         cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)
