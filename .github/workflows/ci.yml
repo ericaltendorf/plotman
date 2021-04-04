@@ -127,6 +127,10 @@ jobs:
         python -m pip install --upgrade pip setuptools wheel
         pip install tox
 
+    - name: Install Plotman
+      run: |
+        pip install .
+
     - name: Prepare tox environment
       run: |
         tox --notest
