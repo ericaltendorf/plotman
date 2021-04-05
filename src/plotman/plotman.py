@@ -30,7 +30,7 @@ class PlotmanArgParser:
         parser = argparse.ArgumentParser(description='Chia plotting manager.')
         sp = parser.add_subparsers(dest='cmd')
 
-        p_status = sp.add_parser('version', help='print the version')
+        p_version = sp.add_parser('version', help='print the version')
 
         p_status = sp.add_parser('status', help='show current plotting status')
  
