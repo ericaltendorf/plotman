@@ -92,7 +92,7 @@ def main():
     if args.cmd == 'version':
         import pkg_resources
         print(pkg_resources.get_distribution('plotman'))
-        exit()
+        return
     
     with open('config.yaml', 'r') as ymlfile:
         cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)
