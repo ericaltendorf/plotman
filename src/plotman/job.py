@@ -12,7 +12,7 @@ from datetime import datetime
 from enum import Enum, auto
 from subprocess import call
 
-import psutil  # apt-get install python-psutil
+import psutil
 
 
 def job_phases_for_tmpdir(d, all_jobs):
