@@ -12,7 +12,7 @@ from datetime import datetime
 from enum import Enum, auto
 from subprocess import call
 
-import psutil  # apt-get install python-psutil
+import psutil
 
 
 def job_phases_for_tmpdir(d, all_jobs):
@@ -27,7 +27,7 @@ def is_plotting_cmdline(cmdline):
     return (
         len(cmdline) >= 4
         and 'python' in cmdline[0]
-        and 'venv/bin/chia' in cmdline[1]
+        and cmdline[1].endswith('/chia')
         and 'plots' == cmdline[2]
         and 'create' == cmdline[3]
     )
