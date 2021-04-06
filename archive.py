@@ -1,6 +1,7 @@
 from datetime import datetime
 import subprocess
 import argparse
+import contextlib
 import math
 import os
 import psutil
@@ -23,16 +24,18 @@ def compute_priority(phase, gb_free, n_plots):
     priority = 50
 
     # To avoid concurrent IO, we should not touch drives that
-    # are about to receive a new plot
-    if (phase == (3, 4)):
-        priority -= 4
-    elif (phase == (3, 5)):
-        priority -= 8
-    elif (phase == (3, 6)):
-        priority -= 16
-    elif (phase >= (3, 7)):
-        priority -= 32
-    
+    # are about to receive a new plot.  If we don't know the phase,
+    # ignore.
+    if (phase[0] and phase[1]):
+        if (phase == (3, 4)):
+            priority -= 4
+        elif (phase == (3, 5)):
+            priority -= 8
+        elif (phase == (3, 6)):
+            priority -= 16
+        elif (phase >= (3, 7)):
+            priority -= 32
+        
     # If a drive is getting full, we should prioritize it
     if (gb_free < 1000):
         priority += 1 + int((1000 - gb_free) / 100)
@@ -72,11 +75,12 @@ def get_running_archive_jobs(arch_cfg):
     jobs = []
     dest = rsync_dest(arch_cfg, '/')
     for proc in psutil.process_iter(['pid', 'name']):
-        if proc.name() == 'rsync':
-            args = proc.cmdline()
-            for arg in args:
-                if arg.startswith(dest):
-                    jobs.append(proc.pid)
+        with contextlib.suppress(psutil.NoSuchProcess):
+            if proc.name() == 'rsync':
+                args = proc.cmdline()
+                for arg in args:
+                    if arg.startswith(dest):
+                        jobs.append(proc.pid)
     return jobs
 
 def archive(dir_cfg, all_jobs):

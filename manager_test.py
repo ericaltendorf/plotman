@@ -1,82 +1,84 @@
-#!/usr/bin/env python3
-
+# TODO: migrate away from unittest patch
 from unittest.mock import patch
-import unittest
+
+import pytest
 import manager
 import job
 
-class TestManager(unittest.TestCase):
-    def setUp(self):
-        self.sched_cfg = {
-                'tmpdir_stagger_phase_major': 3,
-                'tmpdir_stagger_phase_minor': 0,
-                'tmpdir_max_jobs': 3 }
-        self.dir_cfg = {
-                'tmp_overrides': {
-                        '/mnt/tmp/04': {
-                                'tmpdir_max_jobs': 4 }}}
+@pytest.fixture
+def sched_cfg():
+    return { 'tmpdir_stagger_phase_major': 3,
+             'tmpdir_stagger_phase_minor': 0,
+             'tmpdir_max_jobs': 3 }
 
-    @patch('job.Job')
-    def job_w_tmpdir_phase(self, tmpdir, phase, MockJob):
-        j = MockJob()
-        j.progress.return_value = phase
-        j.tmpdir = tmpdir
-        return j
+@pytest.fixture
+def dir_cfg():
+    return { 'tmp_overrides': {
+                 '/mnt/tmp/04': {
+                     'tmpdir_max_jobs': 4 }}}
 
-    @patch('job.Job')
-    def job_w_dstdir_phase(self, dstdir, phase, MockJob):
-        j = MockJob()
-        j.progress.return_value = phase
-        j.dstdir = dstdir
-        return j
+def test_permit_new_job_post_milestone(sched_cfg, dir_cfg):
+    assert manager.phases_permit_new_job(
+        [ (3, 8), (4, 1) ], '/mnt/tmp/00', sched_cfg, dir_cfg)
 
-    def test_permit_new_job_post_milestone(self):
-        self.assertTrue(manager.phases_permit_new_job(
-            [ (3, 8), (4, 1) ], '/mnt/tmp/00', self.sched_cfg, self.dir_cfg))
+def test_permit_new_job_pre_milestone(sched_cfg, dir_cfg):
+    assert not manager.phases_permit_new_job(
+        [ (2, 3), (4, 1) ], '/mnt/tmp/00', sched_cfg, dir_cfg)
 
-    def test_permit_new_job_pre_milestone(self):
-        self.assertFalse(manager.phases_permit_new_job(
-            [ (2, 3), (4, 1) ], '/mnt/tmp/00', self.sched_cfg, self.dir_cfg))
+def test_permit_new_job_too_many_jobs(sched_cfg, dir_cfg):
+    assert not manager.phases_permit_new_job(
+        [ (3, 1), (3, 2), (3, 3) ], '/mnt/tmp/00', sched_cfg, dir_cfg)
 
-    def test_permit_new_job_too_many_jobs(self):
-        self.assertFalse(manager.phases_permit_new_job(
-            [ (3, 1), (3, 2), (3, 3) ], '/mnt/tmp/00', self.sched_cfg,
-            self.dir_cfg))
+def test_permit_new_job_too_many_jobs_zerophase(sched_cfg, dir_cfg):
+    assert not manager.phases_permit_new_job(
+        [ (3, 0), (3, 1), (3, 3) ], '/mnt/tmp/00', sched_cfg, dir_cfg)
 
-    def test_permit_new_job_override_tmp_dir(self):
-        self.assertTrue(manager.phases_permit_new_job(
-            [ (3, 1), (3, 2), (3, 3) ], '/mnt/tmp/04', self.sched_cfg,
-            self.dir_cfg))
-        self.assertFalse(manager.phases_permit_new_job(
-            [ (3, 1), (3, 2), (3, 3), (3, 6) ], '/mnt/tmp/04', self.sched_cfg,
-            self.dir_cfg))
+def test_permit_new_job_too_many_jobs_nonephase(sched_cfg, dir_cfg):
+    assert manager.phases_permit_new_job(
+        [ (None, None), (3, 1), (3, 3) ], '/mnt/tmp/00', sched_cfg, dir_cfg)
 
-    def test_dstdirs_to_furthest_phase(self):
-        all_jobs = [ self.job_w_dstdir_phase('/plots1', (1, 5)),
-                     self.job_w_dstdir_phase('/plots2', (1, 1)),
-                     self.job_w_dstdir_phase('/plots2', (3, 1)),
-                     self.job_w_dstdir_phase('/plots2', (2, 1)),
-                     self.job_w_dstdir_phase('/plots3', (4, 1)) ]
+def test_permit_new_job_override_tmp_dir(sched_cfg, dir_cfg):
+    assert manager.phases_permit_new_job(
+        [ (3, 1), (3, 2), (3, 3) ], '/mnt/tmp/04', sched_cfg, dir_cfg)
+    assert not manager.phases_permit_new_job(
+        [ (3, 1), (3, 2), (3, 3), (3, 6) ], '/mnt/tmp/04', sched_cfg,
+        dir_cfg)
 
-        self.assertEqual(
-                { '/plots1' : (1, 5),
-                  '/plots2' : (3, 1),
-                  '/plots3' : (4, 1) },
-                manager.dstdirs_to_furthest_phase(all_jobs))
+@patch('job.Job')
+def job_w_tmpdir_phase(tmpdir, phase, MockJob):
+    j = MockJob()
+    j.progress.return_value = phase
+    j.tmpdir = tmpdir
+    return j
 
-    def test_dstdirs_to_youngest_phase(self):
-        all_jobs = [ self.job_w_dstdir_phase('/plots1', (1, 5)),
-                     self.job_w_dstdir_phase('/plots2', (1, 1)),
-                     self.job_w_dstdir_phase('/plots2', (3, 1)),
-                     self.job_w_dstdir_phase('/plots2', (2, 1)),
-                     self.job_w_dstdir_phase('/plots3', (4, 1)) ]
+@patch('job.Job')
+def job_w_dstdir_phase(dstdir, phase, MockJob):
+    j = MockJob()
+    j.progress.return_value = phase
+    j.dstdir = dstdir
+    return j
 
-        self.assertEqual(
-                { '/plots1' : (1, 5),
-                  '/plots2' : (1, 1),
-                  '/plots3' : (4, 1) },
-                manager.dstdirs_to_youngest_phase(all_jobs))
+def test_dstdirs_to_furthest_phase():
+    all_jobs = [ job_w_dstdir_phase('/plots1', (1, 5)),
+                 job_w_dstdir_phase('/plots2', (1, 1)),
+                 job_w_dstdir_phase('/plots2', (3, 1)),
+                 job_w_dstdir_phase('/plots2', (2, 1)),
+                 job_w_dstdir_phase('/plots3', (4, 1)) ]
 
+    assert (manager.dstdirs_to_furthest_phase(all_jobs) ==
+            { '/plots1' : (1, 5),
+              '/plots2' : (3, 1),
+              '/plots3' : (4, 1) } )
+           
 
-if __name__ == '__main__':
-    unittest.main()
+def test_dstdirs_to_youngest_phase():
+    all_jobs = [ job_w_dstdir_phase('/plots1', (1, 5)),
+                 job_w_dstdir_phase('/plots2', (1, 1)),
+                 job_w_dstdir_phase('/plots2', (3, 1)),
+                 job_w_dstdir_phase('/plots2', (2, 1)),
+                 job_w_dstdir_phase('/plots3', (4, 1)) ]
+
+    assert (manager.dstdirs_to_youngest_phase(all_jobs) ==
+            { '/plots1' : (1, 5),
+              '/plots2' : (1, 1),
+              '/plots3' : (4, 1) } )

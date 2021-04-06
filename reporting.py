@@ -13,18 +13,23 @@ def abbr_path(path, putative_prefix):
         return os.path.relpath(path, putative_prefix)
     else:
         return path
+    
+def phase_str(phase_pair):
+    (ph, subph) = phase_pair
+    return ((str(ph) if ph is not None else '?') + ':'
+            + (str(subph) if subph is not None else '?'))
 
 def phases_str(phases, max_num=None):
     '''Take a list of phase-subphase pairs and return them as a compact string'''
     if not max_num or len(phases) <= max_num:
-        return ' '.join(['%d:%d' % pair for pair in phases])
+        return ' '.join([phase_str(pair) for pair in phases])
     else:
         n_first = math.floor(max_num / 2)
         n_last = max_num - n_first
         n_elided = len(phases) - (n_first + n_last)
-        first = ' '.join(['%d:%d' % pair for pair in phases[:n_first]])
+        first = ' '.join([phase_str(pair) for pair in phases[:n_first]])
         elided = " [+%d] " % n_elided
-        last = ' '.join(['%d:%d' % pair for pair in phases[n_first + n_elided:]])
+        last = ' '.join([phase_str(pair) for pair in phases[n_first + n_elided:]])
         return first + elided + last
 
 def n_at_ph(jobs, ph):
@@ -56,7 +61,6 @@ def job_viz(jobs):
     result += '4'
     result += n_to_char(n_at_ph(jobs, (4, 0)))
     return result
-    
 
 def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
     '''height, if provided, will limit the number of rows in the table,
@@ -97,7 +101,7 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
                     abbr_path(j.tmpdir, tmp_prefix),
                     abbr_path(j.dstdir, dst_prefix),
                     plot_util.time_format(j.get_time_wall()),
-                    '%d:%d' % j.progress(),
+                    phase_str(j.progress()),
                     plot_util.human_format(j.get_tmp_usage(), 0),
                     j.proc.pid,
                     j.get_run_status(),
