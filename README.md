@@ -171,7 +171,7 @@ Plotman will always look in the current directory for the `config.yaml` file
 
 ## Installation
 
-Installation for Ubuntu 20.04:
+Installation for Linux:
 
 1. Plotman assumes that a functioning [Chia](https://github.com/Chia-Network/chia-blockchain)
    installation is present on the system. Activate your `chia` environment by typing
