@@ -119,8 +119,7 @@ def main():
     # Analysis of completed jobs
     #
     elif args.cmd == 'analyze':
-        analyzer = analyzer.LogAnalyzer()
-        analyzer.analyze(args.logfile, args.bytmp, args.bybitfield)
+        analyzer.LogAnalyzer.analyze(args.logfile, args.bytmp, args.bybitfield)
 
     else:
         # print('...scanning process tables')

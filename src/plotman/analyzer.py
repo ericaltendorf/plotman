@@ -9,7 +9,8 @@ from plotman import plot_util
 
 
 class LogAnalyzer:
-    def analyze(self, logfilenames, bytmp, bybitfield):
+    @staticmethod
+    def analyze(logfilenames, bytmp, bybitfield):
         data = {}
         for logfilename in logfilenames:
             with open(logfilename, 'r') as f:
