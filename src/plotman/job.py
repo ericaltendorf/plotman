@@ -1,18 +1,19 @@
 # TODO do we use all these?
-from datetime import datetime
-from enum import Enum, auto
-from subprocess import call
 import argparse
-
 import contextlib
 import logging
 import os
+import random
 import re
+import sys
 import threading
 import time
-import psutil      # apt-get install python-psutil
-import random
-import sys
+from datetime import datetime
+from enum import Enum, auto
+from subprocess import call
+
+import psutil
+
 
 def job_phases_for_tmpdir(d, all_jobs):
     '''Return phase 2-tuples for jobs running on tmpdir d'''
@@ -26,7 +27,7 @@ def is_plotting_cmdline(cmdline):
     return (
         len(cmdline) >= 4
         and 'python' in cmdline[0]
-        and 'venv/bin/chia' in cmdline[1]
+        and cmdline[1].endswith('/chia')
         and 'plots' == cmdline[2]
         and 'create' == cmdline[3]
     )
