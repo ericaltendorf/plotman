@@ -49,10 +49,8 @@ def cmdline_argfix(cmdline):
             yield i
 
 def parse_chia_plot_time(s):
-    # remove space padding on the day and drop the redundant day of the week
-    s = ' '.join(s.split()[1:])
-
-    return pendulum.from_format(s, 'MMM D HH:mm:ss YYYY', locale='en', tz=None)
+    # This will grow to try ISO8601 as well for when Chia logs that way
+    return pendulum.from_format(s, 'ddd MMM DD HH:mm:ss YYYY', locale='en', tz=None)
 
 # TODO: be more principled and explicit about what we cache vs. what we look up
 # dynamically from the logfile
