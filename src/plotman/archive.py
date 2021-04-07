@@ -54,6 +54,9 @@ def get_archdir_freebytes(arch_cfg):
     with subprocess.Popen(df_cmd, shell=True, stdout=subprocess.PIPE) as proc:
         for line in proc.stdout.readlines():
             fields = line.split()
+            if fields[3] == b'-':
+                # not actually mounted
+                continue
             freebytes = int(fields[3][:-1]) * 1024  # Strip the final 'K'
             archdir = (fields[5]).decode('ascii')
             archdir_freebytes[archdir] = freebytes
