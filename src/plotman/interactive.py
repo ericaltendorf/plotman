@@ -5,12 +5,12 @@ import math
 import os
 import subprocess
 import threading
+
 import yaml
 
-from job import Job
-import archive
-import manager
-import reporting
+from plotman import archive, manager, reporting
+from plotman.job import Job
+
 
 class Log:
     def __init__(self):

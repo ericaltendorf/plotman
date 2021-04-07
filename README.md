@@ -166,15 +166,25 @@ mode or the command line mode.
 
 There are many bugs and TODOs.
 
+Plotman will always look in the current directory for the `config.yaml` file
+([see also](https://github.com/ericaltendorf/plotman/pull/61#issuecomment-812967363)).
+
 ## Installation
 
-This program requires `psutil`, `pyfakefs`, `pyyaml` and `texttable`.
+Installation for Linux:
 
-Installation for Ubuntu 20.04:
+1. Plotman assumes that a functioning [Chia](https://github.com/Chia-Network/chia-blockchain)
+   installation is present on the system. Activate your `chia` environment by typing
+   `source /path/to/your/chia/install/activate`.
+2. Then, install Plotman using the following command:
 
-```
-# Install Python package system
-sudo apt-get install python3-pip
+       pip install git+https://github.com/ericaltendorf/plotman@development
+3. Plotman will look for `config.yaml` in your current working directory when you run it.
+   You can find [an example configuration file](./config.yaml) in the project source that can be used
+   as a starting point.
+5. That's it! You can now run Plotman by typing `plotman version` to verify its version.
+   Run `plotman --help` to learn about the available commands.
 
-python3 -m pip install psutil pyfakefs pyyaml texttable
-```
+### Development note:
+
+If you are forking Plotman, simply replace the installation step with `pip install --editable .[dev]` from the project root directory to install *your* version of plotman with test and development extras.

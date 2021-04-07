@@ -2,9 +2,11 @@ import os
 import re
 import statistics
 import sys
+
 import texttable as tt
 
-import plot_util
+from plotman import plot_util
+
 
 class LogAnalyzer:
     def analyze(self, logfilenames, bytmp, bybitfield):

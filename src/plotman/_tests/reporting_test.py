@@ -1,9 +1,9 @@
 # TODO: migrate away from unittest patch
+import os
 from unittest.mock import patch
 
-import os
+from plotman import reporting
 
-import reporting
 
 def test_phases_str_basic():
     assert(reporting.phases_str([(1,2), (2,3), (3,4), (4,0)]) ==
@@ -24,7 +24,7 @@ def test_phases_str_none():
 def test_job_viz_empty():
     assert(reporting.job_viz([]) == '1        2        3       4 ')
 
-@patch('job.Job')
+@patch('plotman.job.Job')
 def job_w_phase(ph, MockJob):
     j = MockJob()
     j.progress.return_value = ph
