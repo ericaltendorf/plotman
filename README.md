@@ -171,18 +171,20 @@ Plotman will always look in the current directory for the `config.yaml` file
 
 ## Installation
 
-Installation for Ubuntu 20.04:
+Installation for Linux:
 
 1. Plotman assumes that a functioning [Chia](https://github.com/Chia-Network/chia-blockchain)
    installation is present on the system. Activate your `chia` environment by typing
-   `. /path/to/your/chia/install/activate`.
+   `source /path/to/your/chia/install/activate`.
 2. Then, install Plotman using the following command:
 
-       pip install git+https://github.com/ericaltendorf/plotman.git@development
-
-3. That's it! You can now run Plotman by typing `plotman version` to verify its version.
+       pip install git+https://github.com/ericaltendorf/plotman@development
+3. Plotman will look for `config.yaml` in your current working directory when you run it.
+   You can find [an example configuration file](./config.yaml) in the project source that can be used
+   as a starting point.
+5. That's it! You can now run Plotman by typing `plotman version` to verify its version.
    Run `plotman --help` to learn about the available commands.
 
 ### Development note:
 
-If you are forking Plotman, simply replace the installation step with `pip install .[dev]` from the project root directory to install *your* version of plotman with test and development extras.
+If you are forking Plotman, simply replace the installation step with `pip install --editable .[dev]` from the project root directory to install *your* version of plotman with test and development extras.
