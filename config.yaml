@@ -87,7 +87,6 @@ directories:
                 #   index: 0
 
 
-
 # Plotting scheduling parameters
 scheduling:
         # Run a job on a particular temp dir only if the number of existing jobs
