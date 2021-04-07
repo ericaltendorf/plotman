@@ -81,9 +81,6 @@ jobs:
           - name: Linux
             runs-on: ubuntu-latest
         python:
-          - name: CPython 3.6
-            tox: py36
-            action: 3.6
           - name: CPython 3.7
             tox: py37
             action: 3.7
@@ -93,9 +90,6 @@ jobs:
           - name: CPython 3.9
             tox: py39
             action: 3.9
-          - name: PyPy 3.6
-            tox: pypy36
-            action: pypy-3.6
           - name: PyPy 3.7
             tox: pypy37
             action: pypy-3.7
