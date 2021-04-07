@@ -102,6 +102,17 @@ jobs:
         task:
           - name: Test
             tox: test
+        include:
+          - task:
+              name: Check
+              tox: check
+            os:
+              name: Linux
+              runs-on: ubuntu-latest
+            python:
+              name: CPython 3.8
+              action: 3.8
+
 
     env:
       TOXENV: ${{ matrix.task.tox }}${{ fromJSON('["", "-"]')[matrix.python.tox != null] }}${{ matrix.python.tox }}
