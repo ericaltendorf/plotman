@@ -56,7 +56,7 @@ def get_archdir_freebytes(arch_cfg):
     elif arch_mode == 'local':
         df_cmd = ('df -BK | grep " %s/"' % arch_cfg['rsyncd_path'] )
     else:
-        raise KeyError(f'Archive mode must be "remote" or "local" ("{arch_mode}" given). Please inspect config.yaml.')
+        raise KeyError(f'Archive mode must be "remote" or "local" ({arch_mode!r} given). Please inspect config.yaml.')
     with subprocess.Popen(df_cmd, shell=True, stdout=subprocess.PIPE) as proc:
         for line in proc.stdout.readlines():
             fields = line.split()
