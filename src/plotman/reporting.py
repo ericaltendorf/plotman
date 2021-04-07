@@ -1,12 +1,11 @@
-import texttable as tt   # from somewhere?
-import os
-import psutil
-
-import archive
-import job
-import manager
 import math
-import plot_util
+import os
+
+import psutil
+import texttable as tt  # from somewhere?
+
+from plotman import archive, job, manager, plot_util
+
 
 def abbr_path(path, putative_prefix):
     if putative_prefix and path.startswith(putative_prefix):
@@ -72,7 +71,7 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
         abbreviate_jobs_list = True
 
     if abbreviate_jobs_list:
-        n_rows = height - 2  # One for header, one for elipsis
+        n_rows = height - 2  # Minus one for header, one for ellipsis
         n_begin_rows = int(n_rows / 2)
         n_end_rows = n_rows - n_begin_rows
 
@@ -195,5 +194,4 @@ def dirs_report(jobs, dir_cfg, sched_cfg, width):
             dst_dir_report(jobs, dstdirs, width) + '\n' +
             'archive dirs free space:\n' +
             arch_dir_report(archive.get_archdir_freebytes(arch_cfg), width) + '\n')
-
 

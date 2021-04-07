@@ -1,17 +1,17 @@
-from datetime import datetime
-import subprocess
 import argparse
+import contextlib
 import math
 import os
-import psutil
-import re
 import random
+import re
+import subprocess
 import sys
+from datetime import datetime
 
+import psutil
 import texttable as tt
 
-import manager
-import plot_util
+from plotman import manager, plot_util
 
 # TODO : write-protect and delete-protect archived plots
 
@@ -54,6 +54,9 @@ def get_archdir_freebytes(arch_cfg):
     with subprocess.Popen(df_cmd, shell=True, stdout=subprocess.PIPE) as proc:
         for line in proc.stdout.readlines():
             fields = line.split()
+            if fields[3] == b'-':
+                # not actually mounted
+                continue
             freebytes = int(fields[3][:-1]) * 1024  # Strip the final 'K'
             archdir = (fields[5]).decode('ascii')
             archdir_freebytes[archdir] = freebytes
