@@ -11,10 +11,8 @@ import time
 from datetime import datetime
 from subprocess import call
 
-import yaml
-
 # Plotman libraries
-from plotman import analyzer, archive, interactive, manager, plot_util, reporting
+from plotman import analyzer, archive, configuration, interactive, manager, plot_util, reporting
 from plotman.job import Job
 
 
@@ -93,9 +91,9 @@ def main():
         import pkg_resources
         print(pkg_resources.get_distribution('plotman'))
         return
-    
+
     with open('config.yaml', 'r') as ymlfile:
-        cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)
+        cfg = configuration.load(ymlfile)
     dir_cfg = cfg['directories']
     sched_cfg = cfg['scheduling']
     plotting_cfg = cfg['plotting']
