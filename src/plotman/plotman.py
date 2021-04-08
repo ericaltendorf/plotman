@@ -93,7 +93,7 @@ def main():
         return
     
     with open('config.yaml', 'r') as ymlfile:
-        cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)
+        cfg = yaml.load(ymlfile, Loader=yaml.SafeLoader)
     dir_cfg = cfg['directories']
     sched_cfg = cfg['scheduling']
     plotting_cfg = cfg['plotting']
