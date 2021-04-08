@@ -92,7 +92,7 @@ def main():
         print(pkg_resources.get_distribution('plotman'))
         return
 
-    with open('config.yaml', 'r') as ymlfile:
+    with open(configuration.get_path(), 'r') as ymlfile:
         cfg = configuration.load(ymlfile)
     dir_cfg = cfg['directories']
     sched_cfg = cfg['scheduling']
