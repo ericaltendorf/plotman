@@ -326,7 +326,11 @@ def curses_main(stdscr):
         log_win.noutrefresh()
         curses.doupdate()
 
-        key = stdscr.getch()
+        try:
+            key = stdscr.getch()
+        except KeyboardInterrupt:
+            key = ord('q')
+
         if key == curses.KEY_UP:
             log.shift_slice(-1)
             pressed_key = 'up'
