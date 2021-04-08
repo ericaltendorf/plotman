@@ -1,18 +1,19 @@
 # TODO do we use all these?
-from datetime import datetime
-from enum import Enum, auto
-from subprocess import call
 import argparse
-
 import contextlib
 import logging
 import os
+import random
 import re
+import sys
 import threading
 import time
-import psutil      # apt-get install python-psutil
-import random
-import sys
+from datetime import datetime
+from enum import Enum, auto
+from subprocess import call
+
+import psutil
+
 
 def job_phases_for_tmpdir(d, all_jobs):
     '''Return phase 2-tuples for jobs running on tmpdir d'''
@@ -79,7 +80,7 @@ class Job:
         for proc in psutil.process_iter(['pid', 'cmdline']):
             # Ignore processes which most likely have terminated between the time of
             # iteration and data access.
-            with contextlib.suppress(psutil.NoSuchProcess):
+            with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied):
                 if is_plotting_cmdline(proc.cmdline()):
                     if proc.pid in cached_jobs_by_pid.keys():
                         jobs.append(cached_jobs_by_pid[proc.pid])  # Copy from cache

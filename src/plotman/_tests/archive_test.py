@@ -1,5 +1,5 @@
-import archive
-import manager
+from plotman import archive, manager
+
 
 def test_compute_priority():
     assert (archive.compute_priority( (3, 1), 1000, 10) >
