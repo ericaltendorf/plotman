@@ -303,7 +303,10 @@ class Job:
 
     def get_time_iowait(self):
         cpu_times = self.proc.cpu_times()
-        iowait = getattr(cpu_times, 'iowait', -1)
+        iowait = getattr(cpu_times, 'iowait', None)
+        if iowait is None:
+            return None
+
         return int(iowait)
 
     def suspend(self, reason=''):
