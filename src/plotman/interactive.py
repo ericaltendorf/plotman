@@ -66,7 +66,7 @@ def curses_main(stdscr):
     # TODO: figure out how to pass the configs in from plotman.py instead of
     # duplicating the code here.
     with open('config.yaml', 'r') as ymlfile:
-        cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)
+        cfg = yaml.load(ymlfile, Loader=yaml.SafeLoader)
     ui_cfg = cfg['user_interface']
     dir_cfg = cfg['directories']
     sched_cfg = cfg['scheduling']
@@ -328,7 +328,11 @@ def curses_main(stdscr):
         log_win.noutrefresh()
         curses.doupdate()
 
-        key = stdscr.getch()
+        try:
+            key = stdscr.getch()
+        except KeyboardInterrupt:
+            key = ord('q')
+
         if key == curses.KEY_UP:
             log.shift_slice(-1)
             pressed_key = 'up'
