@@ -12,6 +12,7 @@ from datetime import datetime
 from enum import Enum, auto
 from subprocess import call
 
+import pendulum
 import psutil
 
 
@@ -46,6 +47,10 @@ def cmdline_argfix(cmdline):
             yield i[2:]  # value
         else:
             yield i
+
+def parse_chia_plot_time(s):
+    # This will grow to try ISO8601 as well for when Chia logs that way
+    return pendulum.from_format(s, 'ddd MMM DD HH:mm:ss YYYY', locale='en', tz=None)
 
 # TODO: be more principled and explicit about what we cache vs. what we look up
 # dynamically from the logfile
@@ -173,7 +178,7 @@ class Job:
                     m = re.match(r'^Starting phase 1/4:.*\.\.\. (.*)', line)
                     if m:
                         # Mon Nov  2 08:39:53 2020
-                        self.start_time = datetime.strptime(m.group(1), '%a %b  %d %H:%M:%S %Y')
+                        self.start_time = parse_chia_plot_time(m.group(1))
                         found_log = True
                         break  # Stop reading lines in file
 
