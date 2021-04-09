@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import argparse
 import os
 import random
@@ -95,7 +93,7 @@ def main():
         return
     
     with open('config.yaml', 'r') as ymlfile:
-        cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)
+        cfg = yaml.load(ymlfile, Loader=yaml.SafeLoader)
     dir_cfg = cfg['directories']
     sched_cfg = cfg['scheduling']
     plotting_cfg = cfg['plotting']
@@ -119,8 +117,7 @@ def main():
     # Analysis of completed jobs
     #
     elif args.cmd == 'analyze':
-        analyzer.LogAnalyzer.analyze(args.logfile, args.bytmp, args.bybitfield)
-
+        analyzer.analyze(args.logfile, args.bytmp, args.bybitfield)
     else:
         # print('...scanning process tables')
         jobs = Job.get_running_jobs(dir_cfg['log'])
