@@ -117,9 +117,7 @@ def main():
     # Analysis of completed jobs
     #
     elif args.cmd == 'analyze':
-        log_analyzer = analyzer.LogAnalyzer()
-        log_analyzer.analyze(args.logfile, args.bytmp, args.bybitfield)
-
+        analyzer.analyze(args.logfile, args.bytmp, args.bybitfield)
     else:
         # print('...scanning process tables')
         jobs = Job.get_running_jobs(dir_cfg['log'])
