@@ -21,6 +21,8 @@ def human_format(num, precision):
             (num, ['', 'K', 'M', 'G', 'T', 'P'][magnitude]))
 
 def time_format(sec):
+    if sec is None:
+        return '-'
     if sec < 60:
         return '%ds' % sec
     else:

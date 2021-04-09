@@ -6,9 +6,7 @@ import os
 import subprocess
 import threading
 
-import yaml
-
-from plotman import archive, manager, reporting
+from plotman import archive, configuration, manager, reporting
 from plotman.job import Job
 
 
@@ -65,8 +63,8 @@ def archiving_status_msg(configured, active, status):
 def curses_main(stdscr):
     # TODO: figure out how to pass the configs in from plotman.py instead of
     # duplicating the code here.
-    with open('config.yaml', 'r') as ymlfile:
-        cfg = yaml.load(ymlfile, Loader=yaml.SafeLoader)
+    with open(configuration.get_path(), 'r') as ymlfile:
+        cfg = configuration.load(ymlfile)
     ui_cfg = cfg['user_interface']
     dir_cfg = cfg['directories']
     sched_cfg = cfg['scheduling']
