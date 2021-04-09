@@ -104,7 +104,7 @@ class Job:
             assert 'create' == args[3]
             args_iter = iter(cmdline_argfix(args[4:]))
             for arg in args_iter:
-                val = None if arg in ['-e'] else next(args_iter)
+                val = None if arg in ['-e', '--override-k'] else next(args_iter)
                 if arg == '-k':
                     self.k = val
                 elif arg == '-r':
@@ -124,6 +124,8 @@ class Job:
                 elif arg == '-e' or arg == '-f' or arg == '-p':
                     pass
                     # TODO: keep track of these
+                elif arg == '--override-k':
+                    pass
                 else:
                     print('Warning: unrecognized args: %s %s' % (arg, val))
 
