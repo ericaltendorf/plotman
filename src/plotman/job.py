@@ -66,6 +66,7 @@ class Job:
     job_id = 0
     plot_id = '--------'
     proc = None   # will get a psutil.Process
+    help = False
 
     # These are dynamic, cached, and need to be udpated periodically
     phase = (None, None)   # Phase/subphase
@@ -85,7 +86,9 @@ class Job:
                     if proc.pid in cached_jobs_by_pid.keys():
                         jobs.append(cached_jobs_by_pid[proc.pid])  # Copy from cache
                     else:
-                        jobs.append(Job(proc, logroot))
+                        job = Job(proc, logroot)
+                        if not job.help:
+                            jobs.append(job)
 
         return jobs
 
@@ -104,7 +107,7 @@ class Job:
             assert 'create' == args[3]
             args_iter = iter(cmdline_argfix(args[4:]))
             for arg in args_iter:
-                val = None if arg in ['-e'] else next(args_iter)
+                val = None if arg in ['-e', '-h', '--help', '--override-k'] else next(args_iter)
                 if arg == '-k':
                     self.k = val
                 elif arg == '-r':
@@ -121,9 +124,13 @@ class Job:
                     self.dstdir = val
                 elif arg == '-n':
                     self.n = val
+                elif arg in {'-h', '--help'}:
+                    self.help = True
                 elif arg == '-e' or arg == '-f' or arg == '-p':
                     pass
                     # TODO: keep track of these
+                elif arg == '--override-k':
+                    pass
                 else:
                     print('Warning: unrecognized args: %s %s' % (arg, val))
 
@@ -302,7 +309,12 @@ class Job:
         return int(self.proc.cpu_times().system)
 
     def get_time_iowait(self):
-        return int(self.proc.cpu_times().iowait)
+        cpu_times = self.proc.cpu_times()
+        iowait = getattr(cpu_times, 'iowait', None)
+        if iowait is None:
+            return None
+
+        return int(iowait)
 
     def suspend(self, reason=''):
         self.proc.suspend()
