@@ -5,7 +5,10 @@ import random
 import re
 import readline  # For nice CLI
 import subprocess
+import shutil
 import sys
+import sysconfig
+import textwrap
 import threading
 import time
 from datetime import datetime
@@ -22,6 +25,51 @@ MIN = 60    # Seconds
 HR = 3600   # Seconds
 
 MAX_AGE = 1000_000_000   # Arbitrary large number of seconds
+
+SCRIPTS_PATH = sysconfig.get_path('scripts')
+
+class ChiaExecutable:
+    def __init__(self, command, path_entry=None):
+        self.command = command
+        self.path_entry = path_entry
+
+    def modified_path(self, path=None):
+        if path is None:
+            path = os.environ['PATH']
+        if self.path_entry is None:
+            return path
+        if len(path) > 0:
+            return os.pathsep.join([self.path_entry, path])
+        return self.path_entry
+
+    def modified_environment(self, environment=None):
+        if environment is None:
+            environment = os.environ
+        return {
+            **environment,
+            'PATH': self.modified_path(path=environment['PATH']),
+        }
+
+class ChiaNotFoundError(Exception):
+    pass
+
+def select_chia_executable():
+    from_path = shutil.which('chia')
+    if from_path is not None:
+        return ChiaExecutable(command=from_path, path_entry=None)
+    in_scripts = os.path.join(SCRIPTS_PATH, 'chia')
+    if sys.platform == 'win32':
+        in_scripts += '.exe'
+    if os.path.isfile(in_scripts):
+        return ChiaExecutable(command=in_scripts, path_entry=SCRIPTS_PATH)
+    message = textwrap.dedent(f'''\
+    'chia' executable not found in PATH or scripts directory
+        PATH: {os.environ['PATH']}
+        scripts: {SCRIPTS_PATH}
+    ''')
+    raise ChiaNotFoundError(message)
+
+CHIA_EXECUTABLE = select_chia_executable()
 
 def dstdirs_to_furthest_phase(all_jobs):
     '''Return a map from dst dir to a phase tuple for the most progressed job
@@ -112,7 +160,8 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
             logfile = os.path.join(dir_cfg['log'],
                     datetime.now().strftime('%Y-%m-%d-%H:%M:%S.log'))
 
-            plot_args = ['chia', 'plots', 'create',
+            plot_args = [CHIA_EXECUTABLE.command, 'plots', 'create',
+                    '--override-k',
                     '-k', str(plotting_cfg['k']),
                     '-r', str(plotting_cfg['n_threads']),
                     '-u', str(plotting_cfg['n_buckets']),
@@ -135,6 +184,7 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
 
             # start_new_sessions to make the job independent of this controlling tty.
             p = subprocess.Popen(plot_args,
+                env=CHIA_EXECUTABLE.modified_environment(),
                 stdout=open(logfile, 'w'),
                 stderr=subprocess.STDOUT,
                 start_new_session=True)
