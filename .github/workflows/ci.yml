@@ -60,7 +60,6 @@ jobs:
         # build the wheel from the sdist
         python -m build --wheel --outdir ../../dist/ .
         cd ../../
-        pwd
 
         twine check dist/*
 
@@ -141,6 +140,7 @@ jobs:
 
     - name: Prepare tox environment
       run: |
+        pwd
         tox --notest --installpkg dist/*.whl
 
     - name: Runner info
