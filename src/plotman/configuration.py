@@ -9,9 +9,13 @@ def get_validated_configs():
     """Return a validated instance of the PlotmanConfig dataclass with data from config.yaml."""
     config_path = "config.yaml"
     schema = desert.schema(PlotmanConfig)
-    with open(config_path, "r") as file:
-        config_file = yaml.load(file, Loader=yaml.SafeLoader)
-        return schema.load(config_file)
+    try:
+        with open(config_path, "r") as file:
+            config_file = yaml.load(file, Loader=yaml.SafeLoader)
+            return schema.load(config_file)
+    except FileNotFoundError:
+        print("No config.yaml file present in current working directory")
+
 
 # Data models used to deserializing/formatting config.yaml files.
 
