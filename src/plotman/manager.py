@@ -161,7 +161,6 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
                     datetime.now().strftime('%Y-%m-%d-%H:%M:%S.log'))
 
             plot_args = [CHIA_EXECUTABLE.command, 'plots', 'create',
-                    '--override-k',
                     '-k', str(plotting_cfg['k']),
                     '-r', str(plotting_cfg['n_threads']),
                     '-u', str(plotting_cfg['n_buckets']),
@@ -200,4 +199,3 @@ def select_jobs_by_partial_id(jobs, partial_id):
         if j.plot_id.startswith(partial_id):
             selected.append(j)
     return selected
-
