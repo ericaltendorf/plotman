@@ -127,6 +127,12 @@ jobs:
       with:
         python-version: ${{ matrix.python.action }}
 
+    - name: Generate extra locales
+      run: |
+        sudo apt-get update
+        sudo apt-get install --yes tzdata locales
+        sudo locale-gen en_US.UTF-8 de_DE.UTF-8
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip setuptools wheel

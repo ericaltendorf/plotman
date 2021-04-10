@@ -5,7 +5,6 @@ import desert
 import yaml
 
 
-
 def get_validated_configs():
     """Return a validated instance of the PlotmanConfig dataclass with data from config.yaml."""
     config_path = "config.yaml"
