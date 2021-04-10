@@ -6,9 +6,7 @@ import os
 import subprocess
 import threading
 
-import yaml
-
-from plotman import archive, manager, reporting
+from plotman import archive, configuration, manager, reporting
 from plotman.job import Job
 
 
@@ -63,25 +61,18 @@ def archiving_status_msg(configured, active, status):
         return '(not configured)'
 
 def curses_main(stdscr):
-    # TODO: figure out how to pass the configs in from plotman.py instead of
-    # duplicating the code here.
-    with open('config.yaml', 'r') as ymlfile:
-        cfg = yaml.load(ymlfile, Loader=yaml.SafeLoader)
-    ui_cfg = cfg['user_interface']
-    dir_cfg = cfg['directories']
-    sched_cfg = cfg['scheduling']
-    plotting_cfg = cfg['plotting']
-
     log = Log()
 
+    cfg = configuration.get_validated_configs()
+
     plotting_active = True
-    archiving_configured = 'archive' in dir_cfg
+    archiving_configured = cfg.directories.archive is not None
     archiving_active = archiving_configured
 
     plotting_status = '<startup>'    # todo rename these msg?
     archiving_status = '<startup>'
 
-    refresh_period = int(sched_cfg['polling_time_s'])
+    refresh_period = int(cfg.scheduling.polling_time_s)
 
     stdscr.nodelay(True)  # make getch() non-blocking
     stdscr.timeout(2000)
@@ -92,7 +83,7 @@ def curses_main(stdscr):
     jobs_win = curses.newwin(1, 1, 1, 0)
     dirs_win = curses.newwin(1, 1, 1, 0)
 
-    jobs = Job.get_running_jobs(dir_cfg['log'])
+    jobs = Job.get_running_jobs(cfg.directories.log)
     last_refresh = None
 
     pressed_key = ''   # For debugging
@@ -113,19 +104,20 @@ def curses_main(stdscr):
             do_full_refresh = elapsed >= refresh_period
 
         if not do_full_refresh:
-            jobs = Job.get_running_jobs(dir_cfg['log'], cached_jobs=jobs)
+            jobs = Job.get_running_jobs(cfg.directories.log, cached_jobs=jobs)
 
         else:
             last_refresh = datetime.datetime.now()
-            jobs = Job.get_running_jobs(dir_cfg['log'])
+            jobs = Job.get_running_jobs(cfg.directories.log)
 
             if plotting_active:
                 (started, msg) = manager.maybe_start_new_plot(
-                        dir_cfg, sched_cfg, plotting_cfg)
+                    cfg.directories, cfg.scheduling, cfg.plotting
+                )
                 if (started):
                     log.log(msg)
                     plotting_status = '<just started job>'
-                    jobs = Job.get_running_jobs(dir_cfg['log'], cached_jobs=jobs)
+                    jobs = Job.get_running_jobs(cfg.directories.log, cached_jobs=jobs)
                 else:
                     plotting_status = msg
 
@@ -133,11 +125,11 @@ def curses_main(stdscr):
                 if archiving_active:
                     # Look for running archive jobs.  Be robust to finding more than one
                     # even though the scheduler should only run one at a time.
-                    arch_jobs = archive.get_running_archive_jobs(dir_cfg['archive'])
+                    arch_jobs = archive.get_running_archive_jobs(cfg.directories.archive)
                     if arch_jobs:
                         archiving_status = 'pid: ' + ', '.join(map(str, arch_jobs))
                     else:
-                        (should_start, status_or_cmd) = archive.archive(dir_cfg, jobs)
+                        (should_start, status_or_cmd) = archive.archive(cfg.directories, jobs)
                         if not should_start:
                             archiving_status = status_or_cmd
                         else:
@@ -151,7 +143,7 @@ def curses_main(stdscr):
                                     stderr=subprocess.STDOUT,
                                     start_new_session=True)
 
-                archdir_freebytes = archive.get_archdir_freebytes(dir_cfg['archive'])
+                archdir_freebytes = archive.get_archdir_freebytes(cfg.directories)
 
 
         # Get terminal size.  Recommended method is stdscr.getmaxyx(), but this
@@ -164,9 +156,10 @@ def curses_main(stdscr):
         # TODO: also try shutil.get_terminal_size()
         n_rows: int
         n_cols: int
-        if 'use_stty_size' in ui_cfg and ui_cfg['use_stty_size']:
-            completed_process = subprocess.run(['stty', 'size'], check=True,
-                    encoding='utf-8', stdout=subprocess.PIPE)
+        if cfg.user_interface.use_stty_size:
+            completed_process = subprocess.run(
+                ['stty', 'size'], check=True, encoding='utf-8', stdout=subprocess.PIPE
+            )
             elements = completed_process.stdout.split()
             (n_rows, n_cols) = [int(v) for v in elements]
         else:
@@ -181,21 +174,21 @@ def curses_main(stdscr):
         #
 
         # Directory prefixes, for abbreviation
-        tmp_prefix = os.path.commonpath(dir_cfg['tmp'])
-        dst_prefix = os.path.commonpath(dir_cfg['dst'])
+        tmp_prefix = os.path.commonpath(cfg.directories.dst)
+        dst_prefix = os.path.commonpath(cfg.directories.dst)
         if archiving_configured:
-            arch_prefix = dir_cfg['archive']['rsyncd_path']
+            arch_prefix = cfg.directories.archive.rsyncd_path
 
-        n_tmpdirs = len(dir_cfg['tmp']) 
+        n_tmpdirs = len(cfg.directories.tmp)
         n_tmpdirs_half = int(n_tmpdirs / 2)
 
         # Directory reports.
         tmp_report_1 = reporting.tmp_dir_report(
-            jobs, dir_cfg, sched_cfg, n_cols, 0, n_tmpdirs_half, tmp_prefix)
+            jobs, cfg.directories, cfg.scheduling, n_cols, 0, n_tmpdirs_half, tmp_prefix)
         tmp_report_2 = reporting.tmp_dir_report(
-            jobs, dir_cfg, sched_cfg, n_cols, n_tmpdirs_half, n_tmpdirs, tmp_prefix)
+            jobs, cfg.directories, cfg.scheduling, n_cols, n_tmpdirs_half, n_tmpdirs, tmp_prefix)
         dst_report = reporting.dst_dir_report(
-            jobs, dir_cfg['dst'], n_cols, dst_prefix)
+            jobs, cfg.directories.dst, n_cols, dst_prefix)
         if archiving_configured:
             arch_report = reporting.arch_dir_report(archdir_freebytes, n_cols, arch_prefix)
             if not arch_report:

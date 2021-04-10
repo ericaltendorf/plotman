@@ -9,10 +9,8 @@ import time
 from datetime import datetime
 from subprocess import call
 
-import yaml
-
 # Plotman libraries
-from plotman import analyzer, archive, interactive, manager, plot_util, reporting
+from plotman import analyzer, archive, configuration, interactive, manager, plot_util, reporting
 from plotman.job import Job
 
 
@@ -28,20 +26,17 @@ class PlotmanArgParser:
         parser = argparse.ArgumentParser(description='Chia plotting manager.')
         sp = parser.add_subparsers(dest='cmd')
 
-        p_version = sp.add_parser('version', help='print the version')
+        sp.add_parser('version', help='print the version')
 
-        p_status = sp.add_parser('status', help='show current plotting status')
+        sp.add_parser('status', help='show current plotting status')
  
-        p_dirs = sp.add_parser('dirs', help='show directories info')
+        sp.add_parser('dirs', help='show directories info')
 
-        p_interactive = sp.add_parser('interactive', help='run interactive control/montioring mode')
+        sp.add_parser('interactive', help='run interactive control/monitoring mode')
 
-        p_dst_sch = sp.add_parser('dsched', help='print destination dir schedule')
+        sp.add_parser('dsched', help='print destination dir schedule')
 
-        p_plot = sp.add_parser('plot', help='run plotting loop')
-
-        p_archive = sp.add_parser('archive',
-                help='move completed plots to farming location')
+        sp.add_parser('plot', help='run plotting loop')
 
         p_details = sp.add_parser('details', help='show details for job')
         self.add_idprefix_arg(p_details)
@@ -58,8 +53,7 @@ class PlotmanArgParser:
         p_resume = sp.add_parser('resume', help='resume suspended job')
         self.add_idprefix_arg(p_resume)
 
-        p_analyze = sp.add_parser('analyze',
-                help='analyze timing stats of completed jobs')
+        p_analyze = sp.add_parser('analyze', help='analyze timing stats of completed jobs')
         p_analyze.add_argument('--bytmp',
                 action='store_true',
                 help='slice by tmp dirs')
@@ -91,12 +85,8 @@ def main():
         import pkg_resources
         print(pkg_resources.get_distribution('plotman'))
         return
-    
-    with open('config.yaml', 'r') as ymlfile:
-        cfg = yaml.load(ymlfile, Loader=yaml.SafeLoader)
-    dir_cfg = cfg['directories']
-    sched_cfg = cfg['scheduling']
-    plotting_cfg = cfg['plotting']
+
+    cfg = configuration.get_validated_configs()
 
     #
     # Stay alive, spawning plot jobs
@@ -104,23 +94,27 @@ def main():
     if args.cmd == 'plot':
         print('...starting plot loop')
         while True:
-            wait_reason = manager.maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg)
+            wait_reason = manager.maybe_start_new_plot(cfg.directories, cfg.scheduling, cfg.plotting)
 
             # TODO: report this via a channel that can be polled on demand, so we don't spam the console
-            sleep_s = int(sched_cfg['polling_time_s'])
             if wait_reason:
-                print('...sleeping %d s: %s' % (sleep_s, wait_reason))
+                print('...sleeping %d s: %s' % (cfg.scheduling.polling_time_s, wait_reason))
 
-            time.sleep(sleep_s)
-    
+            time.sleep(cfg.scheduling.polling_time_s)
+
     #
     # Analysis of completed jobs
     #
     elif args.cmd == 'analyze':
         analyzer.analyze(args.logfile, args.bytmp, args.bybitfield)
+    elif args.cmd == 'config':
+        # Performing configuration on plotman ".config" file
+        import pdb; pdb.set_trace()
+        # if a
+        # argsargs.idprefix
+
     else:
-        # print('...scanning process tables')
-        jobs = Job.get_running_jobs(dir_cfg['log'])
+        jobs = Job.get_running_jobs(cfg.directories.log)
 
         # Status report
         if args.cmd == 'status':
@@ -128,7 +122,7 @@ def main():
 
         # Directories report
         elif args.cmd == 'dirs':
-            print(reporting.dirs_report(jobs, dir_cfg, sched_cfg, get_term_width()))
+            print(reporting.dirs_report(jobs, cfg.directories, cfg.scheduling, get_term_width()))
 
         elif args.cmd == 'interactive':
             interactive.run_interactive()
@@ -141,13 +135,12 @@ def main():
                 if not firstit:
                     print('Sleeping 60s until next iteration...')
                     time.sleep(60)
-                    jobs = Job.get_running_jobs(dir_cfg['log'])
+                    jobs = Job.get_running_jobs(cfg.directories.log)
                 firstit = False
-                archive.archive(dir_cfg, jobs)
+                archive.archive(cfg.directories, jobs)
 
         # Debugging: show the destination drive usage schedule
         elif args.cmd == 'dsched':
-            dstdirs = dir_cfg['dst']
             for (d, ph) in manager.dstdirs_to_furthest_phase(jobs).items():
                 print('  %s : %s' % (d, str(ph)))
         
