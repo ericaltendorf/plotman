@@ -1,0 +1,3 @@
+[console_scripts]
+plotman = plotman.plotman:main
+

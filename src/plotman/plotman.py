@@ -38,6 +38,8 @@ class PlotmanArgParser:
 
         sp.add_parser('plot', help='run plotting loop')
 
+        p_archive = sp.add_parser('archive', help='move completed plots to farming location')
+
         p_details = sp.add_parser('details', help='show details for job')
         self.add_idprefix_arg(p_details)
 
@@ -107,11 +109,6 @@ def main():
     #
     elif args.cmd == 'analyze':
         analyzer.analyze(args.logfile, args.bytmp, args.bybitfield)
-    elif args.cmd == 'config':
-        # Performing configuration on plotman ".config" file
-        import pdb; pdb.set_trace()
-        # if a
-        # argsargs.idprefix
 
     else:
         jobs = Job.get_running_jobs(cfg.directories.log)

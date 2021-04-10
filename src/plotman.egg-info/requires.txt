@@ -1,0 +1,15 @@
+desert
+psutil~=5.8
+pyyaml
+texttable
+
+[dev]
+check-manifest
+pytest
+pyfakefs
+isort
+
+[test]
+check-manifest
+pytest
+pyfakefs

@@ -1,13 +1,9 @@
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
-from appdirs import AppDirs, user_config_dir
 import desert
 import yaml
 
-APP_DIR_NAME = "plotman"
-
-# def create_default_config():
 
 
 def get_validated_configs():
