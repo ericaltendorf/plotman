@@ -143,7 +143,7 @@ def curses_main(stdscr):
                                     stderr=subprocess.STDOUT,
                                     start_new_session=True)
 
-                archdir_freebytes = archive.get_archdir_freebytes(cfg.directories)
+                archdir_freebytes = archive.get_archdir_freebytes(cfg.directories.archive)
 
 
         # Get terminal size.  Recommended method is stdscr.getmaxyx(), but this
