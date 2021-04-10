@@ -12,7 +12,7 @@ def test_get_validated_configs__default():
 
 def test_get_validated_configs__malformed(mocker):
     """Check that get_validated_configs() raises exception with invalid config.yaml contents."""
-    with open("config.yaml", "r") as file:
+    with open(configuration.get_path(), "r") as file:
         loaded_yaml = yaml.load(file, Loader=yaml.SafeLoader)
 
     # Purposefully malform the contents of loaded_yaml by changing tmp from List[str] --> str

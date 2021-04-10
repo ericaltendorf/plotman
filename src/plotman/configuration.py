@@ -5,12 +5,14 @@ import desert
 import yaml
 
 
+def get_path():
+    return "config.yaml"
+
 def get_validated_configs():
     """Return a validated instance of the PlotmanConfig dataclass with data from config.yaml."""
-    config_path = "config.yaml"
     schema = desert.schema(PlotmanConfig)
     try:
-        with open(config_path, "r") as file:
+        with open(get_path(), "r") as file:
             config_file = yaml.load(file, Loader=yaml.SafeLoader)
             return schema.load(config_file)
     except FileNotFoundError:
@@ -26,7 +28,7 @@ class Archive:
     rsyncd_bwlimit: int
     rsyncd_host: str
     rsyncd_user: str
-    index: Optional[int] = 0  # If not explicit, "index" will default to 0
+    index: int = 0  # If not explicit, "index" will default to 0
 
 @dataclass
 class Directories:
@@ -45,7 +47,7 @@ class Scheduling:
     tmpdir_max_jobs: int
     tmpdir_stagger_phase_major: int
     tmpdir_stagger_phase_minor: int
-    tmpdir_stagger_phase_limit: Optional[int] = 1  # If not explicit, "tmpdir_stagger_phase_limit" will default to 1
+    tmpdir_stagger_phase_limit: int = 1  # If not explicit, "tmpdir_stagger_phase_limit" will default to 1
 
 @dataclass
 class Plotting:
