@@ -122,7 +122,7 @@ by their unique suffix.  For example, if we have `tmp` dirs `/mnt/tmp/00`,
 `/mnt/tmp/01`, `/mnt/tmp/02`, etc., we show `/mnt/tmp` as the prefix here and
 can then talk about `tmp` dirs `00` or `01` etc.  The `archive` directories are
 the same except that these are paths on a remote host and accessed via an
-`rsyncd` module (see `config.yaml` for details).
+`rsyncd` module (see `src/plotman/resources/plotman.yaml` for details).
 
 The next table shows information about the active plotting jobs.  It is
 abbreviated to show the most and least recently started jobs (the full list is
@@ -166,7 +166,7 @@ mode or the command line mode.
 
 There are many bugs and TODOs.
 
-Plotman will always look in the current directory for the `config.yaml` file
+Plotman will always look in the current directory for the `plotman.yaml` file
 ([see also](https://github.com/ericaltendorf/plotman/pull/61#issuecomment-812967363)).
 
 ## Installation
@@ -179,9 +179,9 @@ Installation for Linux:
 2. Then, install Plotman using the following command:
 
        pip install --force-reinstall git+https://github.com/ericaltendorf/plotman@development
-3. Plotman will look for `config.yaml` in your current working directory when you run it.
-   You can find [an example configuration file](./config.yaml) in the project source that can be used
-   as a starting point.
+3. Plotman will look for `plotman.yaml` in your current working directory when you run it.
+   You can find [an example configuration file](./src/plotman/resources/plotman.yaml) in the
+   project source that can be used as a starting point.
 5. That's it! You can now run Plotman by typing `plotman version` to verify its version.
    Run `plotman --help` to learn about the available commands.
 

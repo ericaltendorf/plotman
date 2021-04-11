@@ -91,7 +91,7 @@ def archive(dir_cfg, all_jobs):
     if we should not execute an archive job or (True, <cmd>) with the archive
     command if we should.'''
     if dir_cfg.archive is None:
-        return (False, "No 'archive' settings declared in config.yaml")
+        return (False, "No 'archive' settings declared in plotman.yaml")
 
     dir2ph = manager.dstdirs_to_furthest_phase(all_jobs)
     best_priority = -100000000

@@ -6,20 +6,21 @@ import yaml
 
 
 def get_path():
-    return "config.yaml"
+    return "src/plotman/resources/plotman.yaml"
+
 
 def get_validated_configs():
-    """Return a validated instance of the PlotmanConfig dataclass with data from config.yaml."""
+    """Return a validated instance of the PlotmanConfig dataclass with data from plotman.yaml."""
     schema = desert.schema(PlotmanConfig)
     try:
         with open(get_path(), "r") as file:
             config_file = yaml.load(file, Loader=yaml.SafeLoader)
             return schema.load(config_file)
     except FileNotFoundError:
-        print("No config.yaml file present in current working directory")
+        print("No plotman.yaml file present in current working directory")
 
 
-# Data models used to deserializing/formatting config.yaml files.
+# Data models used to deserializing/formatting plotman.yaml files.
 
 @dataclass
 class Archive:
