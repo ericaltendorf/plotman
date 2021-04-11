@@ -32,12 +32,16 @@ class Archive:
     index: int = 0  # If not explicit, "index" will default to 0
 
 @dataclass
+class TmpOverrides:
+    tmpdir_max_jobs: Optional[int] = None
+
+@dataclass
 class Directories:
     log: str
     tmp: List[str]
     dst: List[str]
     tmp2: Optional[str] = None
-    tmp_overrides: Optional[Dict[str, Dict[str, int]]] = None
+    tmp_overrides: Optional[Dict[str, TmpOverrides]] = None
     archive: Optional[Archive] = None
 
 @dataclass

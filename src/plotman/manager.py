@@ -60,8 +60,8 @@ def phases_permit_new_job(phases, d, sched_cfg, dir_cfg):
     max_plots = sched_cfg.tmpdir_max_jobs
     if dir_cfg.tmp_overrides is not None and d in dir_cfg.tmp_overrides:
         curr_overrides = dir_cfg.tmp_overrides[d]
-        if "tmpdir_max_jobs" in curr_overrides:
-            max_plots = curr_overrides["tmpdir_max_jobs"]
+        if curr_overrides.tmpdir_max_jobs is not None:
+            max_plots = curr_overrides.tmpdir_max_jobs
     if len(phases) >= max_plots:
         return False
 
