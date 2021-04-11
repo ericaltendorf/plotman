@@ -38,7 +38,12 @@ class PlotmanArgParser:
 
         sp.add_parser('plot', help='run plotting loop')
 
-        p_archive = sp.add_parser('archive', help='move completed plots to farming location')
+        sp.add_parser('archive', help='move completed plots to farming location')
+
+        p_config = sp.add_parser('config', help='display or generate plotman.yaml configuration')
+        sp_config = p_config.add_subparsers(dest='config_subcommand')
+        sp_config.add_parser('generate', help='generate a default plotman.yaml file and print path')
+        sp_config.add_parser('show', help='show path to current plotman.yaml file')
 
         p_details = sp.add_parser('details', help='show details for job')
         self.add_idprefix_arg(p_details)
