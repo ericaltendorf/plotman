@@ -58,6 +58,11 @@ class PlotmanArgParser:
 
         p_analyze = sp.add_parser('analyze',
                 help='analyze timing stats of completed jobs')
+        p_analyze.add_argument('--clipterminals',
+                action='store_true',
+                help='Ignore first and last plot in a logfile, useful for '
+                     'focusing on the steady-state in a staggered parallel '
+                     'plotting test (requires plotting  with -n>2)')
         p_analyze.add_argument('--bytmp',
                 action='store_true',
                 help='slice by tmp dirs')
@@ -115,7 +120,9 @@ def main():
     # Analysis of completed jobs
     #
     elif args.cmd == 'analyze':
-        analyzer.analyze(args.logfile, args.bytmp, args.bybitfield)
+        analyzer.analyze(args.logfile, args.clipterminals,
+                args.bytmp, args.bybitfield)
+
     else:
         # print('...scanning process tables')
         jobs = Job.get_running_jobs(dir_cfg['log'])

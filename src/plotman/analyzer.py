@@ -8,7 +8,7 @@ import texttable as tt
 from plotman import plot_util
 
 
-def analyze(logfilenames, bytmp, bybitfield):
+def analyze(logfilenames, clipterminals, bytmp, bybitfield):
     data = {}
     for logfilename in logfilenames:
         with open(logfilename, 'r') as f:
@@ -17,14 +17,15 @@ def analyze(logfilenames, bytmp, bybitfield):
             phase_time = {}  # Map from phase index to time
             n_sorts = 0
             n_uniform = 0
+            is_first_last = False
 
             # Read the logfile, triggering various behaviors on various
             # regex matches.
             for line in f:
                 # Beginning of plot job.  We may encounter this multiple
                 # times, if a job was run with -n > 1.  Sample log line:
-                # Starting plotting progress into temporary dirs: /mnt/tmp/01 and /mnt/tmp/a
-                m = re.search(r'^Starting plotting.*dirs: (.*) and (.*)', line)
+                # 2021-04-08T13:33:43.542  chia.plotting.create_plots       : INFO     Starting plot 1/5
+                m = re.search(r'Starting plot (\d*)/(\d*)', line)
                 if m:
                     # (re)-initialize data structures
                     sl = 'x'         # Slice key
@@ -32,6 +33,14 @@ def analyze(logfilenames, bytmp, bybitfield):
                     n_sorts = 0
                     n_uniform = 0
 
+                    seq_num = int(m.group(1))
+                    seq_total = int(m.group(2))
+                    is_first_last = seq_num == 1 or seq_num == seq_total
+
+                # Temp dirs.  Sample log line:
+                # Starting plotting progress into temporary dirs: /mnt/tmp/01 and /mnt/tmp/a
+                m = re.search(r'^Starting plotting.*dirs: (.*) and (.*)', line)
+                if m:
                     # Record tmpdir, if slicing by it
                     if bytmp:
                         tmpdir = m.group(1)
@@ -77,10 +86,13 @@ def analyze(logfilenames, bytmp, bybitfield):
                 # Total time = 49487.1 seconds. CPU (97.26%) Wed Sep 30 01:22:10 2020
                 m = re.search(r'^Total time = (\d+.\d+) seconds.*', line)
                 if m:
-                    data.setdefault(sl, {}).setdefault('total time', []).append(float(m.group(1)))
-                    for phase in ['1', '2', '3', '4']:
-                        data.setdefault(sl, {}).setdefault('phase ' + phase, []).append(phase_time[phase])
-                    data.setdefault(sl, {}).setdefault('%usort', []).append(100 * n_uniform // n_sorts)
+                    if clipterminals and is_first_last:
+                        pass  # Drop this data; omit from statistics.
+                    else:
+                        data.setdefault(sl, {}).setdefault('total time', []).append(float(m.group(1)))
+                        for phase in ['1', '2', '3', '4']:
+                            data.setdefault(sl, {}).setdefault('phase ' + phase, []).append(phase_time[phase])
+                        data.setdefault(sl, {}).setdefault('%usort', []).append(100 * n_uniform // n_sorts)
 
     # Prepare report
     tab = tt.Texttable()
@@ -115,6 +127,7 @@ def analyze(logfilenames, bytmp, bybitfield):
                 row.append(plot_util.human_format(values[0], 1))
             else:
                 row.append('N/A')
+
         tab.add_row(row)
 
     (rows, columns) = os.popen('stty size', 'r').read().split()
