@@ -166,8 +166,18 @@ mode or the command line mode.
 
 There are many bugs and TODOs.
 
-Plotman will always look in the current directory for the `plotman.yaml` file
-([see also](https://github.com/ericaltendorf/plotman/pull/61#issuecomment-812967363)).
+Plotman will always look for the `plotman.yaml` file within your computer at an OS-based
+default location. To generate a default `plotman.yaml`, run:
+```shell
+> plotman config generate
+```
+
+To display the current location of your `plotman.yaml` file and check if it exists, run:
+```shell
+> plotman config show
+```
+
+([See also](https://github.com/ericaltendorf/plotman/pull/61#issuecomment-812967363)).
 
 ## Installation
 
@@ -177,12 +187,17 @@ Installation for Linux:
    installation is present on the system. Activate your `chia` environment by typing
    `source /path/to/your/chia/install/activate`.
 2. Then, install Plotman using the following command:
-
-       pip install --force-reinstall git+https://github.com/ericaltendorf/plotman@development
-3. Plotman will look for `plotman.yaml` in your current working directory when you run it.
-   You can find [an example configuration file](./src/plotman/resources/plotman.yaml) in the
-   project source that can be used as a starting point.
-5. That's it! You can now run Plotman by typing `plotman version` to verify its version.
+   ```shell
+    > pip install --force-reinstall git+https://github.com/ericaltendorf/plotman@development
+    ```
+3. Plotman will look for `plotman.yaml` within your computer at an OS-based
+   default location. To create a default `plotman.yaml` and display its location,
+   run the following command:
+   ```shell
+   > plotman config generate
+   ```
+   The default configuration file used as a starting point is located [here](./src/plotman/resources/plotman.yaml)
+4. That's it! You can now run Plotman by typing `plotman version` to verify its version.
    Run `plotman --help` to learn about the available commands.
 
 ### Development note:
