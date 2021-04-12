@@ -12,7 +12,7 @@ from plotman import resources as plotman_resources
 from plotman.job import Job
 
 
-class PlotmanArgParser:s
+class PlotmanArgParser:
     def add_idprefix_arg(self, subparser):
         subparser.add_argument(
                 'idprefix',
@@ -108,12 +108,14 @@ def main():
             )
         if args.config_subcommand == 'generate':
             if os.path.isfile(config_file_path):
-                overwrite = input(
-                    f"A 'plotman.yaml' file already exists at the default location: '{config_file_path}' \n\n"
-                    "\tInput 'Y' to overwrite existing file, or 'N' to exit without overwrite."
-                  )
-                if overwrite == "N":
-                    return "\nExited without overrwriting file"
+                overwrite = None
+                while overwrite not in {"y", "n"}:
+                    overwrite = input(
+                        f"A 'plotman.yaml' file already exists at the default location: '{config_file_path}' \n\n"
+                        "\tInput 'y' to overwrite existing file, or 'n' to exit without overwrite."
+                      ).lower()
+                    if overwrite == 'n':
+                        return "\nExited without overrwriting file"
 
             # Copy the default plotman.yaml (packaged in plotman/resources/) to the user's config file path,
             # creating the parent plotman/ directory if it does not yet exist
