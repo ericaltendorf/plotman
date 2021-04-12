@@ -120,8 +120,7 @@ def main():
     # Analysis of completed jobs
     #
     elif args.cmd == 'analyze':
-        log_analyzer = analyzer.LogAnalyzer()
-        log_analyzer.analyze(args.logfile, args.clipterminals,
+        analyzer.analyze(args.logfile, args.clipterminals,
                 args.bytmp, args.bybitfield)
 
     else:

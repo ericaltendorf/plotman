@@ -8,7 +8,7 @@ import texttable as tt
 from plotman import plot_util
 
 
-def analyze(self, logfilenames, clipterminals, bytmp, bybitfield):
+def analyze(logfilenames, clipterminals, bytmp, bybitfield):
     data = {}
     for logfilename in logfilenames:
         with open(logfilename, 'r') as f:
@@ -113,7 +113,21 @@ def analyze(self, logfilenames, clipterminals, bytmp, bybitfield):
         if sample_size_lower_bound == sample_size_upper_bound:
             row.append('%d' % sample_size_lower_bound)
         else:
-            row.append('N/A')
+            row.append('%d-%d' % (sample_size_lower_bound, sample_size_upper_bound))
+
+        # Phase timings
+        for measure in all_measures:
+            values = data.get(sl, {}).get(measure, [])
+            if(len(values) > 1):
+                row.append('μ=%s σ=%s' % (
+                    plot_util.human_format(statistics.mean(values), 1),
+                    plot_util.human_format(statistics.stdev(values), 0)
+                    ))
+            elif(len(values) == 1):
+                row.append(plot_util.human_format(values[0], 1))
+            else:
+                row.append('N/A')
+
         tab.add_row(row)
 
     (rows, columns) = os.popen('stty size', 'r').read().split()
