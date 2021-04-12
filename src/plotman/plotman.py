@@ -1,17 +1,15 @@
 import argparse
+import importlib
+import importlib.resources
 import os
 import random
-import re
-import readline  # For nice CLI
-import sys
-import threading
+from shutil import copyfile
 import time
-from datetime import datetime
-from subprocess import call
 
 # Plotman libraries
 from plotman import analyzer, archive, configuration, interactive, manager, plot_util, reporting
 from plotman.job import Job
+from plotman import resources as plotman_resources
 
 
 class PlotmanArgParser:
@@ -61,6 +59,12 @@ class PlotmanArgParser:
         self.add_idprefix_arg(p_resume)
 
         p_analyze = sp.add_parser('analyze', help='analyze timing stats of completed jobs')
+
+        p_analyze.add_argument('--clipterminals',
+                action='store_true',
+                help='Ignore first and last plot in a logfile, useful for '
+                     'focusing on the steady-state in a staggered parallel '
+                     'plotting test (requires plotting  with -n>2)')
         p_analyze.add_argument('--bytmp',
                 action='store_true',
                 help='slice by tmp dirs')
@@ -93,6 +97,37 @@ def main():
         print(pkg_resources.get_distribution('plotman'))
         return
 
+    elif args.cmd == 'config':
+        config_file_path = configuration.get_path()
+        if args.config_subcommand == 'show':
+            if os.path.isfile(config_file_path):
+                return config_file_path
+            return (
+                f"No 'plotman.yaml' file exists at expected location: '{config_file_path}'. To generate "
+                f"default config file, run: 'plotman config generate'"
+            )
+        if args.config_subcommand == 'generate':
+            if os.path.isfile(config_file_path):
+                overwrite = input(
+                    f"A 'plotman.yaml' file already exists at the default location: '{config_file_path}' \n\n"
+                    "\tInput 'Y' to overwrite existing file, or 'N' to exit without overwrite."
+                  )
+                if overwrite == "N":
+                    return "\nExited without overrwriting file"
+
+            # Copy the default plotman.yaml (packaged in plotman/resources/) to the user's config file path,
+            # creating the parent plotman/ directory if it does not yet exist
+            config_directory_path = configuration.get_directory_path()
+            with importlib.resources.path(plotman_resources, "plotman.yaml") as default_config:
+                if not os.path.isdir(config_directory_path):
+                    os.mkdir(config_directory_path)
+
+                copyfile(default_config, config_file_path)
+                return f"\nWrote default plotman.yaml to: {config_file_path}"
+
+        if not args.config_subcommand:
+            return "No action requested, add 'generate' or 'show'."
+
     cfg = configuration.get_validated_configs()
 
     #
@@ -113,7 +148,9 @@ def main():
     # Analysis of completed jobs
     #
     elif args.cmd == 'analyze':
-        analyzer.analyze(args.logfile, args.bytmp, args.bybitfield)
+
+        analyzer.analyze(args.logfile, args.clipterminals,
+                args.bytmp, args.bybitfield)
 
     else:
         jobs = Job.get_running_jobs(cfg.directories.log)

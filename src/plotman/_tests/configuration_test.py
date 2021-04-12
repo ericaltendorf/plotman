@@ -1,7 +1,6 @@
 """Tests for plotman/configuration.py"""
 import importlib.resources
 
-import marshmallow
 import pytest
 import yaml
 
@@ -33,5 +32,21 @@ def test_get_validated_configs__malformed(mocker, config_path):
     loaded_yaml["directories"]["tmp"] = "/mnt/tmp/00"
     mocker.patch("yaml.load", return_value=loaded_yaml)
 
-    with pytest.raises(marshmallow.exceptions.ValidationError):
+    with pytest.raises(configuration.ConfigurationException) as exc_info:
         configuration.get_validated_configs()
+
+    assert exc_info.value.args[0] == f"Config file at: '{configuration.get_path()}' is malformed"
+
+
+def test_get_validated_configs__missing(mocker, config_path):
+    """Check that get_validated_configs() raises exception when plotman.yaml does not exist."""
+    nonexistent_config = config_path.with_name("plotman2.yaml")
+    mocker.patch("plotman.configuration.get_path", return_value=nonexistent_config)
+
+    with pytest.raises(configuration.ConfigurationException) as exc_info:
+        configuration.get_validated_configs()
+
+    assert exc_info.value.args[0] == (
+        f"No 'plotman.yaml' file exists at expected location: '{nonexistent_config}'. To generate "
+        f"default config file, run: 'plotman config generate'"
+    )

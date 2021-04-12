@@ -1,23 +1,44 @@
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
+import appdirs
 import desert
+import marshmallow
 import yaml
 
 
+class ConfigurationException(Exception):
+    """Raised when plotman.yaml configuration is missing or malformed."""
+
+
+def get_directory_path():
+    """Return path to where plotman/ configuration directory should exist."""
+    return appdirs.user_config_dir("plotman")
+
+
 def get_path():
-    return "src/plotman/resources/plotman.yaml"
+    """Return path to where plotman.yaml configuration file should exist."""
+    return get_directory_path() + "/plotman.yaml"
 
 
 def get_validated_configs():
-    """Return a validated instance of the PlotmanConfig dataclass with data from plotman.yaml."""
+    """Return a validated instance of the PlotmanConfig dataclass with data from plotman.yaml
+
+    :raises ConfigurationException: Raised when plotman.yaml is either missing or malformed
+    """
     schema = desert.schema(PlotmanConfig)
+    config_file_path = get_path()
     try:
-        with open(get_path(), "r") as file:
+        with open(config_file_path, "r") as file:
             config_file = yaml.load(file, Loader=yaml.SafeLoader)
             return schema.load(config_file)
     except FileNotFoundError:
-        print("No plotman.yaml file present in current working directory")
+        raise ConfigurationException(
+            f"No 'plotman.yaml' file exists at expected location: '{config_file_path}'. To generate "
+            f"default config file, run: 'plotman config generate'"
+        )
+    except marshmallow.exceptions.ValidationError:
+        raise ConfigurationException(f"Config file at: '{config_file_path}' is malformed")
 
 
 # Data models used to deserializing/formatting plotman.yaml files.
