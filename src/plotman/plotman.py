@@ -8,11 +8,11 @@ import time
 
 # Plotman libraries
 from plotman import analyzer, archive, configuration, interactive, manager, plot_util, reporting
-from plotman.job import Job
 from plotman import resources as plotman_resources
+from plotman.job import Job
 
 
-class PlotmanArgParser:
+class PlotmanArgParser:s
     def add_idprefix_arg(self, subparser):
         subparser.add_argument(
                 'idprefix',

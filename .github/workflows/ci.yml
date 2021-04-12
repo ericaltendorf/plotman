@@ -140,7 +140,6 @@ jobs:
 
     - name: Prepare tox environment
       run: |
-        pwd
         tox --notest --installpkg dist/*.whl
 
     - name: Runner info
