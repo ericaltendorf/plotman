@@ -148,7 +148,7 @@ def main():
                     time.sleep(60)
                     jobs = Job.get_running_jobs(dir_cfg['log'])
                 firstit = False
-                archive.archive(dir_cfg, jobs)
+                print(archive.archive(dir_cfg, jobs))
 
         # Debugging: show the destination drive usage schedule
         elif args.cmd == 'dsched':

@@ -5,6 +5,8 @@ import os
 import random
 import re
 import subprocess
+from threading import Thread
+from queue import Queue, Empty
 import sys
 from datetime import datetime
 
@@ -14,6 +16,13 @@ import texttable as tt
 from plotman import manager, plot_util
 
 # TODO : write-protect and delete-protect archived plots
+
+jobs = []
+
+def enqueue_output(out, queue):
+    for line in out:
+        queue.put(line.strip())
+    out.close()
 
 def compute_priority(phase, gb_free, n_plots):
     # All these values are designed around dst buffer dirs of about
@@ -109,7 +118,7 @@ def archive(dir_cfg, all_jobs):
             chosen_plot = dir_plots[0]
 
     if not chosen_plot:
-        return (False, 'No plots found')
+        return 'No plots found'
 
     # TODO: sanity check that archive machine is available
     # TODO: filter drives mounted RO
@@ -118,9 +127,10 @@ def archive(dir_cfg, all_jobs):
     # Pick first archive dir with sufficient space
     #
     archdir_freebytes = get_archdir_freebytes(arch_cfg)
+
     if not archdir_freebytes:
-        return(False, 'No free archive dirs found.')
-    
+        return 'No free archive dirs found.'
+
     archdir = ''
     available = [(d, space) for (d, space) in archdir_freebytes.items() if 
                  space > 1.2 * plot_util.get_k32_plotsize()]
@@ -130,13 +140,41 @@ def archive(dir_cfg, all_jobs):
         (archdir, freespace) = sorted(available)[index]
 
     if not archdir:
-        return(False, 'No archive directories found with enough free space')
-    
+        return 'No archive directories found with enough free space'
+
+    arch_jobs = get_running_archive_jobs(dir_cfg['archive'])
+    if arch_jobs:
+        # Build status list
+        status_list = 'Cannot retrieve status.'
+        for j in jobs:
+            status_list = ''
+            try:
+                line = j[0].get_nowait() # or q.get(timeout=.1)
+            except Empty:
+                line = 'No data yet.'
+            if (line is None) or (line in j[1]):
+                line = 'No data yet.'
+            status_list += 'Moving ' + j[1] + ' to ' + j[2] + '. Progress: ' + line + '\n'
+        return 'Arch job(s) already running. ' + status_list 
+
     msg = 'Found %s with ~%d GB free' % (archdir, freespace / plot_util.GB)
 
     bwlimit = arch_cfg['rsyncd_bwlimit']
     throttle_arg = ('--bwlimit=%d' % bwlimit) if bwlimit else ''
-    cmd = ('rsync %s --remove-source-files -P %s %s' %
+    cmd = ('rsync %s --remove-source-files -P --outbuf=L %s %s' %
             (throttle_arg, chosen_plot, rsync_dest(arch_cfg, archdir)))
-
-    return (True, cmd)
+            #shell=True,
+            #start_new_session=True,
+    p = subprocess.Popen(cmd,
+            shell=True,
+            start_new_session=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            bufsize=1,
+            universal_newlines=True)
+    q = Queue()
+    t = Thread(target=enqueue_output, args=(p.stdout, q))
+    t.daemon = True # thread dies with the program
+    t.start()
+    jobs.append([q, archdir, chosen_plot])
+    return cmd
