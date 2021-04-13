@@ -163,8 +163,7 @@ def archive(dir_cfg, all_jobs):
     throttle_arg = ('--bwlimit=%d' % bwlimit) if bwlimit else ''
     cmd = ('rsync %s --remove-source-files -P --outbuf=L %s %s' %
             (throttle_arg, chosen_plot, rsync_dest(arch_cfg, archdir)))
-            #shell=True,
-            #start_new_session=True,
+
     p = subprocess.Popen(cmd,
             shell=True,
             start_new_session=True,
@@ -172,6 +171,7 @@ def archive(dir_cfg, all_jobs):
             stderr=subprocess.PIPE,
             bufsize=1,
             universal_newlines=True)
+            
     q = Queue()
     t = Thread(target=enqueue_output, args=(p.stdout, q))
     t.daemon = True # thread dies with the program
