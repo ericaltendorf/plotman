@@ -32,11 +32,11 @@ def get_validated_configs():
         with open(config_file_path, "r") as file:
             config_file = yaml.load(file, Loader=yaml.SafeLoader)
             return schema.load(config_file)
-    except FileNotFoundError:
+    except FileNotFoundError as e:
         raise ConfigurationException(
             f"No 'plotman.yaml' file exists at expected location: '{config_file_path}'. To generate "
             f"default config file, run: 'plotman config generate'"
-        )
+        ) from e
     except marshmallow.exceptions.ValidationError:
         raise ConfigurationException(f"Config file at: '{config_file_path}' is malformed")
 
