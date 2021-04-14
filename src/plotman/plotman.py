@@ -41,7 +41,7 @@ class PlotmanArgParser:
         p_config = sp.add_parser('config', help='display or generate plotman.yaml configuration')
         sp_config = p_config.add_subparsers(dest='config_subcommand')
         sp_config.add_parser('generate', help='generate a default plotman.yaml file and print path')
-        sp_config.add_parser('show', help='show path to current plotman.yaml file')
+        sp_config.add_parser('path', help='show path to current plotman.yaml file')
 
         p_details = sp.add_parser('details', help='show details for job')
         self.add_idprefix_arg(p_details)
@@ -99,7 +99,7 @@ def main():
 
     elif args.cmd == 'config':
         config_file_path = configuration.get_path()
-        if args.config_subcommand == 'show':
+        if args.config_subcommand == 'path':
             if os.path.isfile(config_file_path):
                 return config_file_path
             return (
@@ -128,7 +128,7 @@ def main():
                 return f"\nWrote default plotman.yaml to: {config_file_path}"
 
         if not args.config_subcommand:
-            return "No action requested, add 'generate' or 'show'."
+            return "No action requested, add 'generate' or 'path'."
 
     cfg = configuration.get_validated_configs()
 

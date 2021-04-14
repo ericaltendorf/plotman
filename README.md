@@ -174,7 +174,7 @@ default location. To generate a default `plotman.yaml`, run:
 
 To display the current location of your `plotman.yaml` file and check if it exists, run:
 ```shell
-> plotman config show
+> plotman config path
 ```
 
 ([See also](https://github.com/ericaltendorf/plotman/pull/61#issuecomment-812967363)).
