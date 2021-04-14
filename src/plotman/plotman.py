@@ -122,7 +122,7 @@ def main():
             with importlib.resources.path(plotman_resources, "plotman.yaml") as default_config:
                 config_dir = os.path.dirname(config_file_path)
 
-                os.makedirs(config_directory_path, exist_ok=True)
+                os.makedirs(config_dir, exist_ok=True)
                 copyfile(default_config, config_file_path)
                 return f"\nWrote default plotman.yaml to: {config_file_path}"
 
