@@ -58,14 +58,15 @@ class Job:
     'Represents a plotter job'
 
     # These are constants, not updated during a run.
-    k = 0
-    r = 0
-    u = 0
-    b = 0
-    n = 0  # probably not used
-    tmpdir = ''
+    # Defaults updated as of chia-blockchain 1.0.4.
+    k = 32
+    r = 2
+    u = 128
+    b = 4608
+    n = 1  # probably not used
+    tmpdir = '.'
     tmp2dir = ''
-    dstdir = ''
+    dstdir = '.'
     logfile = ''
     jobfile = ''
     job_id = 0
@@ -105,7 +106,7 @@ class Job:
         with self.proc.oneshot():
             # Parse command line args
             args = self.proc.cmdline()
-            assert len(args) > 4
+            assert len(args) >= 4
             assert 'python' in args[0]
             assert 'chia' in args[1]
             assert 'plots' == args[2]
@@ -138,6 +139,12 @@ class Job:
                     pass
                 else:
                     print('Warning: unrecognized args: %s %s' % (arg, val))
+
+            plot_cwd = self.proc.cwd()
+            self.tmpdir = os.path.join(plot_cwd, self.tmpdir)
+            if self.tmp2dir != '':
+                self.tmp2dir = os.path.join(plot_cwd, self.tmp2dir)
+            self.dstdir = os.path.join(plot_cwd, self.dstdir)
 
             # Find logfile (whatever file is open under the log root).  The
             # file may be open more than once, e.g. for STDOUT and STDERR.
