@@ -37,8 +37,8 @@ def get_validated_configs():
             f"No 'plotman.yaml' file exists at expected location: '{config_file_path}'. To generate "
             f"default config file, run: 'plotman config generate'"
         ) from e
-    except marshmallow.exceptions.ValidationError:
-        raise ConfigurationException(f"Config file at: '{config_file_path}' is malformed")
+    except marshmallow.exceptions.ValidationError as e:
+        raise ConfigurationException(f"Config file at: '{config_file_path}' is malformed") from e
 
 
 # Data models used to deserializing/formatting plotman.yaml files.
