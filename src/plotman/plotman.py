@@ -121,8 +121,8 @@ def main():
             # creating the parent plotman/ directory if it does not yet exist
             config_directory_path = configuration.get_directory_path()
             with importlib.resources.path(plotman_resources, "plotman.yaml") as default_config:
-                if not os.path.isdir(config_directory_path):
-                    os.mkdir(config_directory_path)
+                
+                os.makedirs(config_directory_path, exist_ok=True)
 
                 copyfile(default_config, config_file_path)
                 return f"\nWrote default plotman.yaml to: {config_file_path}"
