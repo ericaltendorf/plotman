@@ -118,12 +118,11 @@ def main():
                         return "\nExited without overrwriting file"
 
             # Copy the default plotman.yaml (packaged in plotman/resources/) to the user's config file path,
-            # creating the parent plotman/ directory if it does not yet exist
-            config_directory_path = configuration.get_directory_path()
+            # creating the parent plotman file/directory if it does not yet exist
             with importlib.resources.path(plotman_resources, "plotman.yaml") as default_config:
-                
-                os.makedirs(config_directory_path, exist_ok=True)
+                config_dir = os.path.dirname(config_file_path)
 
+                os.makedirs(config_directory_path, exist_ok=True)
                 copyfile(default_config, config_file_path)
                 return f"\nWrote default plotman.yaml to: {config_file_path}"
 

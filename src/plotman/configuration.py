@@ -11,14 +11,9 @@ class ConfigurationException(Exception):
     """Raised when plotman.yaml configuration is missing or malformed."""
 
 
-def get_directory_path():
-    """Return path to where plotman/ configuration directory should exist."""
-    return appdirs.user_config_dir("plotman")
-
-
 def get_path():
     """Return path to where plotman.yaml configuration file should exist."""
-    return get_directory_path() + "/plotman.yaml"
+    return appdirs.user_config_dir("plotman") + "/plotman.yaml"
 
 
 def get_validated_configs():
