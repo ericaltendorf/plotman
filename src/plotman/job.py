@@ -142,7 +142,7 @@ class Job:
 
             plot_cwd = self.proc.cwd()
             self.tmpdir = os.path.join(plot_cwd, self.tmpdir)
-            if self.tmp2dir != '':
+            if self.tmp2dir is not None:
                 self.tmp2dir = os.path.join(plot_cwd, self.tmp2dir)
             self.dstdir = os.path.join(plot_cwd, self.dstdir)
 
