@@ -12,6 +12,7 @@ from datetime import datetime
 from enum import Enum, auto
 from subprocess import call
 
+import chia.cmds.plots
 import pendulum
 import psutil
 
@@ -57,15 +58,6 @@ def parse_chia_plot_time(s):
 class Job:
     'Represents a plotter job'
 
-    # These are constants, not updated during a run.
-    k = 0
-    r = 0
-    u = 0
-    b = 0
-    n = 0  # probably not used
-    tmpdir = ''
-    tmp2dir = ''
-    dstdir = ''
     logfile = ''
     jobfile = ''
     job_id = 0
@@ -110,34 +102,14 @@ class Job:
             assert 'chia' in args[1]
             assert 'plots' == args[2]
             assert 'create' == args[3]
-            args_iter = iter(cmdline_argfix(args[4:]))
-            for arg in args_iter:
-                val = None if arg in {'-e', '--nobitfield', '-h', '--help', '--override-k'} else next(args_iter)
-                if arg in {'-k', '--size'}:
-                    self.k = val
-                elif arg in {'-r', '--num_threads'}:
-                    self.r = val
-                elif arg in {'-b', '--buffer'}:
-                    self.b = val
-                elif arg in {'-u', '--buckets'}:
-                    self.u = val
-                elif arg in {'-t', '--tmp_dir'}:
-                    self.tmpdir = val
-                elif arg in {'-2', '--tmp2_dir'}:
-                    self.tmp2dir = val
-                elif arg in {'-d', '--final_dir'}:
-                    self.dstdir = val
-                elif arg in {'-n', '--num'}:
-                    self.n = val
-                elif arg in {'-h', '--help'}:
-                    self.help = True
-                elif arg in {'-e', '--nobitfield', '-f', '--farmer_public_key', '-p', '--pool_public_key'}:
-                    pass
-                    # TODO: keep track of these
-                elif arg == '--override-k':
-                    pass
-                else:
-                    print('Warning: unrecognized args: %s %s' % (arg, val))
+
+            self.args = chia.cmds.plots.create_cmd.make_context(info_name='', args=args[4:])
+
+            plot_cwd = self.proc.cwd()
+            self.args['tmpdir'] = os.path.join(plot_cwd, self.args['tmpdir'])
+            if self.args['tmp2dir'] is not None:
+                self.args['tmp2dir'] = os.path.join(plot_cwd, args['tmp2dir'])
+            self.args['dstdir'] = os.path.join(plot_cwd, self.args['dstdir'])
 
             # Find logfile (whatever file is open under the log root).  The
             # file may be open more than once, e.g. for STDOUT and STDERR.
@@ -262,14 +234,14 @@ class Job:
     def status_str_long(self):
         return '{plot_id}\nk={k} r={r} b={b} u={u}\npid:{pid}\ntmp:{tmp}\ntmp2:{tmp2}\ndst:{dst}\nlogfile:{logfile}'.format(
             plot_id = self.plot_id,
-            k = self.k,
-            r = self.r,
-            b = self.b,
-            u = self.u,
+            k = self.args['size'],
+            r = self.args['num_threads'],
+            b = self.args['buffer'],
+            u = self.args['buckets'],
             pid = self.proc.pid,
-            tmp = self.tmpdir,
-            tmp2 = self.tmp2dir,
-            dst = self.dstdir,
+            tmp = self.args['tmpdir'],
+            tmp2 = self.args['tmp2dir'],
+            dst = self.args['dstdir'],
             plotid = self.plot_id,
             logfile = self.logfile
             )
@@ -332,7 +304,7 @@ class Job:
         # Prevent duplicate file paths by using set.
         temp_files = set([])
         for f in self.proc.open_files():
-            if self.tmpdir in f.path or self.tmp2dir in f.path or self.dstdir in f.path:
+            if self.args['tmpdir'] in f.path or self.args['tmp2dir'] in f.path or self.args['dstdir'] in f.path:
                 temp_files.add(f.path)
         return temp_files
 
