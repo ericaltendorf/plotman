@@ -1,4 +1,4 @@
-from plotman import archive, manager
+from plotman import archive, configuration, manager
 
 
 def test_compute_priority():
@@ -7,10 +7,13 @@ def test_compute_priority():
 
 def test_rsync_dest():
     arch_dir = '/plotdir/012'
-    arch_cfg = { 'rsyncd_module': 'plots_mod',
-                 'rsyncd_path'  : '/plotdir',
-                 'rsyncd_host'  : 'thehostname',
-                 'rsyncd_user'  : 'theusername' }
+    arch_cfg = configuration.Archive(
+        rsyncd_module='plots_mod',
+        rsyncd_path='/plotdir',
+        rsyncd_host='thehostname',
+        rsyncd_user='theusername',
+        rsyncd_bwlimit=80000
+    )
 
     # Normal usage
     assert ('rsync://theusername@thehostname:12000/plots_mod/012' ==
