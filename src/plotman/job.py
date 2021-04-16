@@ -110,11 +110,41 @@ class Job:
 
             self.args = chia.cmds.plots.create_cmd.make_context(info_name='', args=args[4:])
 
+            # an example as of 1.0.5
+            # {
+            #     'size': 32,
+            #     'num_threads': 4,
+            #     'buckets': 128,
+            #     'buffer': 6000,
+            #     'tmp_dir': '/farm/yards/901',
+            #     'final_dir': '/farm/wagons/801',
+            #     'override_k': False,
+            #     'num': 1,
+            #     'alt_fingerprint': None,
+            #     'pool_contract_address': None,
+            #     'farmer_public_key': None,
+            #     'pool_public_key': None,
+            #     'tmp2_dir': None,
+            #     'plotid': None,
+            #     'memo': None,
+            #     'nobitfield': False,
+            #     'exclude_final_dir': False,
+            # }
+
+            self.k = self.args['size']
+            self.r = self.args['num_threads']
+            self.u = self.args['buckets']
+            self.b = self.args['buffer']
+            self.n = self.args['num']
+            self.tmpdir = self.args['tmp_dir']
+            self.tmp2dir = self.args['tmp2_dir']
+            self.dstdir = self.args['final_dir']
+
             plot_cwd = self.proc.cwd()
-            self.args['tmpdir'] = os.path.join(plot_cwd, self.args['tmpdir'])
-            if self.args['tmp2dir'] is not None:
-                self.args['tmp2dir'] = os.path.join(plot_cwd, args['tmp2dir'])
-            self.args['dstdir'] = os.path.join(plot_cwd, self.args['dstdir'])
+            self.tmpdir = os.path.join(plot_cwd, self.tmpdir)
+            if self.tmp2dir != '':
+                self.tmp2dir = os.path.join(plot_cwd, self.tmp2dir)
+            self.dstdir = os.path.join(plot_cwd, self.dstdir)
 
             # Find logfile (whatever file is open under the log root).  The
             # file may be open more than once, e.g. for STDOUT and STDERR.
@@ -239,14 +269,14 @@ class Job:
     def status_str_long(self):
         return '{plot_id}\nk={k} r={r} b={b} u={u}\npid:{pid}\ntmp:{tmp}\ntmp2:{tmp2}\ndst:{dst}\nlogfile:{logfile}'.format(
             plot_id = self.plot_id,
-            k = self.args['size'],
-            r = self.args['num_threads'],
-            b = self.args['buffer'],
-            u = self.args['buckets'],
+            k = self.k,
+            r = self.r,
+            b = self.b,
+            u = self.u,
             pid = self.proc.pid,
-            tmp = self.args['tmpdir'],
-            tmp2 = self.args['tmp2dir'],
-            dst = self.args['dstdir'],
+            tmp = self.tmpdir,
+            tmp2 = self.tmp2dir,
+            dst = self.dstdir,
             plotid = self.plot_id,
             logfile = self.logfile
             )
@@ -309,7 +339,7 @@ class Job:
         # Prevent duplicate file paths by using set.
         temp_files = set([])
         for f in self.proc.open_files():
-            if self.args['tmpdir'] in f.path or self.args['tmp2dir'] in f.path or self.args['dstdir'] in f.path:
+            if self.tmpdir in f.path or self.tmp2dir in f.path or self.dstdir in f.path:
                 temp_files.add(f.path)
         return temp_files
 
