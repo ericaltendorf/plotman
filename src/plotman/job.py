@@ -63,7 +63,6 @@ class Job:
     job_id = 0
     plot_id = '--------'
     proc = None   # will get a psutil.Process
-    help = False
 
     # These are dynamic, cached, and need to be udpated periodically
     phase = (None, None)   # Phase/subphase
@@ -102,6 +101,12 @@ class Job:
             assert 'chia' in args[1]
             assert 'plots' == args[2]
             assert 'create' == args[3]
+
+            if '--help' in args:
+                args = [arg for arg in args if arg != '--help']
+                self.help = True
+            else:
+                self.help = False
 
             self.args = chia.cmds.plots.create_cmd.make_context(info_name='', args=args[4:])
 
