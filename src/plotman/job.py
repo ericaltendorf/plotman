@@ -108,7 +108,7 @@ class Job:
             else:
                 self.help = False
 
-            self.args = chia.cmds.plots.create_cmd.make_context(info_name='', args=args[4:])
+            self.args = chia.cmds.plots.create_cmd.make_context(info_name='', args=args[4:]).params
 
             # an example as of 1.0.5
             # {
