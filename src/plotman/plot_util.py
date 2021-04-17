@@ -12,6 +12,17 @@ def df_b(d):
 def get_k32_plotsize():
     return 108 * GB
 
+def is_valid_plot_dst(d, sched_cfg):
+    return (not sched_cfg.stop_when_dst_full) or dir_can_recieve_k32(d)
+
+def dir_can_recieve_k32(d):
+    'Determine if there is enough space for a k32 in a directory'
+    return enough_space_for_k32(df_b(d))
+
+def enough_space_for_k32(b):
+    'Determine if there is enough space for a k32 given a number of free bytes'
+    return b > 1.2 * get_k32_plotsize()
+
 def human_format(num, precision):
     magnitude = 0
     while abs(num) >= 1000:
