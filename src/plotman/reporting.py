@@ -130,8 +130,7 @@ def tmp_dir_report(jobs, dir_cfg, sched_cfg, width, start_row=None, end_row=None
     tab.header(headings)
     tab.set_cols_dtype('t' * len(headings))
     tab.set_cols_align('r' * (len(headings) - 1) + 'l')
-    tmpdirs = dir_cfg['tmp']
-    for i, d in enumerate(sorted(tmpdirs)):
+    for i, d in enumerate(sorted(dir_cfg.tmp)):
         if (start_row and i < start_row) or (end_row and i >= end_row):
             continue
         phases = sorted(job.job_phases_for_tmpdir(d, jobs))
@@ -187,11 +186,10 @@ def arch_dir_report(archdir_freebytes, width, prefix=''):
 
 # TODO: remove this
 def dirs_report(jobs, dir_cfg, sched_cfg, width):
-    tmpdirs = dir_cfg['tmp']
-    dstdirs = dir_cfg['dst']
-    arch_cfg = dir_cfg['archive']
-    return (tmp_dir_report(jobs, dir_cfg, sched_cfg, width) + '\n' +
-            dst_dir_report(jobs, dstdirs, width) + '\n' +
-            'archive dirs free space:\n' +
-            arch_dir_report(archive.get_archdir_freebytes(arch_cfg), width) + '\n')
+    return (
+        tmp_dir_report(jobs, dir_cfg, sched_cfg, width) + '\n' +
+        dst_dir_report(jobs, dir_cfg.dst, width) + '\n' +
+        'archive dirs free space:\n' +
+        arch_dir_report(archive.get_archdir_freebytes(dir_cfg.archive), width) + '\n'
+    )
 
