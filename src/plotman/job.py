@@ -102,21 +102,21 @@ class Job:
             assert 'plots' == command_line[2]
             assert 'create' == command_line[3]
 
-            command_arguments = command_line[4:]
-            command = chia.cmds.plots.create_cmd
-            context = command.make_context(
-                info_name='',
-                args=command_arguments,
-                resilient_parsing=True,
-            )
-
             # nice idea, but this doesn't include -h
             # help_option_names = command.get_help_option_names(ctx=context)
             help_option_names = {'--help', '-h'}
 
-            self.help = any(
-                argument in help_option_names for argument in command_arguments
-            )
+            all_command_arguments = command_line[4:]
+            command_arguments = [
+                argument
+                for argument in all_command_arguments
+                if argument not in help_option_names
+            ]
+
+            self.help = len(all_command_arguments) > len(command_arguments)
+
+            command = chia.cmds.plots.create_cmd
+            context = command.make_context(info_name='', args=command_arguments)
 
             self.args = context.params
 
