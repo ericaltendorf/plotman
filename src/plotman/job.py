@@ -53,6 +53,39 @@ def parse_chia_plot_time(s):
     # This will grow to try ISO8601 as well for when Chia logs that way
     return pendulum.from_format(s, 'ddd MMM DD HH:mm:ss YYYY', locale='en', tz=None)
 
+class ParsedChiaPlotsCreateCommand:
+    def __init__(self, help, parameters):
+        self.help = help
+        self.parameters = parameters
+
+def parse_chia_plots_create_command_line(command_line):
+    # Parse command line args
+    assert len(command_line) >= 4
+    assert 'python' in command_line[0]
+    assert 'chia' in command_line[1]
+    assert 'plots' == command_line[2]
+    assert 'create' == command_line[3]
+
+    all_command_arguments = command_line[4:]
+
+    # nice idea, but this doesn't include -h
+    # help_option_names = command.get_help_option_names(ctx=context)
+    help_option_names = {'--help', '-h'}
+
+    command_arguments = [
+        argument
+        for argument in all_command_arguments
+        if argument not in help_option_names
+    ]
+
+    command = chia.cmds.plots.create_cmd
+    context = command.make_context(info_name='', args=list(command_arguments))
+
+    return ParsedChiaPlotsCreateCommand(
+        help=len(all_command_arguments) > len(command_arguments),
+        parameters=context.params,
+    )
+
 # TODO: be more principled and explicit about what we cache vs. what we look up
 # dynamically from the logfile
 class Job:
@@ -94,31 +127,11 @@ class Job:
         self.proc = proc
 
         with self.proc.oneshot():
-            # Parse command line args
-            command_line = self.proc.cmdline()
-            assert len(command_line) > 4
-            assert 'python' in command_line[0]
-            assert 'chia' in command_line[1]
-            assert 'plots' == command_line[2]
-            assert 'create' == command_line[3]
-
-            # nice idea, but this doesn't include -h
-            # help_option_names = command.get_help_option_names(ctx=context)
-            help_option_names = {'--help', '-h'}
-
-            all_command_arguments = command_line[4:]
-            command_arguments = [
-                argument
-                for argument in all_command_arguments
-                if argument not in help_option_names
-            ]
-
-            self.help = len(all_command_arguments) > len(command_arguments)
-
-            command = chia.cmds.plots.create_cmd
-            context = command.make_context(info_name='', args=command_arguments)
-
-            self.args = context.params
+            parsed_command = parse_chia_plots_create_command_line(
+                command_line=self.proc.cmdline(),
+            )
+            self.help = parsed_command.help
+            self.args = parsed_command.parameters
 
             # an example as of 1.0.5
             # {
