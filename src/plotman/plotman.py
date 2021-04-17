@@ -101,11 +101,11 @@ def main():
         config_file_path = configuration.get_path()
         if args.config_subcommand == 'path':
             if os.path.isfile(config_file_path):
-                return config_file_path
-            return (
-                f"No 'plotman.yaml' file exists at expected location: '{config_file_path}'. To generate "
-                f"default config file, run: 'plotman config generate'"
-            )
+                print(config_file_path)
+                return
+            print(f"No 'plotman.yaml' file exists at expected location: '{config_file_path}'")
+            print(f"To generate a default config file, run: 'plotman config generate'")
+            return 1
         if args.config_subcommand == 'generate':
             if os.path.isfile(config_file_path):
                 overwrite = None
