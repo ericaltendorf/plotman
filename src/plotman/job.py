@@ -95,20 +95,30 @@ class Job:
 
         with self.proc.oneshot():
             # Parse command line args
-            args = self.proc.cmdline()
-            assert len(args) > 4
-            assert 'python' in args[0]
-            assert 'chia' in args[1]
-            assert 'plots' == args[2]
-            assert 'create' == args[3]
+            command_line = self.proc.cmdline()
+            assert len(command_line) > 4
+            assert 'python' in command_line[0]
+            assert 'chia' in command_line[1]
+            assert 'plots' == command_line[2]
+            assert 'create' == command_line[3]
 
-            if '--help' in args:
-                args = [arg for arg in args if arg != '--help']
-                self.help = True
-            else:
-                self.help = False
+            command_arguments = command_line[4:]
+            command = chia.cmds.plots.create_cmd
+            context = command.make_context(
+                info_name='',
+                args=command_arguments,
+                resilient_parsing=True,
+            )
 
-            self.args = chia.cmds.plots.create_cmd.make_context(info_name='', args=args[4:]).params
+            # nice idea, but this doesn't include -h
+            # help_option_names = command.get_help_option_names(ctx=context)
+            help_option_names = {'--help', '-h'}
+
+            self.help = any(
+                argument in help_option_names for argument in command_arguments
+            )
+
+            self.args = context.params
 
             # an example as of 1.0.5
             # {
