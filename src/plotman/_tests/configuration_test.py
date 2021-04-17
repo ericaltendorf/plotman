@@ -12,7 +12,7 @@ from plotman import resources as plotman_resources
 def config_fixture(tmp_path):
     """Return direct path to plotman.yaml"""
     with importlib.resources.path(plotman_resources, "plotman.yaml") as path:
-        return path
+        yield path
 
 
 def test_get_validated_configs__default(mocker, config_path):
