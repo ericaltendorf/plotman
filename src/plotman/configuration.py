@@ -77,8 +77,8 @@ class Plotting:
     n_threads: int
     n_buckets: int
     job_buffer: int
-    farmer_pk: Optional[int] = None
-    pool_pk: Optional[int] = None
+    farmer_pk: Optional[str] = None
+    pool_pk: Optional[str] = None
 
 @dataclass
 class UserInterface:
