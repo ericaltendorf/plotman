@@ -115,7 +115,8 @@ def main():
                         "\tInput 'y' to overwrite existing file, or 'n' to exit without overwrite."
                       ).lower()
                     if overwrite == 'n':
-                        return "\nExited without overrwriting file"
+                        print("\nExited without overrwriting file")
+                        return
 
             # Copy the default plotman.yaml (packaged in plotman/resources/) to the user's config file path,
             # creating the parent plotman file/directory if it does not yet exist
@@ -124,10 +125,12 @@ def main():
 
                 os.makedirs(config_dir, exist_ok=True)
                 copyfile(default_config, config_file_path)
-                return f"\nWrote default plotman.yaml to: {config_file_path}"
+                print(f"\nWrote default plotman.yaml to: {config_file_path}")
+                return
 
         if not args.config_subcommand:
-            return "No action requested, add 'generate' or 'path'."
+            print("No action requested, add 'generate' or 'path'.")
+            return
 
     cfg = configuration.get_validated_configs()
 
