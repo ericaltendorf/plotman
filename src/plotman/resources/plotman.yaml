@@ -1,3 +1,5 @@
+# Default/example plotman.yaml configuration file
+
 # Options for display and rendering
 user_interface:
         # Call out to the `stty` program to determine terminal size, instead of
