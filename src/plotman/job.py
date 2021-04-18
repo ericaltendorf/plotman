@@ -391,10 +391,3 @@ class Job:
         # TODO: check that this is best practice for killing a job.
         self.proc.resume()
         self.proc.terminate()
-
-    def check_status(self, expected_status):
-        if (self.status == expected_status):
-            return 1
-        else:
-            print('Expected status %s, actual %s', expected_status, self.status)
-            return 0
