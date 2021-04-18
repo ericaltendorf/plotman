@@ -17,7 +17,7 @@ from plotman import manager, plot_util
 
 # TODO : write-protect and delete-protect archived plots
 
-jobs = []
+archive_job_status_list = []
 
 def enqueue_output(out, queue):
     for line in out:
@@ -143,7 +143,7 @@ def archive(dir_cfg, all_jobs):
     if arch_jobs:
         # Create empty status string to hold arch job data
         status = ''
-        for j in jobs:
+        for j in archive_job_status_list:
             try:
                 rsync_output = j['queue'].get_nowait()
 
@@ -178,7 +178,7 @@ def archive(dir_cfg, all_jobs):
     t = Thread(target=enqueue_output, args=(p.stdout, q))
     t.daemon = True # thread dies with the program
     t.start()
-    jobs.append({
+    archive_job_status_list.append({
         "queue": q,
         "chosen_plot": chosen_plot,
         "archdir": archdir
