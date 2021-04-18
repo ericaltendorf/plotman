@@ -123,7 +123,7 @@ def curses_main(stdscr):
                 if archiving_active:
                     # Look for running archive jobs.  Be robust to finding more than one
                     # even though the scheduler should only run one at a time.
-                    archiving_status = archive.archive(dir_cfg, jobs)
+                    archiving_status = archive.archive(cfg.directories, jobs)
                     log.log('Archiving Status: ' + archiving_status)
 
                 archdir_freebytes = archive.get_archdir_freebytes(cfg.directories.archive)
