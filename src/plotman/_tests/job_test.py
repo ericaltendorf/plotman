@@ -82,21 +82,6 @@ def test_chia_plots_create_parsing_does_not_fail(arguments):
     ],
     ids=str,
 )
-def test_chia_plots_create_parsing_does_not_fail(arguments):
-    job.parse_chia_plots_create_command_line(
-        command_line=['python', 'chia', 'plots', 'create', *arguments],
-    )
-
-
-@pytest.mark.parametrize(
-    argnames=['arguments'],
-    argvalues=[
-        [['-h']],
-        [['--help']],
-        [['-k', '32', '--help']],
-    ],
-    ids=str,
-)
 def test_chia_plots_create_parsing_detects_help(arguments):
     parsed = job.parse_chia_plots_create_command_line(
         command_line=['python', 'chia', 'plots', 'create', *arguments],
@@ -138,3 +123,19 @@ def test_chia_plots_create_parsing_handles_argument_forms(arguments):
     )
 
     assert parsed.parameters['size'] == 32
+
+
+@pytest.mark.parametrize(
+    argnames=['arguments'],
+    argvalues=[
+        [['--size32']],
+        [['--not-an-actual-option']],
+    ],
+    ids=str,
+)
+def test_chia_plots_create_parsing_handles_argument_forms(arguments):
+    parsed = job.parse_chia_plots_create_command_line(
+        command_line=['python', 'chia', 'plots', 'create', *arguments],
+    )
+
+    assert parsed.error is not None

@@ -13,6 +13,7 @@ from enum import Enum, auto
 from subprocess import call
 
 import chia.cmds.plots
+import click
 import pendulum
 import psutil
 
@@ -74,15 +75,24 @@ def parse_chia_plots_create_command_line(command_line):
     ]
 
     command = chia.cmds.plots.create_cmd
-    context = command.make_context(info_name='', args=list(command_arguments))
+    try:
+        context = command.make_context(info_name='', args=list(command_arguments))
+    except click.ClickException as e:
+        error = e
+        params = {}
+    else:
+        error = None
+        params = context.params
 
     return ParsedChiaPlotsCreateCommand(
+        error=error,
         help=len(all_command_arguments) > len(command_arguments),
-        parameters=context.params,
+        parameters=params,
     )
 
 class ParsedChiaPlotsCreateCommand:
-    def __init__(self, help, parameters):
+    def __init__(self, error, help, parameters):
+        self.error = error
         self.help = help
         self.parameters = parameters
 
@@ -115,78 +125,85 @@ class Job:
                     if proc.pid in cached_jobs_by_pid.keys():
                         jobs.append(cached_jobs_by_pid[proc.pid])  # Copy from cache
                     else:
-                        job = Job(proc, logroot)
-                        if not job.help:
+                        with proc.oneshot():
+                            parsed_command = parse_chia_plots_create_command_line(
+                                command_line=proc.cmdline(),
+                            )
+                            if parsed_command.error is not None:
+                                continue
+                            if job.help:
+                                continue
+                            job = Job(
+                                proc=proc,
+                                parsed_command=parsed_command,
+                                logroot=logroot,
+                            )
                             jobs.append(job)
 
         return jobs
 
  
-    def __init__(self, proc, logroot):
+    def __init__(self, proc, parsed_command, logroot):
         '''Initialize from an existing psutil.Process object.  must know logroot in order to understand open files'''
         self.proc = proc
 
-        with self.proc.oneshot():
-            parsed_command = parse_chia_plots_create_command_line(
-                command_line=self.proc.cmdline(),
-            )
-            self.help = parsed_command.help
-            self.args = parsed_command.parameters
+        self.help = parsed_command.help
+        self.args = parsed_command.parameters
 
-            # an example as of 1.0.5
-            # {
-            #     'size': 32,
-            #     'num_threads': 4,
-            #     'buckets': 128,
-            #     'buffer': 6000,
-            #     'tmp_dir': '/farm/yards/901',
-            #     'final_dir': '/farm/wagons/801',
-            #     'override_k': False,
-            #     'num': 1,
-            #     'alt_fingerprint': None,
-            #     'pool_contract_address': None,
-            #     'farmer_public_key': None,
-            #     'pool_public_key': None,
-            #     'tmp2_dir': None,
-            #     'plotid': None,
-            #     'memo': None,
-            #     'nobitfield': False,
-            #     'exclude_final_dir': False,
-            # }
+        # an example as of 1.0.5
+        # {
+        #     'size': 32,
+        #     'num_threads': 4,
+        #     'buckets': 128,
+        #     'buffer': 6000,
+        #     'tmp_dir': '/farm/yards/901',
+        #     'final_dir': '/farm/wagons/801',
+        #     'override_k': False,
+        #     'num': 1,
+        #     'alt_fingerprint': None,
+        #     'pool_contract_address': None,
+        #     'farmer_public_key': None,
+        #     'pool_public_key': None,
+        #     'tmp2_dir': None,
+        #     'plotid': None,
+        #     'memo': None,
+        #     'nobitfield': False,
+        #     'exclude_final_dir': False,
+        # }
 
-            self.k = self.args['size']
-            self.r = self.args['num_threads']
-            self.u = self.args['buckets']
-            self.b = self.args['buffer']
-            self.n = self.args['num']
-            self.tmpdir = self.args['tmp_dir']
-            self.tmp2dir = self.args['tmp2_dir']
-            self.dstdir = self.args['final_dir']
+        self.k = self.args['size']
+        self.r = self.args['num_threads']
+        self.u = self.args['buckets']
+        self.b = self.args['buffer']
+        self.n = self.args['num']
+        self.tmpdir = self.args['tmp_dir']
+        self.tmp2dir = self.args['tmp2_dir']
+        self.dstdir = self.args['final_dir']
 
-            plot_cwd = self.proc.cwd()
-            self.tmpdir = os.path.join(plot_cwd, self.tmpdir)
-            if self.tmp2dir is not None:
-                self.tmp2dir = os.path.join(plot_cwd, self.tmp2dir)
-            self.dstdir = os.path.join(plot_cwd, self.dstdir)
+        plot_cwd = self.proc.cwd()
+        self.tmpdir = os.path.join(plot_cwd, self.tmpdir)
+        if self.tmp2dir is not None:
+            self.tmp2dir = os.path.join(plot_cwd, self.tmp2dir)
+        self.dstdir = os.path.join(plot_cwd, self.dstdir)
 
-            # Find logfile (whatever file is open under the log root).  The
-            # file may be open more than once, e.g. for STDOUT and STDERR.
+        # Find logfile (whatever file is open under the log root).  The
+        # file may be open more than once, e.g. for STDOUT and STDERR.
+        for f in self.proc.open_files():
+            if logroot in f.path:
+                if self.logfile:
+                    assert self.logfile == f.path
+                else:
+                    self.logfile = f.path
+                break
+
+        if self.logfile:
+            # Initialize data that needs to be loaded from the logfile
+            self.init_from_logfile()
+        else:
+            print('Found plotting process PID {pid}, but could not find '
+                    'logfile in its open files:'.format(pid = self.proc.pid))
             for f in self.proc.open_files():
-                if logroot in f.path:
-                    if self.logfile:
-                        assert self.logfile == f.path
-                    else:
-                        self.logfile = f.path
-                    break
-
-            if self.logfile:
-                # Initialize data that needs to be loaded from the logfile
-                self.init_from_logfile()
-            else:
-                print('Found plotting process PID {pid}, but could not find '
-                        'logfile in its open files:'.format(pid = self.proc.pid))
-                for f in self.proc.open_files():
-                    print(f.path)
+                print(f.path)
 
 
 
