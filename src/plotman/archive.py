@@ -180,7 +180,7 @@ def archive(dir_cfg, all_jobs):
     t.start()
     jobs.append({
         "queue": q,
-        "chosen_plot": chosen_plot
+        "chosen_plot": chosen_plot,
         "archdir": archdir
     })
     return cmd
