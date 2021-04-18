@@ -65,6 +65,7 @@ def test_job_parses_time_with_non_english_locale(logfile_path, locale_name):
         [['-k32']],
         [['-k', '32', '--help']],
     ],
+    ids=str,
 )
 def test_chia_plots_create_parsing_does_not_fail(arguments):
     job.parse_chia_plots_create_command_line(
@@ -79,6 +80,7 @@ def test_chia_plots_create_parsing_does_not_fail(arguments):
         [['--help']],
         [['-k', '32', '--help']],
     ],
+    ids=str,
 )
 def test_chia_plots_create_parsing_does_not_fail(arguments):
     job.parse_chia_plots_create_command_line(
@@ -93,6 +95,7 @@ def test_chia_plots_create_parsing_does_not_fail(arguments):
         [['--help']],
         [['-k', '32', '--help']],
     ],
+    ids=str,
 )
 def test_chia_plots_create_parsing_detects_help(arguments):
     parsed = job.parse_chia_plots_create_command_line(
@@ -109,6 +112,7 @@ def test_chia_plots_create_parsing_detects_help(arguments):
         [['-k32']],
         [['-k', '32']],
     ],
+    ids=str,
 )
 def test_chia_plots_create_parsing_detects_not_help(arguments):
     parsed = job.parse_chia_plots_create_command_line(
@@ -116,3 +120,21 @@ def test_chia_plots_create_parsing_detects_not_help(arguments):
     )
 
     assert not parsed.help
+
+
+@pytest.mark.parametrize(
+    argnames=['arguments'],
+    argvalues=[
+        [[]],
+        [['-k32']],
+        [['-k', '32']],
+        [['--size', '32']],
+    ],
+    ids=str,
+)
+def test_chia_plots_create_parsing_handles_argument_forms(arguments):
+    parsed = job.parse_chia_plots_create_command_line(
+        command_line=['python', 'chia', 'plots', 'create', *arguments],
+    )
+
+    assert parsed.parameters['size'] == 32

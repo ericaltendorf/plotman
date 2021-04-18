@@ -53,11 +53,6 @@ def parse_chia_plot_time(s):
     # This will grow to try ISO8601 as well for when Chia logs that way
     return pendulum.from_format(s, 'ddd MMM DD HH:mm:ss YYYY', locale='en', tz=None)
 
-class ParsedChiaPlotsCreateCommand:
-    def __init__(self, help, parameters):
-        self.help = help
-        self.parameters = parameters
-
 def parse_chia_plots_create_command_line(command_line):
     # Parse command line args
     assert len(command_line) >= 4
@@ -85,6 +80,11 @@ def parse_chia_plots_create_command_line(command_line):
         help=len(all_command_arguments) > len(command_arguments),
         parameters=context.params,
     )
+
+class ParsedChiaPlotsCreateCommand:
+    def __init__(self, help, parameters):
+        self.help = help
+        self.parameters = parameters
 
 # TODO: be more principled and explicit about what we cache vs. what we look up
 # dynamically from the logfile
