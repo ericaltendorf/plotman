@@ -6,7 +6,7 @@ import random
 import re
 import subprocess
 from threading import Thread
-from queue import Queue, Empty
+from queue import LifoQueue, Empty
 import sys
 from datetime import datetime
 
@@ -174,7 +174,9 @@ def archive(dir_cfg, all_jobs):
             bufsize=1,
             universal_newlines=True)
 
-    q = Queue()
+    # Use a stack type queue, otherwise the lines bunch up and are processed in order, 
+    # returning only the very oldest rsync data
+    q = LifoQueue()
     t = Thread(target=enqueue_output, args=(p.stdout, q))
     t.daemon = True # thread dies with the program
     t.start()
