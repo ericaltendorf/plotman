@@ -87,6 +87,7 @@ def curses_main(stdscr):
     pressed_key = ''   # For debugging
 
     archdir_freebytes = None
+    aging_reason = None
 
     while True:
 
@@ -113,10 +114,16 @@ def curses_main(stdscr):
                     cfg.directories, cfg.scheduling, cfg.plotting
                 )
                 if (started):
+                    if aging_reason is not None:
+                        log.log(aging_reason)
+                        aging_reason = None
                     log.log(msg)
                     plotting_status = '<just started job>'
                     jobs = Job.get_running_jobs(cfg.directories.log, cached_jobs=jobs)
                 else:
+                    # If a plot is delayed for any reason other than stagger, log it
+                    if msg.find("stagger") < 0:
+                        aging_reason = msg
                     plotting_status = msg
 
             if archiving_configured:
