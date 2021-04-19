@@ -21,6 +21,16 @@ archive_job_status_list = []
 
 def enqueue_output(out, queue):
     for line in out:
+        # We only hold the most recent 3 lines to prevent
+        # any memory leaks. 3 is good just in case we consume an item
+        # while another thread tries to read it
+        if queue.full():
+            try:
+                # Toss out old data to make room for new data
+                oldest_data = queue.get()
+            except Empty:
+                pass
+        # Put the latest data onto the stack
         queue.put(line.strip())
     out.close()
 
@@ -176,7 +186,7 @@ def archive(dir_cfg, all_jobs):
 
     # Use a stack type queue, otherwise the lines bunch up and are processed in order, 
     # returning only the very oldest rsync data
-    q = LifoQueue()
+    q = LifoQueue(maxsize=3)
     t = Thread(target=enqueue_output, args=(p.stdout, q))
     t.daemon = True # thread dies with the program
     t.start()
