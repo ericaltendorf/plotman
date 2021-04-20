@@ -122,7 +122,7 @@ by their unique suffix.  For example, if we have `tmp` dirs `/mnt/tmp/00`,
 `/mnt/tmp/01`, `/mnt/tmp/02`, etc., we show `/mnt/tmp` as the prefix here and
 can then talk about `tmp` dirs `00` or `01` etc.  The `archive` directories are
 the same except that these are paths on a remote host and accessed via an
-`rsyncd` module (see `config.yaml` for details).
+`rsyncd` module (see `src/plotman/resources/plotman.yaml` for details).
 
 The next table shows information about the active plotting jobs.  It is
 abbreviated to show the most and least recently started jobs (the full list is
@@ -166,17 +166,40 @@ mode or the command line mode.
 
 There are many bugs and TODOs.
 
+Plotman will always look for the `plotman.yaml` file within your computer at an OS-based
+default location. To generate a default `plotman.yaml`, run:
+```shell
+> plotman config generate
+```
+
+To display the current location of your `plotman.yaml` file and check if it exists, run:
+```shell
+> plotman config path
+```
+
+([See also](https://github.com/ericaltendorf/plotman/pull/61#issuecomment-812967363)).
+
 ## Installation
 
-This program requires `psutil`, `pyfakefs`, and `texttable`.
+Installation for Linux:
 
-Installation for Ubuntu 20.04:
+1. Plotman assumes that a functioning [Chia](https://github.com/Chia-Network/chia-blockchain)
+   installation is present on the system. Activate your `chia` environment by typing
+   `source /path/to/your/chia/install/activate`.
+2. Then, install Plotman using the following command:
+   ```shell
+    > pip install --force-reinstall git+https://github.com/ericaltendorf/plotman@main
+    ```
+3. Plotman will look for `plotman.yaml` within your computer at an OS-based
+   default location. To create a default `plotman.yaml` and display its location,
+   run the following command:
+   ```shell
+   > plotman config generate
+   ```
+   The default configuration file used as a starting point is located [here](./src/plotman/resources/plotman.yaml)
+4. That's it! You can now run Plotman by typing `plotman version` to verify its version.
+   Run `plotman --help` to learn about the available commands.
 
-```
-# Install Python package system
-sudo apt-get install python3-pip
+### Development note:
 
-python3 -m pip install psutil
-python3 -m pip install pyfakefs
-python3 -m pip install texttable
-```
+If you are forking Plotman, simply replace the installation step with `pip install --editable .[dev]` from the project root directory to install *your* version of plotman with test and development extras.

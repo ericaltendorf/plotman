@@ -7,7 +7,7 @@ GB = 1_000_000_000
 def df_b(d):
     'Return free space for directory (in bytes)'
     stat = os.statvfs(d)
-    return stat.f_frsize * stat.f_bfree 
+    return stat.f_frsize * stat.f_bavail
 
 def get_k32_plotsize():
     return 108 * GB
@@ -21,6 +21,8 @@ def human_format(num, precision):
             (num, ['', 'K', 'M', 'G', 'T', 'P'][magnitude]))
 
 def time_format(sec):
+    if sec is None:
+        return '-'
     if sec < 60:
         return '%ds' % sec
     else:

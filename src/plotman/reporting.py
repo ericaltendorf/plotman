@@ -1,30 +1,34 @@
-import texttable as tt   # from somewhere?
-import os
-import psutil
-
-import archive
-import job
-import manager
 import math
-import plot_util
+import os
+
+import psutil
+import texttable as tt  # from somewhere?
+
+from plotman import archive, job, manager, plot_util
+
 
 def abbr_path(path, putative_prefix):
     if putative_prefix and path.startswith(putative_prefix):
         return os.path.relpath(path, putative_prefix)
     else:
         return path
+    
+def phase_str(phase_pair):
+    (ph, subph) = phase_pair
+    return ((str(ph) if ph is not None else '?') + ':'
+            + (str(subph) if subph is not None else '?'))
 
 def phases_str(phases, max_num=None):
     '''Take a list of phase-subphase pairs and return them as a compact string'''
     if not max_num or len(phases) <= max_num:
-        return ' '.join(['%d:%d' % pair for pair in phases])
+        return ' '.join([phase_str(pair) for pair in phases])
     else:
         n_first = math.floor(max_num / 2)
         n_last = max_num - n_first
         n_elided = len(phases) - (n_first + n_last)
-        first = ' '.join(['%d:%d' % pair for pair in phases[:n_first]])
+        first = ' '.join([phase_str(pair) for pair in phases[:n_first]])
         elided = " [+%d] " % n_elided
-        last = ' '.join(['%d:%d' % pair for pair in phases[n_first + n_elided:]])
+        last = ' '.join([phase_str(pair) for pair in phases[n_first + n_elided:]])
         return first + elided + last
 
 def n_at_ph(jobs, ph):
@@ -56,7 +60,6 @@ def job_viz(jobs):
     result += '4'
     result += n_to_char(n_at_ph(jobs, (4, 0)))
     return result
-    
 
 def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
     '''height, if provided, will limit the number of rows in the table,
@@ -68,7 +71,7 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
         abbreviate_jobs_list = True
 
     if abbreviate_jobs_list:
-        n_rows = height - 2  # One for header, one for elipsis
+        n_rows = height - 2  # Minus one for header, one for ellipsis
         n_begin_rows = int(n_rows / 2)
         n_end_rows = n_rows - n_begin_rows
 
@@ -92,12 +95,12 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
         # Regular row
         else:
             try:
-                row = [j.plot_id[:8] + '...',
+                row = [j.plot_id[:8],
                     j.k,
                     abbr_path(j.tmpdir, tmp_prefix),
                     abbr_path(j.dstdir, dst_prefix),
                     plot_util.time_format(j.get_time_wall()),
-                    '%d:%d' % j.progress(),
+                    phase_str(j.progress()),
                     plot_util.human_format(j.get_tmp_usage(), 0),
                     j.proc.pid,
                     j.get_run_status(),
@@ -108,7 +111,7 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
                     ]
             except psutil.NoSuchProcess:
                 # In case the job has disappeared
-                row = [j.plot_id[:8] + '...'] + (['--'] * 12)
+                row = [j.plot_id[:8]] + (['--'] * 12)
 
             if height:
                 row.insert(0, '%3d' % i)
@@ -120,18 +123,18 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
     # return ('tmp dir prefix: %s ; dst dir prefix: %s\n' % (tmp_prefix, dst_prefix)
     return tab.draw()
 
-def tmp_dir_report(jobs, tmpdirs, sched_cfg, width, start_row=None, end_row=None, prefix=''):
+def tmp_dir_report(jobs, dir_cfg, sched_cfg, width, start_row=None, end_row=None, prefix=''):
     '''start_row, end_row let you split the table up if you want'''
     tab = tt.Texttable()
     headings = ['tmp', 'ready', 'phases']
     tab.header(headings)
     tab.set_cols_dtype('t' * len(headings))
     tab.set_cols_align('r' * (len(headings) - 1) + 'l')
-    for i, d in enumerate(sorted(tmpdirs)):
+    for i, d in enumerate(sorted(dir_cfg.tmp)):
         if (start_row and i < start_row) or (end_row and i >= end_row):
             continue
         phases = sorted(job.job_phases_for_tmpdir(d, jobs))
-        ready = manager.phases_permit_new_job(phases, sched_cfg)
+        ready = manager.phases_permit_new_job(phases, d, sched_cfg, dir_cfg)
         row = [abbr_path(d, prefix), 'OK' if ready else '--', phases_str(phases)]
         tab.add_row(row)
 
@@ -183,12 +186,10 @@ def arch_dir_report(archdir_freebytes, width, prefix=''):
 
 # TODO: remove this
 def dirs_report(jobs, dir_cfg, sched_cfg, width):
-    tmpdirs = dir_cfg['tmp']
-    dstdirs = dir_cfg['dst']
-    arch_cfg = dir_cfg['archive']
-    return (tmp_dir_report(jobs, tmpdirs, sched_cfg, width) + '\n' +
-            dst_dir_report(jobs, dstdirs, width) + '\n' +
-            'archive dirs free space:\n' +
-            arch_dir_report(archive.get_archdir_freebytes(arch_cfg), width) + '\n')
-
+    return (
+        tmp_dir_report(jobs, dir_cfg, sched_cfg, width) + '\n' +
+        dst_dir_report(jobs, dir_cfg.dst, width) + '\n' +
+        'archive dirs free space:\n' +
+        arch_dir_report(archive.get_archdir_freebytes(dir_cfg.archive), width) + '\n'
+    )
 

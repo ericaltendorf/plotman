@@ -1,20 +1,20 @@
-#!/usr/bin/python3
-
 # TODO do we use all these?
-from datetime import datetime
-from enum import Enum, auto
-from subprocess import call
 import argparse
-
 import contextlib
 import logging
 import os
+import random
 import re
+import sys
 import threading
 import time
-import psutil      # apt-get install python-psutil
-import random
-import sys
+from datetime import datetime
+from enum import Enum, auto
+from subprocess import call
+
+import pendulum
+import psutil
+
 
 def job_phases_for_tmpdir(d, all_jobs):
     '''Return phase 2-tuples for jobs running on tmpdir d'''
@@ -28,10 +28,29 @@ def is_plotting_cmdline(cmdline):
     return (
         len(cmdline) >= 4
         and 'python' in cmdline[0]
-        and 'venv/bin/chia' in cmdline[1]
+        and cmdline[1].endswith('/chia')
         and 'plots' == cmdline[2]
         and 'create' == cmdline[3]
     )
+
+# This is a cmdline argument fix for https://github.com/ericaltendorf/plotman/issues/41
+def cmdline_argfix(cmdline):
+    known_keys = 'krbut2dne'
+    for i in cmdline:
+        # If the argument starts with dash and a known key and is longer than 2,
+        # then an argument is passed with no space between its key and value.
+        # This is POSIX compliant but the arg parser was tripping over it.
+        # In these cases, splitting that item up in separate key and value
+        # elements results in a `cmdline` list that is correctly formatted.
+        if i[0]=='-' and i[1] in known_keys and len(i)>2:
+            yield i[0:2]  # key
+            yield i[2:]  # value
+        else:
+            yield i
+
+def parse_chia_plot_time(s):
+    # This will grow to try ISO8601 as well for when Chia logs that way
+    return pendulum.from_format(s, 'ddd MMM DD HH:mm:ss YYYY', locale='en', tz=None)
 
 # TODO: be more principled and explicit about what we cache vs. what we look up
 # dynamically from the logfile
@@ -52,6 +71,7 @@ class Job:
     job_id = 0
     plot_id = '--------'
     proc = None   # will get a psutil.Process
+    help = False
 
     # These are dynamic, cached, and need to be udpated periodically
     phase = (None, None)   # Phase/subphase
@@ -66,12 +86,14 @@ class Job:
         for proc in psutil.process_iter(['pid', 'cmdline']):
             # Ignore processes which most likely have terminated between the time of
             # iteration and data access.
-            with contextlib.suppress(psutil.NoSuchProcess):
+            with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied):
                 if is_plotting_cmdline(proc.cmdline()):
                     if proc.pid in cached_jobs_by_pid.keys():
                         jobs.append(cached_jobs_by_pid[proc.pid])  # Copy from cache
                     else:
-                        jobs.append(Job(proc, logroot))
+                        job = Job(proc, logroot)
+                        if not job.help:
+                            jobs.append(job)
 
         return jobs
 
@@ -88,28 +110,32 @@ class Job:
             assert 'chia' in args[1]
             assert 'plots' == args[2]
             assert 'create' == args[3]
-            args_iter = iter(args[4:])
+            args_iter = iter(cmdline_argfix(args[4:]))
             for arg in args_iter:
-                val = None if arg in ['-e'] else next(args_iter)
-                if arg == '-k':
+                val = None if arg in {'-e', '--nobitfield', '-h', '--help', '--override-k'} else next(args_iter)
+                if arg in {'-k', '--size'}:
                     self.k = val
-                elif arg == '-r':
+                elif arg in {'-r', '--num_threads'}:
                     self.r = val
-                elif arg == '-b':
+                elif arg in {'-b', '--buffer'}:
                     self.b = val
-                elif arg == '-u':
+                elif arg in {'-u', '--buckets'}:
                     self.u = val
-                elif arg == '-t':
+                elif arg in {'-t', '--tmp_dir'}:
                     self.tmpdir = val
-                elif arg == '-2':
+                elif arg in {'-2', '--tmp2_dir'}:
                     self.tmp2dir = val
-                elif arg == '-d':
+                elif arg in {'-d', '--final_dir'}:
                     self.dstdir = val
-                elif arg == '-n':
+                elif arg in {'-n', '--num'}:
                     self.n = val
-                elif arg == '-e':
+                elif arg in {'-h', '--help'}:
+                    self.help = True
+                elif arg in {'-e', '--nobitfield', '-f', '--farmer_public_key', '-p', '--pool_public_key'}:
                     pass
-                    # TODO: keep track of -e
+                    # TODO: keep track of these
+                elif arg == '--override-k':
+                    pass
                 else:
                     print('Warning: unrecognized args: %s %s' % (arg, val))
 
@@ -123,8 +149,15 @@ class Job:
                         self.logfile = f.path
                     break
 
-            # Initialize data that needs to be loaded from the logfile
-            self.init_from_logfile()
+            if self.logfile:
+                # Initialize data that needs to be loaded from the logfile
+                self.init_from_logfile()
+            else:
+                print('Found plotting process PID {pid}, but could not find '
+                        'logfile in its open files:'.format(pid = self.proc.pid))
+                for f in self.proc.open_files():
+                    print(f.path)
+
 
 
     def init_from_logfile(self):
@@ -145,7 +178,7 @@ class Job:
                     m = re.match(r'^Starting phase 1/4:.*\.\.\. (.*)', line)
                     if m:
                         # Mon Nov  2 08:39:53 2020
-                        self.start_time = datetime.strptime(m.group(1), '%a %b  %d %H:%M:%S %Y')
+                        self.start_time = parse_chia_plot_time(m.group(1))
                         found_log = True
                         break  # Stop reading lines in file
 
@@ -157,6 +190,7 @@ class Job:
         # If we couldn't find the line in the logfile, the job is probably just getting started
         # (and being slow about it).  In this case, use the last metadata change as the start time.
         # TODO: we never come back to this; e.g. plot_id may remain uninitialized.
+        # TODO: should we just use the process start time instead?
         if not found_log:
             self.start_time = datetime.fromtimestamp(os.path.getctime(self.logfile))
 
@@ -270,7 +304,8 @@ class Job:
             return self.proc.status()
 
     def get_time_wall(self):
-        return int((datetime.now() - self.start_time).total_seconds())
+        create_time = datetime.fromtimestamp(self.proc.create_time())
+        return int((datetime.now() - create_time).total_seconds())
 
     def get_time_user(self):
         return int(self.proc.cpu_times().user)
@@ -279,7 +314,12 @@ class Job:
         return int(self.proc.cpu_times().system)
 
     def get_time_iowait(self):
-        return int(self.proc.cpu_times().iowait)
+        cpu_times = self.proc.cpu_times()
+        iowait = getattr(cpu_times, 'iowait', None)
+        if iowait is None:
+            return None
+
+        return int(iowait)
 
     def suspend(self, reason=''):
         self.proc.suspend()
@@ -289,10 +329,11 @@ class Job:
         self.proc.resume()
 
     def get_temp_files(self):
-        temp_files = []
+        # Prevent duplicate file paths by using set.
+        temp_files = set([])
         for f in self.proc.open_files():
             if self.tmpdir in f.path or self.tmp2dir in f.path or self.dstdir in f.path:
-                temp_files.append(f.path)
+                temp_files.add(f.path)
         return temp_files
 
     def cancel(self):
@@ -303,10 +344,3 @@ class Job:
         # TODO: check that this is best practice for killing a job.
         self.proc.resume()
         self.proc.terminate()
-
-    def check_status(self, expected_status):
-        if (self.status == expected_status):
-            return 1
-        else:
-            print('Expected status %s, actual %s', expected_status, self.status)
-            return 0

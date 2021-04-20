@@ -1,15 +1,14 @@
 import curses
 import datetime
 import locale
+import math
 import os
 import subprocess
 import threading
-import yaml
 
-from job import Job
-import archive
-import manager
-import reporting
+from plotman import archive, configuration, manager, reporting
+from plotman.job import Job
+
 
 class Log:
     def __init__(self):
@@ -62,119 +61,184 @@ def archiving_status_msg(configured, active, status):
         return '(not configured)'
 
 def curses_main(stdscr):
-    # TODO: figure out how to pass the configs in from plotman.py instead of
-    # duplicating the code here.
-    with open('config.yaml', 'r') as ymlfile:
-        cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)
-    dir_cfg = cfg['directories']
-    sched_cfg = cfg['scheduling']
-    plotting_cfg = cfg['plotting']
-
     log = Log()
 
+    cfg = configuration.get_validated_configs()
+
     plotting_active = True
-    archiving_configured = 'archive' in dir_cfg
+    archiving_configured = cfg.directories.archive is not None
     archiving_active = archiving_configured
-
-    (n_rows, n_cols) = map(int, stdscr.getmaxyx())
-
-    # Page layout.  Currently requires at least ~40 rows.
-    # TODO: make everything dynamically resize to best use available space
-    header_height = 3
-    jobs_height = 10
-    dirs_height = 14
-    logscreen_height = n_rows - (header_height + jobs_height + dirs_height)
-
-    header_pos = 0
-    jobs_pos = header_pos + header_height
-    dirs_pos = jobs_pos + jobs_height
-    logscreen_pos = dirs_pos + dirs_height
 
     plotting_status = '<startup>'    # todo rename these msg?
     archiving_status = '<startup>'
 
-    refresh_period = int(sched_cfg['polling_time_s'])
-
     stdscr.nodelay(True)  # make getch() non-blocking
     stdscr.timeout(2000)
 
-    header_win = curses.newwin(header_height, n_cols, header_pos, 0)
-    log_win = curses.newwin(logscreen_height, n_cols, logscreen_pos, 0)
-    jobs_win = curses.newwin(jobs_height, n_cols, jobs_pos, 0)
-    dirs_win = curses.newwin(dirs_height, n_cols, dirs_pos, 0)
+    # Create windows.  We'll size them in the main loop when we have their content.
+    header_win = curses.newwin(1, 1, 1, 0)
+    log_win = curses.newwin(1, 1, 1, 0)
+    jobs_win = curses.newwin(1, 1, 1, 0)
+    dirs_win = curses.newwin(1, 1, 1, 0)
 
-    jobs = Job.get_running_jobs(dir_cfg['log'])
-    last_refresh = datetime.datetime.now()
+    jobs = Job.get_running_jobs(cfg.directories.log)
+    last_refresh = None
 
     pressed_key = ''   # For debugging
 
+    archdir_freebytes = None
+
     while True:
-
-        # TODO: handle resizing.  Need to (1) figure out how to reliably get
-        # the terminal size -- the recommended method doesn't seem to work:
-        #    (n_rows, n_cols) = [int(v) for v in stdscr.getmaxyx()]
-        # Consider instead:
-        #    ...[int(v) for v in os.popen('stty size', 'r').read().split()]
-        # and then (2) implement the logic to resize all the subwindows as above
-
-        stdscr.clear()
-        linecap = n_cols - 1
-        logscreen_height = n_rows - (header_height + jobs_height + dirs_height)
-
-        elapsed = (datetime.datetime.now() - last_refresh).total_seconds() 
 
         # A full refresh scans for and reads info for running jobs from
         # scratch (i.e., reread their logfiles).  Otherwise we'll only
         # initialize new jobs, and mostly rely on cached info.
-        do_full_refresh = elapsed >= refresh_period
+        do_full_refresh = False
+        elapsed = 0    # Time since last refresh, or zero if no prev. refresh
+        if last_refresh is None:
+            do_full_refresh = True
+        else:
+            elapsed = (datetime.datetime.now() - last_refresh).total_seconds() 
+            do_full_refresh = elapsed >= cfg.scheduling.polling_time_s
 
         if not do_full_refresh:
-            jobs = Job.get_running_jobs(dir_cfg['log'], cached_jobs=jobs)
+            jobs = Job.get_running_jobs(cfg.directories.log, cached_jobs=jobs)
 
         else:
             last_refresh = datetime.datetime.now()
-            jobs = Job.get_running_jobs(dir_cfg['log'])
+            jobs = Job.get_running_jobs(cfg.directories.log)
 
             if plotting_active:
-                (started, msg) = manager.maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg)
+                (started, msg) = manager.maybe_start_new_plot(
+                    cfg.directories, cfg.scheduling, cfg.plotting
+                )
                 if (started):
                     log.log(msg)
                     plotting_status = '<just started job>'
-                    jobs = Job.get_running_jobs(dir_cfg['log'], cached_jobs=jobs)
+                    jobs = Job.get_running_jobs(cfg.directories.log, cached_jobs=jobs)
                 else:
                     plotting_status = msg
 
-            if archiving_configured and archiving_active:
-                # Look for running archive jobs.  Be robust to finding more than one
-                # even though the scheduler should only run one at a time.
-                arch_jobs = archive.get_running_archive_jobs(dir_cfg['archive'])
-                if arch_jobs:
-                    archiving_status = 'pid: ' + ', '.join(map(str, arch_jobs))
-                else:
-                    (should_start, status_or_cmd) = archive.archive(dir_cfg, jobs)
-                    if not should_start:
-                        archiving_status = status_or_cmd
+            if archiving_configured:
+                if archiving_active:
+                    # Look for running archive jobs.  Be robust to finding more than one
+                    # even though the scheduler should only run one at a time.
+                    arch_jobs = archive.get_running_archive_jobs(cfg.directories.archive)
+                    if arch_jobs:
+                        archiving_status = 'pid: ' + ', '.join(map(str, arch_jobs))
                     else:
-                        cmd = status_or_cmd
-                        log.log('Starting archive: ' + cmd)
+                        (should_start, status_or_cmd) = archive.archive(cfg.directories, jobs)
+                        if not should_start:
+                            archiving_status = status_or_cmd
+                        else:
+                            cmd = status_or_cmd
+                            log.log('Starting archive: ' + cmd)
 
-                        # TODO: do something useful with output instead of DEVNULL
-                        p = subprocess.Popen(cmd,
-                                shell=True,
-                                stdout=subprocess.DEVNULL,
-                                stderr=subprocess.STDOUT,
-                                start_new_session=True)
+                            # TODO: do something useful with output instead of DEVNULL
+                            p = subprocess.Popen(cmd,
+                                    shell=True,
+                                    stdout=subprocess.DEVNULL,
+                                    stderr=subprocess.STDOUT,
+                                    start_new_session=True)
+
+                archdir_freebytes = archive.get_archdir_freebytes(cfg.directories.archive)
+
+
+        # Get terminal size.  Recommended method is stdscr.getmaxyx(), but this
+        # does not seem to work on some systems.  It may be a bug in Python
+        # curses, maybe having to do with registering sigwinch handlers in
+        # multithreaded environments.  See e.g.
+        #     https://stackoverflow.com/questions/33906183#33906270
+        # Alternative option is to call out to `stty size`.  For now, we
+        # support both strategies, selected by a config option.
+        # TODO: also try shutil.get_terminal_size()
+        n_rows: int
+        n_cols: int
+        if cfg.user_interface.use_stty_size:
+            completed_process = subprocess.run(
+                ['stty', 'size'], check=True, encoding='utf-8', stdout=subprocess.PIPE
+            )
+            elements = completed_process.stdout.split()
+            (n_rows, n_cols) = [int(v) for v in elements]
+        else:
+            (n_rows, n_cols) = map(int, stdscr.getmaxyx())
+
+        stdscr.clear()
+        stdscr.resize(n_rows, n_cols)
+        curses.resize_term(n_rows, n_cols)
+
+        #
+        # Obtain and measure content
+        #
 
         # Directory prefixes, for abbreviation
-        tmp_prefix = os.path.commonpath(dir_cfg['tmp'])
-        dst_prefix = os.path.commonpath(dir_cfg['dst'])
+        tmp_prefix = os.path.commonpath(cfg.directories.tmp)
+        dst_prefix = os.path.commonpath(cfg.directories.dst)
         if archiving_configured:
-            arch_prefix = dir_cfg['archive']['rsyncd_path']
+            arch_prefix = cfg.directories.archive.rsyncd_path
+
+        n_tmpdirs = len(cfg.directories.tmp)
+        n_tmpdirs_half = int(n_tmpdirs / 2)
+
+        # Directory reports.
+        tmp_report_1 = reporting.tmp_dir_report(
+            jobs, cfg.directories, cfg.scheduling, n_cols, 0, n_tmpdirs_half, tmp_prefix)
+        tmp_report_2 = reporting.tmp_dir_report(
+            jobs, cfg.directories, cfg.scheduling, n_cols, n_tmpdirs_half, n_tmpdirs, tmp_prefix)
+        dst_report = reporting.dst_dir_report(
+            jobs, cfg.directories.dst, n_cols, dst_prefix)
+        if archiving_configured:
+            arch_report = reporting.arch_dir_report(archdir_freebytes, n_cols, arch_prefix)
+            if not arch_report:
+                arch_report = '<no archive dir info>'
+        else:
+            arch_report = '<archiving not configured>'
+
+        #
+        # Layout
+        #
+            
+        tmp_h = max(len(tmp_report_1.splitlines()),
+                    len(tmp_report_2.splitlines()))
+        tmp_w = len(max(tmp_report_1.splitlines() +
+                        tmp_report_2.splitlines(), key=len)) + 1
+        dst_h = len(dst_report.splitlines())
+        dst_w = len(max(dst_report.splitlines(), key=len)) + 1
+        arch_h = len(arch_report.splitlines()) + 1
+        arch_w = n_cols
+
+        header_h = 3
+        dirs_h = max(tmp_h, dst_h) + arch_h
+        remainder = n_rows - (header_h + dirs_h)
+        jobs_h = max(5, math.floor(remainder * 0.6))
+        logs_h = n_rows - (header_h + jobs_h + dirs_h)
+
+        header_pos = 0
+        jobs_pos = header_pos + header_h
+        stdscr.resize(n_rows, n_cols)
+        dirs_pos = jobs_pos + jobs_h
+        logscreen_pos = dirs_pos + dirs_h
+
+        linecap = n_cols - 1
+        logs_h = n_rows - (header_h + jobs_h + dirs_h)
+
+        try:
+            header_win = curses.newwin(header_h, n_cols, header_pos, 0)
+            log_win = curses.newwin(logs_h, n_cols, logscreen_pos, 0)
+            jobs_win = curses.newwin(jobs_h, n_cols, jobs_pos, 0)
+            dirs_win = curses.newwin(dirs_h, n_cols, dirs_pos, 0)
+        except Exception:
+            raise Exception('Failed to initialize curses windows, try a larger '
+                            'terminal window.')
+
+        #
+        # Write
+        #
 
         # Header
         header_win.addnstr(0, 0, 'Plotman', linecap, curses.A_BOLD)
         timestamp = datetime.datetime.now().strftime("%H:%M:%S")
-        refresh_msg = "now" if do_full_refresh else f"{int(elapsed)}s/{refresh_period}"
+        refresh_msg = "now" if do_full_refresh else f"{int(elapsed)}s/{cfg.scheduling.polling_time_s}"
         header_win.addnstr(f" {timestamp} (refresh {refresh_msg})", linecap)
         header_win.addnstr('  |  <P>lotting: ', linecap, curses.A_BOLD)
         header_win.addnstr(
@@ -204,38 +268,11 @@ def curses_main(stdscr):
         
 
         # Jobs
-        jobs_win.addstr(0, 0, reporting.status_report(jobs, n_cols, jobs_height, 
+        jobs_win.addstr(0, 0, reporting.status_report(jobs, n_cols, jobs_h, 
             tmp_prefix, dst_prefix))
         jobs_win.chgat(0, 0, curses.A_REVERSE)
 
-        # Dirs.  Collect reports as strings, then lay out.
-        n_tmpdirs = len(dir_cfg['tmp']) 
-        n_tmpdirs_half = int(n_tmpdirs / 2)
-        tmp_report_1 = reporting.tmp_dir_report(
-            jobs, dir_cfg['tmp'], sched_cfg, n_cols, 0, n_tmpdirs_half, tmp_prefix)
-        tmp_report_2 = reporting.tmp_dir_report(
-            jobs, dir_cfg['tmp'], sched_cfg, n_cols, n_tmpdirs_half, n_tmpdirs, tmp_prefix)
-
-        dst_report = reporting.dst_dir_report(
-            jobs, dir_cfg['dst'], n_cols, dst_prefix)
-
-        if archiving_configured:
-            arch_report = reporting.arch_dir_report(
-                archive.get_archdir_freebytes(dir_cfg['archive']), n_cols, arch_prefix)
-            if not arch_report:
-                arch_report = '<no archive dir info>'
-        else:
-            arch_report = '<archiving not configured>'
-            
-        tmp_h = max(len(tmp_report_1.splitlines()),
-                    len(tmp_report_2.splitlines()))
-        tmp_w = len(max(tmp_report_1.splitlines() +
-                        tmp_report_2.splitlines(), key=len)) + 1
-        dst_h = len(dst_report.splitlines())
-        dst_w = len(max(dst_report.splitlines(), key=len)) + 1
-        arch_h = len(arch_report.splitlines()) + 1
-        arch_w = n_cols
-
+        # Dirs
         tmpwin_12_gutter = 3
         tmpwin_dstwin_gutter = 6
 
@@ -269,7 +306,7 @@ def curses_main(stdscr):
         # this seems easier.
         log_win.addnstr(0, 0, ('Log: %d (<up>/<down>/<end> to scroll)\n' % log.get_cur_pos() ),
                 linecap, curses.A_REVERSE)
-        for i, logline in enumerate(log.cur_slice(logscreen_height - 1)):
+        for i, logline in enumerate(log.cur_slice(logs_h - 1)):
             log_win.addnstr(i + 1, 0, logline, linecap)
 
         stdscr.noutrefresh()
@@ -282,7 +319,11 @@ def curses_main(stdscr):
         log_win.noutrefresh()
         curses.doupdate()
 
-        key = stdscr.getch()
+        try:
+            key = stdscr.getch()
+        except KeyboardInterrupt:
+            key = ord('q')
+
         if key == curses.KEY_UP:
             log.shift_slice(-1)
             pressed_key = 'up'
