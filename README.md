@@ -181,11 +181,14 @@ To display the current location of your `plotman.yaml` file and check if it exis
 
 ## Installation
 
-Installation for Linux:
+Installation for Linux and macOS:
 
 1. Plotman assumes that a functioning [Chia](https://github.com/Chia-Network/chia-blockchain)
-   installation is present on the system. Activate your `chia` environment by typing
-   `source /path/to/your/chia/install/activate`.
+   installation is present on the system.
+      - Linux: Activate your `chia` environment by typing
+        `source /path/to/your/chia/install/activate`.
+      - macOS: Follow [these instructions](https://github.com/Chia-Network/chia-blockchain/wiki/CLI-Commands-Reference#mac)
+        to add the `chia` binary to the PATH
 2. Then, install Plotman using the following command:
    ```shell
     > pip install --force-reinstall git+https://github.com/ericaltendorf/plotman@main
