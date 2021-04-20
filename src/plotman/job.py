@@ -6,7 +6,6 @@ import os
 import random
 import re
 import sys
-import threading
 import time
 from datetime import datetime
 from enum import Enum, auto
