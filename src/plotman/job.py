@@ -34,21 +34,6 @@ def is_plotting_cmdline(cmdline):
         and 'create' == cmdline[3]
     )
 
-# This is a cmdline argument fix for https://github.com/ericaltendorf/plotman/issues/41
-def cmdline_argfix(cmdline):
-    known_keys = 'krbut2dne'
-    for i in cmdline:
-        # If the argument starts with dash and a known key and is longer than 2,
-        # then an argument is passed with no space between its key and value.
-        # This is POSIX compliant but the arg parser was tripping over it.
-        # In these cases, splitting that item up in separate key and value
-        # elements results in a `cmdline` list that is correctly formatted.
-        if i[0]=='-' and i[1] in known_keys and len(i)>2:
-            yield i[0:2]  # key
-            yield i[2:]  # value
-        else:
-            yield i
-
 def parse_chia_plot_time(s):
     # This will grow to try ISO8601 as well for when Chia logs that way
     return pendulum.from_format(s, 'ddd MMM DD HH:mm:ss YYYY', locale='en', tz=None)
