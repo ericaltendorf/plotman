@@ -110,9 +110,9 @@ scheduling:
 plotting:
         k: 32
         e: False             # Use -e plotting option
-        n_threads: 8         # Threads per job
+        n_threads: 2         # Threads per job
         n_buckets: 128       # Number of buckets to split data into
-        job_buffer: 3389     # Per job memory
+        job_buffer: 4608     # Per job memory
         # If specified, pass through to the -f and -p options.  See CLI reference.
         #   farmer_pk: ...
         #   pool_pk: ...
