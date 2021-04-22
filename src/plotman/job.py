@@ -6,7 +6,6 @@ import os
 import random
 import re
 import sys
-import threading
 import time
 from datetime import datetime
 from enum import Enum, auto
@@ -25,7 +24,7 @@ def job_phases_for_dstdir(d, all_jobs):
     return sorted([j.progress() for j in all_jobs if j.dstdir == d])
 
 def is_plotting_cmdline(cmdline):
-    if cmdline and 'python' in cmdline[0]:
+    if cmdline and 'python' in cmdline[0].lower():
         cmdline = cmdline[1:]
     return (
         len(cmdline) >= 3
@@ -106,7 +105,7 @@ class Job:
         with self.proc.oneshot():
             # Parse command line args
             args = self.proc.cmdline()
-            if 'python' in args[0]:
+            if 'python' in args[0].lower():
                 args = args[1:]
             assert len(args) > 4
             assert 'chia' in args[0]
