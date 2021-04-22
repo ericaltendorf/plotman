@@ -6,7 +6,6 @@ import re
 import readline  # For nice CLI
 import subprocess
 import sys
-import threading
 import time
 from datetime import datetime
 

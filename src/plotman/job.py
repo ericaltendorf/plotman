@@ -6,7 +6,6 @@ import os
 import random
 import re
 import sys
-import threading
 import time
 from datetime import datetime
 from enum import Enum, auto
@@ -29,7 +28,7 @@ def job_phases_for_dstdir(d, all_jobs):
 def is_plotting_cmdline(cmdline):
     return (
         len(cmdline) >= 4
-        and 'python' in cmdline[0]
+        and 'python' in cmdline[0].lower()
         and cmdline[1].endswith('/chia')
         and 'plots' == cmdline[2]
         and 'create' == cmdline[3]
@@ -57,7 +56,7 @@ def parse_chia_plot_time(s):
 def parse_chia_plots_create_command_line(command_line):
     # Parse command line args
     assert len(command_line) >= 4
-    assert 'python' in command_line[0]
+    assert 'python' in command_line[0].lower()
     assert 'chia' in command_line[1]
     assert 'plots' == command_line[2]
     assert 'create' == command_line[3]
