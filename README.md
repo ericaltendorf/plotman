@@ -188,7 +188,7 @@ Installation for Linux:
    `source /path/to/your/chia/install/activate`.
 2. Then, install Plotman using the following command:
    ```shell
-    > pip install --force-reinstall git+https://github.com/ericaltendorf/plotman@development
+    > pip install --force-reinstall git+https://github.com/ericaltendorf/plotman@main
     ```
 3. Plotman will look for `plotman.yaml` within your computer at an OS-based
    default location. To create a default `plotman.yaml` and display its location,
