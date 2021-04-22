@@ -6,7 +6,6 @@ import os
 import random
 import re
 import sys
-import threading
 import time
 from datetime import datetime
 from enum import Enum, auto
@@ -27,7 +26,7 @@ def job_phases_for_dstdir(d, all_jobs):
 def is_plotting_cmdline(cmdline):
     return (
         len(cmdline) >= 4
-        and 'python' in cmdline[0]
+        and 'python' in cmdline[0].lower()
         and cmdline[1].endswith('/chia')
         and 'plots' == cmdline[2]
         and 'create' == cmdline[3]
@@ -106,7 +105,7 @@ class Job:
             # Parse command line args
             args = self.proc.cmdline()
             assert len(args) > 4
-            assert 'python' in args[0]
+            assert 'python' in args[0].lower()
             assert 'chia' in args[1]
             assert 'plots' == args[2]
             assert 'create' == args[3]
