@@ -118,13 +118,13 @@ class Job:
                             )
                             if parsed_command.error is not None:
                                 continue
-                            if job.help:
-                                continue
                             job = Job(
                                 proc=proc,
                                 parsed_command=parsed_command,
                                 logroot=logroot,
                             )
+                            if job.help:
+                                continue
                             jobs.append(job)
 
         return jobs
