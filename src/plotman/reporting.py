@@ -110,7 +110,7 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
                         plot_util.time_format(j.get_time_sys()),
                         plot_util.time_format(j.get_time_iowait())
                         ]
-            except psutil.NoSuchProcess, psutil.AccessDenied:
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
                 # In case the job has disappeared
                 row = [j.plot_id[:8]] + (['--'] * 12)
 
