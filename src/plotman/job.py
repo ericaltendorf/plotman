@@ -26,12 +26,13 @@ def job_phases_for_dstdir(d, all_jobs):
     return sorted([j.progress() for j in all_jobs if j.dstdir == d])
 
 def is_plotting_cmdline(cmdline):
+    if cmdline and 'python' in cmdline[0].lower():
+        cmdline = cmdline[1:]
     return (
-        len(cmdline) >= 4
-        and 'python' in cmdline[0].lower()
-        and cmdline[1].endswith('/chia')
-        and 'plots' == cmdline[2]
-        and 'create' == cmdline[3]
+        len(cmdline) >= 3
+        and cmdline[0].endswith("chia")
+        and 'plots' == cmdline[1]
+        and 'create' == cmdline[2]
     )
 
 def parse_chia_plot_time(s):
@@ -39,14 +40,16 @@ def parse_chia_plot_time(s):
     return pendulum.from_format(s, 'ddd MMM DD HH:mm:ss YYYY', locale='en', tz=None)
 
 def parse_chia_plots_create_command_line(command_line):
+    command_line = list(command_line)
     # Parse command line args
-    assert len(command_line) >= 4
-    assert 'python' in command_line[0].lower()
-    assert 'chia' in command_line[1]
-    assert 'plots' == command_line[2]
-    assert 'create' == command_line[3]
+    if 'python' in command_line[0].lower():
+        command_line = command_line[1:]
+    assert len(command_line) >= 3
+    assert 'chia' in command_line[0]
+    assert 'plots' == command_line[1]
+    assert 'create' == command_line[2]
 
-    all_command_arguments = command_line[4:]
+    all_command_arguments = command_line[3:]
 
     # nice idea, but this doesn't include -h
     # help_option_names = command.get_help_option_names(ctx=context)
