@@ -6,7 +6,6 @@ import os
 import random
 import re
 import sys
-import threading
 import time
 from datetime import datetime
 from enum import Enum, auto
@@ -25,12 +24,13 @@ def job_phases_for_dstdir(d, all_jobs):
     return sorted([j.progress() for j in all_jobs if j.dstdir == d])
 
 def is_plotting_cmdline(cmdline):
+    if cmdline and 'python' in cmdline[0].lower():
+        cmdline = cmdline[1:]
     return (
-        len(cmdline) >= 4
-        and 'python' in cmdline[0]
-        and cmdline[1].endswith('/chia')
-        and 'plots' == cmdline[2]
-        and 'create' == cmdline[3]
+        len(cmdline) >= 3
+        and cmdline[0].endswith("chia")
+        and 'plots' == cmdline[1]
+        and 'create' == cmdline[2]
     )
 
 # This is a cmdline argument fix for https://github.com/ericaltendorf/plotman/issues/41
@@ -105,33 +105,34 @@ class Job:
         with self.proc.oneshot():
             # Parse command line args
             args = self.proc.cmdline()
+            if 'python' in args[0].lower():
+                args = args[1:]
             assert len(args) > 4
-            assert 'python' in args[0]
-            assert 'chia' in args[1]
-            assert 'plots' == args[2]
-            assert 'create' == args[3]
-            args_iter = iter(cmdline_argfix(args[4:]))
+            assert 'chia' in args[0]
+            assert 'plots' == args[1]
+            assert 'create' == args[2]
+            args_iter = iter(cmdline_argfix(args[3:]))
             for arg in args_iter:
-                val = None if arg in ['-e', '-h', '--help', '--override-k'] else next(args_iter)
-                if arg == '-k':
+                val = None if arg in {'-e', '--nobitfield', '-h', '--help', '--override-k'} else next(args_iter)
+                if arg in {'-k', '--size'}:
                     self.k = val
-                elif arg == '-r':
+                elif arg in {'-r', '--num_threads'}:
                     self.r = val
-                elif arg == '-b':
+                elif arg in {'-b', '--buffer'}:
                     self.b = val
-                elif arg == '-u':
+                elif arg in {'-u', '--buckets'}:
                     self.u = val
-                elif arg == '-t':
+                elif arg in {'-t', '--tmp_dir'}:
                     self.tmpdir = val
-                elif arg == '-2':
+                elif arg in {'-2', '--tmp2_dir'}:
                     self.tmp2dir = val
-                elif arg == '-d':
+                elif arg in {'-d', '--final_dir'}:
                     self.dstdir = val
-                elif arg == '-n':
+                elif arg in {'-n', '--num'}:
                     self.n = val
                 elif arg in {'-h', '--help'}:
                     self.help = True
-                elif arg == '-e' or arg == '-f' or arg == '-p':
+                elif arg in {'-e', '--nobitfield', '-f', '--farmer_public_key', '-p', '--pool_public_key'}:
                     pass
                     # TODO: keep track of these
                 elif arg == '--override-k':
@@ -344,10 +345,3 @@ class Job:
         # TODO: check that this is best practice for killing a job.
         self.proc.resume()
         self.proc.terminate()
-
-    def check_status(self, expected_status):
-        if (self.status == expected_status):
-            return 1
-        else:
-            print('Expected status %s, actual %s', expected_status, self.status)
-            return 0
