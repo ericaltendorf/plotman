@@ -4,7 +4,6 @@ import locale
 import math
 import os
 import subprocess
-import threading
 
 from plotman import archive, configuration, manager, reporting
 from plotman.job import Job
