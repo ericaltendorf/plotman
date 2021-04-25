@@ -92,7 +92,7 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
 
             # Select the dst dir least recently selected
             dir2ph = { d:ph for (d, ph) in dstdirs_to_youngest_phase(jobs).items()
-                      if d in dir_cfg.dst }
+                      if d in dir_cfg.dst and ph is not None}
             unused_dirs = [d for d in dir_cfg.dst if d not in dir2ph.keys()]
             dstdir = ''
             if unused_dirs: 
