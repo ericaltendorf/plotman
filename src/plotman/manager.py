@@ -6,7 +6,6 @@ import re
 import readline  # For nice CLI
 import subprocess
 import sys
-import threading
 import time
 from datetime import datetime
 
@@ -50,44 +49,36 @@ def phases_permit_new_job(phases, d, sched_cfg, dir_cfg):
     if len(phases) == 0:
         return True
 
-    milestone = ( sched_cfg['tmpdir_stagger_phase_major'],
-                  sched_cfg['tmpdir_stagger_phase_minor'] )
-    # 1 is the default value.
-    max_allowed_before_milestone = 1
-    if 'tmpdir_stagger_phase_limit' in sched_cfg:
-        max_allowed_before_milestone = sched_cfg['tmpdir_stagger_phase_limit']
-    if len([p for p in phases if p < milestone]) >= max_allowed_before_milestone:
+    milestone = (sched_cfg.tmpdir_stagger_phase_major, sched_cfg.tmpdir_stagger_phase_minor)
+    # tmpdir_stagger_phase_limit default is 1, as declared in configuration.py
+    if len([p for p in phases if p < milestone]) >= sched_cfg.tmpdir_stagger_phase_limit:
         return False
 
     # Limit the total number of jobs per tmp dir. Default to the overall max
     # jobs configuration, but restrict to any configured overrides.
-    max_plots = sched_cfg['tmpdir_max_jobs']
-    tmp_overrides = dir_cfg.get('tmp_overrides', None)
-    if tmp_overrides is not None and d in tmp_overrides:
-        overrides = tmp_overrides[d]
-        if 'tmpdir_max_jobs' in overrides:
-            max_plots = overrides['tmpdir_max_jobs']
+    max_plots = sched_cfg.tmpdir_max_jobs
+    if dir_cfg.tmp_overrides is not None and d in dir_cfg.tmp_overrides:
+        curr_overrides = dir_cfg.tmp_overrides[d]
+        if curr_overrides.tmpdir_max_jobs is not None:
+            max_plots = curr_overrides.tmpdir_max_jobs
     if len(phases) >= max_plots:
         return False
 
     return True
 
 def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
-    jobs = job.Job.get_running_jobs(dir_cfg['log'])
+    jobs = job.Job.get_running_jobs(dir_cfg.log)
 
     wait_reason = None  # If we don't start a job this iteration, this says why.
 
     youngest_job_age = min(jobs, key=job.Job.get_time_wall).get_time_wall() if jobs else MAX_AGE
-    global_stagger = int(sched_cfg['global_stagger_m'] * MIN)
+    global_stagger = int(sched_cfg.global_stagger_m * MIN)
     if (youngest_job_age < global_stagger):
-        wait_reason = 'stagger (%ds/%ds)' % (
-                youngest_job_age, global_stagger)
-    elif ('global_max_jobs' in sched_cfg and
-            len(jobs) >= sched_cfg['global_max_jobs']):
-        wait_reason = 'max jobs (%d)' % sched_cfg['global_max_jobs']
+        wait_reason = 'stagger (%ds/%ds)' % (youngest_job_age, global_stagger)
+    elif len(jobs) >= sched_cfg.global_max_jobs:
+        wait_reason = 'max jobs (%d)' % sched_cfg.global_max_jobs
     else:
-        tmp_to_all_phases = [ (d, job.job_phases_for_tmpdir(d, jobs))
-                for d in dir_cfg['tmp'] ]
+        tmp_to_all_phases = [(d, job.job_phases_for_tmpdir(d, jobs)) for d in dir_cfg.tmp]
         eligible = [ (d, phases) for (d, phases) in tmp_to_all_phases
                 if phases_permit_new_job(phases, d, sched_cfg, dir_cfg) ]
         rankable = [ (d, phases[0]) if phases else (d, (999, 999))
@@ -101,35 +92,36 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
 
             # Select the dst dir least recently selected
             dir2ph = { d:ph for (d, ph) in dstdirs_to_youngest_phase(jobs).items()
-                      if d in dir_cfg['dst'] }
-            unused_dirs = [d for d in dir_cfg['dst'] if d not in dir2ph.keys()]
+                      if d in dir_cfg.dst }
+            unused_dirs = [d for d in dir_cfg.dst if d not in dir2ph.keys()]
             dstdir = ''
             if unused_dirs: 
                 dstdir = random.choice(unused_dirs)
             else:
                 dstdir = max(dir2ph, key=dir2ph.get)
 
-            logfile = os.path.join(dir_cfg['log'],
-                    datetime.now().strftime('%Y-%m-%d-%H:%M:%S.log'))
+            logfile = os.path.join(
+                dir_cfg.log, datetime.now().strftime('%Y-%m-%d-%H:%M:%S.log')
+            )
 
             plot_args = ['chia', 'plots', 'create',
-                    '-k', str(plotting_cfg['k']),
-                    '-r', str(plotting_cfg['n_threads']),
-                    '-u', str(plotting_cfg['n_buckets']),
-                    '-b', str(plotting_cfg['job_buffer']),
+                    '-k', str(plotting_cfg.k),
+                    '-r', str(plotting_cfg.n_threads),
+                    '-u', str(plotting_cfg.n_buckets),
+                    '-b', str(plotting_cfg.job_buffer),
                     '-t', tmpdir,
                     '-d', dstdir ]
-            if 'e' in plotting_cfg and plotting_cfg['e']:
+            if plotting_cfg.e:
                 plot_args.append('-e')
-            if 'farmer_pk' in plotting_cfg and plotting_cfg['farmer_pk']:
+            if plotting_cfg.farmer_pk is not None:
                 plot_args.append('-f')
-                plot_args.append(plotting_cfg['farmer_pk'])
-            if 'pool_pk' in plotting_cfg and plotting_cfg['pool_pk']:
+                plot_args.append(plotting_cfg.farmer_pk)
+            if plotting_cfg.pool_pk is not None:
                 plot_args.append('-p')
-                plot_args.append(plotting_cfg['pool_pk'])
-            if 'tmp2' in dir_cfg:
+                plot_args.append(plotting_cfg.pool_pk)
+            if dir_cfg.tmp2 is not None:
                 plot_args.append('-2')
-                plot_args.append(dir_cfg['tmp2'])
+                plot_args.append(dir_cfg.tmp2)
 
             logmsg = ('Starting plot job: %s ; logging to %s' % (' '.join(plot_args), logfile))
 
@@ -150,4 +142,3 @@ def select_jobs_by_partial_id(jobs, partial_id):
         if j.plot_id.startswith(partial_id):
             selected.append(j)
     return selected
-

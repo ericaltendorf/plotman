@@ -3,20 +3,28 @@ from unittest.mock import patch
 
 import pytest
 
-from plotman import job, manager
+from plotman import configuration, job, manager
 
 
 @pytest.fixture
 def sched_cfg():
-    return { 'tmpdir_stagger_phase_major': 3,
-             'tmpdir_stagger_phase_minor': 0,
-             'tmpdir_max_jobs': 3 }
+    return configuration.Scheduling(
+        global_max_jobs=1,
+        global_stagger_m=2,
+        polling_time_s=2,
+        tmpdir_stagger_phase_major=3,
+        tmpdir_stagger_phase_minor=0,
+        tmpdir_max_jobs=3
+    )
 
 @pytest.fixture
 def dir_cfg():
-    return { 'tmp_overrides': {
-                 '/mnt/tmp/04': {
-                     'tmpdir_max_jobs': 4 }}}
+    return configuration.Directories(
+        log="/plots/log",
+        tmp=["/var/tmp", "/tmp"],
+        dst=["/mnt/dst/00", "/mnt/dst/01", "/mnt/dst/03"],
+        tmp_overrides={"/mnt/tmp/04": configuration.TmpOverrides(tmpdir_max_jobs=4)}
+    )
 
 def test_permit_new_job_post_milestone(sched_cfg, dir_cfg):
     assert manager.phases_permit_new_job(

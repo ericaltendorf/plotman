@@ -2,7 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ development ]
+    branches:
+      - main
+      - development
     tags: [ "**" ]
   pull_request:
     branches: [ "**" ]
@@ -21,6 +23,7 @@ jobs:
         os:
           - name: Linux
             runs-on: ubuntu-latest
+            matrix: linux
         python:
           - name: CPython 3.8
             tox: py38
@@ -80,6 +83,10 @@ jobs:
         os:
           - name: Linux
             runs-on: ubuntu-latest
+            matrix: linux
+          - name: macOS
+            runs-on: macos-latest
+            matrix: macos
         python:
           - name: CPython 3.7
             tox: py37
@@ -90,9 +97,6 @@ jobs:
           - name: CPython 3.9
             tox: py39
             action: 3.9
-          - name: PyPy 3.7
-            tox: pypy37
-            action: pypy-3.7
         task:
           - name: Test
             tox: test
@@ -127,7 +131,8 @@ jobs:
       with:
         python-version: ${{ matrix.python.action }}
 
-    - name: Generate extra locales
+    - name: Generate extra locales (Linux)
+      if: ${{ matrix.os.matrix == 'linux' }}
       run: |
         sudo apt-get update
         sudo apt-get install --yes tzdata locales
