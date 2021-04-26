@@ -180,7 +180,11 @@ def main():
                     time.sleep(60)
                     jobs = Job.get_running_jobs(cfg.directories.log)
                 firstit = False
-                archive.archive(cfg.directories, jobs)
+
+                archiving_status, log_message = archive.spawn_archive_process(cfg.directories, jobs)
+                if log_message:
+                    print(log_message)
+
 
         # Debugging: show the destination drive usage schedule
         elif args.cmd == 'dsched':
