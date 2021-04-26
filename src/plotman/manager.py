@@ -36,6 +36,8 @@ def dstdirs_to_youngest_phase(all_jobs):
        that is emitting to that dst dir.'''
     result = {}
     for j in all_jobs:
+        if j.dstdir is None:
+            continue
         if not j.dstdir in result.keys() or result[j.dstdir] > j.progress():
             result[j.dstdir] = j.progress()
     return result
