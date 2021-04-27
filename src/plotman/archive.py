@@ -20,7 +20,8 @@ def spawn_archive_process(dir_cfg, all_jobs):
     in the archive() function. Returns archiving status and a log message to print.'''
 
     log_message = None
-
+    archiving_status = None
+    
     # Look for running archive jobs.  Be robust to finding more than one
     # even though the scheduler should only run one at a time.
     arch_jobs = get_running_archive_jobs(dir_cfg.archive)
