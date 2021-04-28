@@ -24,17 +24,18 @@ def job_phases_for_dstdir(d, all_jobs):
     return sorted([j.progress() for j in all_jobs if j.dstdir == d])
 
 def is_plotting_cmdline(cmdline):
+    if cmdline and 'python' in cmdline[0].lower():
+        cmdline = cmdline[1:]
     return (
-        len(cmdline) >= 4
-        and 'python' in cmdline[0].lower()
-        and cmdline[1].endswith('/chia')
-        and 'plots' == cmdline[2]
-        and 'create' == cmdline[3]
+        len(cmdline) >= 3
+        and cmdline[0].endswith("chia")
+        and 'plots' == cmdline[1]
+        and 'create' == cmdline[2]
     )
 
 # This is a cmdline argument fix for https://github.com/ericaltendorf/plotman/issues/41
 def cmdline_argfix(cmdline):
-    known_keys = 'krbut2dne'
+    known_keys = 'krbut2dnea'
     for i in cmdline:
         # If the argument starts with dash and a known key and is longer than 2,
         # then an argument is passed with no space between its key and value.
@@ -96,7 +97,7 @@ class Job:
 
         return jobs
 
- 
+
     def __init__(self, proc, logroot):
         '''Initialize from an existing psutil.Process object.  must know logroot in order to understand open files'''
         self.proc = proc
@@ -104,12 +105,13 @@ class Job:
         with self.proc.oneshot():
             # Parse command line args
             args = self.proc.cmdline()
+            if 'python' in args[0].lower():
+                args = args[1:]
             assert len(args) > 4
-            assert 'python' in args[0].lower()
-            assert 'chia' in args[1]
-            assert 'plots' == args[2]
-            assert 'create' == args[3]
-            args_iter = iter(cmdline_argfix(args[4:]))
+            assert 'chia' in args[0]
+            assert 'plots' == args[1]
+            assert 'create' == args[2]
+            args_iter = iter(cmdline_argfix(args[3:]))
             for arg in args_iter:
                 val = None if arg in {'-e', '--nobitfield', '-h', '--help', '--override-k'} else next(args_iter)
                 if arg in {'-k', '--size'}:
@@ -130,7 +132,7 @@ class Job:
                     self.n = val
                 elif arg in {'-h', '--help'}:
                     self.help = True
-                elif arg in {'-e', '--nobitfield', '-f', '--farmer_public_key', '-p', '--pool_public_key'}:
+                elif arg in {'-e', '--nobitfield', '-f', '--farmer_public_key', '-p', '--pool_public_key', '-a', '--alt_fingerprint'}:
                     pass
                     # TODO: keep track of these
                 elif arg == '--override-k':
