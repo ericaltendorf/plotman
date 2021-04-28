@@ -63,7 +63,6 @@ directories:
         # See code for details.
         archive:
                 rsyncd_module: plots
-
                 rsyncd_path: /plots
                 rsyncd_bwlimit: 80000  # Bandwidth limit in KB/s
                 rsyncd_host: myfarmer
@@ -79,7 +78,7 @@ directories:
                 # the 4 machines, or 0, 1, 0, 1.
                 #   index: 0
 
-                # Optional switch to enable local archiving.
+                # Optional switch to enable local archiving (defaults to remote if absent).
                 # Note: rsyncd_module, rsyncd_host and rsyncd_user are ignored in local mode.
                 mode: remote  # remote or local
                 # Note for local mode:
