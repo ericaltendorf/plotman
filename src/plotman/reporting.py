@@ -95,7 +95,7 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
         # Regular row
         else:
             try:
-                with j.proc.one_shot():
+                with j.proc.oneshot():
                     row = [j.plot_id[:8],
                         j.k,
                         abbr_path(j.tmpdir, tmp_prefix),
