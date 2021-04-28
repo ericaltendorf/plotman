@@ -46,7 +46,7 @@ class Archive:
     rsyncd_host: str
     rsyncd_user: str
     index: int = 0  # If not explicit, "index" will default to 0
-    mode: Optional[str] = 'remote'
+    mode: str = 'remote'
 
 @dataclass
 class TmpOverrides:
