@@ -62,21 +62,12 @@ directories:
         # host, and that the module is configured to match the local path.
         # See code for details.
         archive:
-                mode: remote  # remote or local
-                rsyncd_module: plots  # ignored in local mode
+                rsyncd_module: plots
 
-                # Note for local mode:
-                # This path should be the directory *in which* your archive disks
-                # are mounted. For example, if your archive disks are
-                # /mnt/archive1 and /mnt/archive2, the path should be /mnt.
-                # Note that *all* mounted drives within that path will be
-                # considered - so if you have other things mounted as well,
-                # make sure you mount all Chia archive drives to some custom
-                # directory that only contains Chia archive mountpoints.
                 rsyncd_path: /plots
                 rsyncd_bwlimit: 80000  # Bandwidth limit in KB/s
-                rsyncd_host: myfarmer  # # ignored in local mode
-                rsyncd_user: chia  # # ignored in local mode
+                rsyncd_host: myfarmer
+                rsyncd_user: chia
 
                 # Optional index.  If omitted or set to 0, plotman will archive
                 # to the first archive dir with free space.  If specified,
@@ -87,6 +78,18 @@ directories:
                 # have four plotters, you could set this to 0, 1, 2, and 3, on
                 # the 4 machines, or 0, 1, 0, 1.
                 #   index: 0
+
+                # Optional switch to enable local archiving.
+                # Note: rsyncd_module, rsyncd_host and rsyncd_user are ignored in local mode.
+                mode: remote  # remote or local
+                # Note for local mode:
+                # The rsyncd_path should be the directory *in which* your archive
+                # disks are mounted. For example, if your archive disks are
+                # /mnt/archive1 and /mnt/archive2, the path should be /mnt.
+                # Note that *all* mounted drives within that path will be
+                # considered - so if you have other things mounted as well,
+                # make sure you mount all Chia archive drives to some custom
+                # directory that only contains Chia archive mountpoints.
 
 
 # Plotting scheduling parameters
