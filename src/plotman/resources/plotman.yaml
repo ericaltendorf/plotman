@@ -1,3 +1,5 @@
+# Default/example plotman.yaml configuration file
+
 # Options for display and rendering
 user_interface:
         # Call out to the `stty` program to determine terminal size, instead of
@@ -119,10 +121,10 @@ scheduling:
 # https://github.com/Chia-Network/chia-blockchain/wiki/CLI-Commands-Reference#create
 plotting:
         k: 32
-        e: True              # Use -e plotting option
-        n_threads: 8         # Threads per job
+        e: False             # Use -e plotting option
+        n_threads: 2         # Threads per job
         n_buckets: 128       # Number of buckets to split data into
-        job_buffer: 4520     # Per job memory
+        job_buffer: 3389     # Per job memory
         # If specified, pass through to the -f and -p options.  See CLI reference.
         #   farmer_pk: ...
         #   pool_pk: ...

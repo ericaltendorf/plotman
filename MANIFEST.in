@@ -5,3 +5,5 @@ include *.md
 include VERSION
 include tox.ini
 recursive-include src *.py
+recursive-include src/plotman/_tests/resources *
+recursive-include src/plotman/resources *

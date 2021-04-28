@@ -2,7 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ development ]
+    branches:
+      - main
+      - development
     tags: [ "**" ]
   pull_request:
     branches: [ "**" ]
@@ -21,6 +23,7 @@ jobs:
         os:
           - name: Linux
             runs-on: ubuntu-latest
+            matrix: linux
         python:
           - name: CPython 3.8
             tox: py38
@@ -80,10 +83,11 @@ jobs:
         os:
           - name: Linux
             runs-on: ubuntu-latest
+            matrix: linux
+          - name: macOS
+            runs-on: macos-latest
+            matrix: macos
         python:
-          - name: CPython 3.6
-            tox: py36
-            action: 3.6
           - name: CPython 3.7
             tox: py37
             action: 3.7
@@ -93,15 +97,20 @@ jobs:
           - name: CPython 3.9
             tox: py39
             action: 3.9
-          - name: PyPy 3.6
-            tox: pypy36
-            action: pypy-3.6
-          - name: PyPy 3.7
-            tox: pypy37
-            action: pypy-3.7
         task:
           - name: Test
             tox: test
+        include:
+          - task:
+              name: Check
+              tox: check
+            os:
+              name: Linux
+              runs-on: ubuntu-latest
+            python:
+              name: CPython 3.8
+              action: 3.8
+
 
     env:
       TOXENV: ${{ matrix.task.tox }}${{ fromJSON('["", "-"]')[matrix.python.tox != null] }}${{ matrix.python.tox }}
@@ -121,6 +130,13 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python.action }}
+
+    - name: Generate extra locales (Linux)
+      if: ${{ matrix.os.matrix == 'linux' }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install --yes tzdata locales
+        sudo locale-gen en_US.UTF-8 de_DE.UTF-8
 
     - name: Install dependencies
       run: |

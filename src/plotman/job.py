@@ -6,12 +6,12 @@ import os
 import random
 import re
 import sys
-import threading
 import time
 from datetime import datetime
 from enum import Enum, auto
 from subprocess import call
 
+import pendulum
 import psutil
 
 
@@ -24,17 +24,18 @@ def job_phases_for_dstdir(d, all_jobs):
     return sorted([j.progress() for j in all_jobs if j.dstdir == d])
 
 def is_plotting_cmdline(cmdline):
+    if cmdline and 'python' in cmdline[0].lower():
+        cmdline = cmdline[1:]
     return (
-        len(cmdline) >= 4
-        and 'python' in cmdline[0]
-        and cmdline[1].endswith('/chia')
-        and 'plots' == cmdline[2]
-        and 'create' == cmdline[3]
+        len(cmdline) >= 3
+        and cmdline[0].endswith("chia")
+        and 'plots' == cmdline[1]
+        and 'create' == cmdline[2]
     )
 
 # This is a cmdline argument fix for https://github.com/ericaltendorf/plotman/issues/41
 def cmdline_argfix(cmdline):
-    known_keys = 'krbut2dne'
+    known_keys = 'krbut2dnea'
     for i in cmdline:
         # If the argument starts with dash and a known key and is longer than 2,
         # then an argument is passed with no space between its key and value.
@@ -46,6 +47,10 @@ def cmdline_argfix(cmdline):
             yield i[2:]  # value
         else:
             yield i
+
+def parse_chia_plot_time(s):
+    # This will grow to try ISO8601 as well for when Chia logs that way
+    return pendulum.from_format(s, 'ddd MMM DD HH:mm:ss YYYY', locale='en', tz=None)
 
 # TODO: be more principled and explicit about what we cache vs. what we look up
 # dynamically from the logfile
@@ -66,6 +71,7 @@ class Job:
     job_id = 0
     plot_id = '--------'
     proc = None   # will get a psutil.Process
+    help = False
 
     # These are dynamic, cached, and need to be udpated periodically
     phase = (None, None)   # Phase/subphase
@@ -80,16 +86,18 @@ class Job:
         for proc in psutil.process_iter(['pid', 'cmdline']):
             # Ignore processes which most likely have terminated between the time of
             # iteration and data access.
-            with contextlib.suppress(psutil.NoSuchProcess):
+            with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied):
                 if is_plotting_cmdline(proc.cmdline()):
                     if proc.pid in cached_jobs_by_pid.keys():
                         jobs.append(cached_jobs_by_pid[proc.pid])  # Copy from cache
                     else:
-                        jobs.append(Job(proc, logroot))
+                        job = Job(proc, logroot)
+                        if not job.help:
+                            jobs.append(job)
 
         return jobs
 
- 
+
     def __init__(self, proc, logroot):
         '''Initialize from an existing psutil.Process object.  must know logroot in order to understand open files'''
         self.proc = proc
@@ -97,33 +105,38 @@ class Job:
         with self.proc.oneshot():
             # Parse command line args
             args = self.proc.cmdline()
+            if 'python' in args[0].lower():
+                args = args[1:]
             assert len(args) > 4
-            assert 'python' in args[0]
-            assert 'chia' in args[1]
-            assert 'plots' == args[2]
-            assert 'create' == args[3]
-            args_iter = iter(cmdline_argfix(args[4:]))
+            assert 'chia' in args[0]
+            assert 'plots' == args[1]
+            assert 'create' == args[2]
+            args_iter = iter(cmdline_argfix(args[3:]))
             for arg in args_iter:
-                val = None if arg in ['-e'] else next(args_iter)
-                if arg == '-k':
+                val = None if arg in {'-e', '--nobitfield', '-h', '--help', '--override-k'} else next(args_iter)
+                if arg in {'-k', '--size'}:
                     self.k = val
-                elif arg == '-r':
+                elif arg in {'-r', '--num_threads'}:
                     self.r = val
-                elif arg == '-b':
+                elif arg in {'-b', '--buffer'}:
                     self.b = val
-                elif arg == '-u':
+                elif arg in {'-u', '--buckets'}:
                     self.u = val
-                elif arg == '-t':
+                elif arg in {'-t', '--tmp_dir'}:
                     self.tmpdir = val
-                elif arg == '-2':
+                elif arg in {'-2', '--tmp2_dir'}:
                     self.tmp2dir = val
-                elif arg == '-d':
+                elif arg in {'-d', '--final_dir'}:
                     self.dstdir = val
-                elif arg == '-n':
+                elif arg in {'-n', '--num'}:
                     self.n = val
-                elif arg == '-e' or arg == '-f' or arg == '-p':
+                elif arg in {'-h', '--help'}:
+                    self.help = True
+                elif arg in {'-e', '--nobitfield', '-f', '--farmer_public_key', '-p', '--pool_public_key', '-a', '--alt_fingerprint'}:
                     pass
                     # TODO: keep track of these
+                elif arg == '--override-k':
+                    pass
                 else:
                     print('Warning: unrecognized args: %s %s' % (arg, val))
 
@@ -166,7 +179,7 @@ class Job:
                     m = re.match(r'^Starting phase 1/4:.*\.\.\. (.*)', line)
                     if m:
                         # Mon Nov  2 08:39:53 2020
-                        self.start_time = datetime.strptime(m.group(1), '%a %b  %d %H:%M:%S %Y')
+                        self.start_time = parse_chia_plot_time(m.group(1))
                         found_log = True
                         break  # Stop reading lines in file
 
@@ -302,7 +315,12 @@ class Job:
         return int(self.proc.cpu_times().system)
 
     def get_time_iowait(self):
-        return int(self.proc.cpu_times().iowait)
+        cpu_times = self.proc.cpu_times()
+        iowait = getattr(cpu_times, 'iowait', None)
+        if iowait is None:
+            return None
+
+        return int(iowait)
 
     def suspend(self, reason=''):
         self.proc.suspend()
@@ -327,10 +345,3 @@ class Job:
         # TODO: check that this is best practice for killing a job.
         self.proc.resume()
         self.proc.terminate()
-
-    def check_status(self, expected_status):
-        if (self.status == expected_status):
-            return 1
-        else:
-            print('Expected status %s, actual %s', expected_status, self.status)
-            return 0
