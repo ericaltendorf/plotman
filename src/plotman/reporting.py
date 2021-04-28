@@ -95,21 +95,22 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
         # Regular row
         else:
             try:
-                row = [j.plot_id[:8],
-                    j.k,
-                    abbr_path(j.tmpdir, tmp_prefix),
-                    abbr_path(j.dstdir, dst_prefix),
-                    plot_util.time_format(j.get_time_wall()),
-                    phase_str(j.progress()),
-                    plot_util.human_format(j.get_tmp_usage(), 0),
-                    j.proc.pid,
-                    j.get_run_status(),
-                    plot_util.human_format(j.get_mem_usage(), 1),
-                    plot_util.time_format(j.get_time_user()),
-                    plot_util.time_format(j.get_time_sys()),
-                    plot_util.time_format(j.get_time_iowait())
-                    ]
-            except psutil.NoSuchProcess:
+                with j.proc.oneshot():
+                    row = [j.plot_id[:8],
+                        j.k,
+                        abbr_path(j.tmpdir, tmp_prefix),
+                        abbr_path(j.dstdir, dst_prefix),
+                        plot_util.time_format(j.get_time_wall()),
+                        phase_str(j.progress()),
+                        plot_util.human_format(j.get_tmp_usage(), 0),
+                        j.proc.pid,
+                        j.get_run_status(),
+                        plot_util.human_format(j.get_mem_usage(), 1),
+                        plot_util.time_format(j.get_time_user()),
+                        plot_util.time_format(j.get_time_sys()),
+                        plot_util.time_format(j.get_time_iowait())
+                        ]
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
                 # In case the job has disappeared
                 row = [j.plot_id[:8]] + (['--'] * 12)
 
