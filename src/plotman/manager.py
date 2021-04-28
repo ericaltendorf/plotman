@@ -102,7 +102,7 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
                 dstdir = max(dir2ph, key=dir2ph.get)
 
             logfile = os.path.join(
-                dir_cfg.log, pendulum.now().strftime('%Y-%m-%dT%H_%M_%S.%f%z.log')
+                dir_cfg.log, pendulum.now().isoformat(timespec='microseconds').replace(':', '_') + '.log'
             )
 
             plot_args = ['chia', 'plots', 'create',
