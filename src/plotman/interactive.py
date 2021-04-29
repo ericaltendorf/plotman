@@ -251,7 +251,7 @@ def curses_main(stdscr):
 
         # Oneliner progress display
         header_win.addnstr(1, 0, 'Jobs (%d): ' % len(jobs), linecap)
-        header_win.addnstr('[' + reporting.job_viz(jobs) + ']', linecap)
+        header_win.addnstr('[%s]'.format(reporting.job_viz(jobs)), linecap)
 
         # These are useful for debugging.
         # header_win.addnstr('  term size: (%d, %d)' % (n_rows, n_cols), linecap)  # Debuggin
