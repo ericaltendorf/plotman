@@ -77,7 +77,7 @@ def compute_priority(phase, gb_free, n_plots):
 
 def get_archdir_freebytes(arch_cfg):
     archdir_freebytes = {}
-	just_df_cmd = 'df -aBK'
+    just_df_cmd = 'df -aBK'
     if arch_cfg.mode == 'remote':
         df_cmd = ('ssh %s@%s %s | grep " %s/"' %
             (arch_cfg.rsyncd_user, arch_cfg.rsyncd_host, just_df_cmd, arch_cfg.rsyncd_path) )
