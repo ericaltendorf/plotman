@@ -77,11 +77,12 @@ def compute_priority(phase, gb_free, n_plots):
 
 def get_archdir_freebytes(arch_cfg):
     archdir_freebytes = {}
+	just_df_cmd = 'df -aBK'
     if arch_cfg.mode == 'remote':
-        df_cmd = ('ssh %s@%s df -aBK | grep " %s/"' %
-            (arch_cfg.rsyncd_user, arch_cfg.rsyncd_host, arch_cfg.rsyncd_path) )
+        df_cmd = ('ssh %s@%s %s | grep " %s/"' %
+            (arch_cfg.rsyncd_user, arch_cfg.rsyncd_host, just_df_cmd, arch_cfg.rsyncd_path) )
     elif arch_cfg.mode == 'local':
-        df_cmd = ('df -BK | grep " %s/"' % arch_cfg.rsyncd_path )
+        df_cmd = '%s | grep " %s/"' % (just_df_cmd, arch_cfg.rsyncd_path)
     else:
         raise KeyError(f'Archive mode must be "remote" or "local" ({arch_cfg.mode!r} given). Please inspect plotman.yaml.')
     with subprocess.Popen(df_cmd, shell=True, stdout=subprocess.PIPE) as proc:
