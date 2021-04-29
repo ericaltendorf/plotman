@@ -81,11 +81,14 @@ directories:
 # Plotting scheduling parameters
 scheduling:
         # Run a job on a particular temp dir only if the number of existing jobs
-        # before tmpdir_stagger_phase_major tmpdir_stagger_phase_minor
+        # before [tmpdir_stagger_phase_major : tmpdir_stagger_phase_minor]
         # is less than tmpdir_stagger_phase_limit.
         # Phase major corresponds to the plot phase, phase minor corresponds to
         # the table or table pair in sequence, phase limit corresponds to
-        # the number of plots allowed before [phase major, phase minor]
+        # the number of plots allowed before [phase major : phase minor].
+        # e.g, with default settings, a new plot will start only when your plot
+        # reaches phase [2 : 1] on your temp drive. This setting takes precidence 
+        # over global_stagger_m 
         tmpdir_stagger_phase_major: 2
         tmpdir_stagger_phase_minor: 1
         # Optional: default is 1
