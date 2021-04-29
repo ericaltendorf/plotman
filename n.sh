@@ -33,7 +33,7 @@ increment_version() {
 }
 
 fined() {
-  VERSION=$(cat version)
+  VERSION=$(cat VERSION)
   increment_version $VERSION >version
   VERSION=$(cat version)
 

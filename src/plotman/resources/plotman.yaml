@@ -86,16 +86,16 @@ scheduling:
         # Phase major corresponds to the plot phase, phase minor corresponds to
         # the table or table pair in sequence, phase limit corresponds to
         # the number of plots allowed before [phase major, phase minor]
-        tmpdir_stagger_phase_major: 2
-        tmpdir_stagger_phase_minor: 1
+        tmpdir_stagger_phase_major: 20
+        tmpdir_stagger_phase_minor: 10
         # Optional: default is 1
-        tmpdir_stagger_phase_limit: 1
+        tmpdir_stagger_phase_limit: 10
 
         # Don't run more than this many jobs at a time on a single temp dir.
-        tmpdir_max_jobs: 3
+        tmpdir_max_jobs: 10
 
         # Don't run more than this many jobs at a time in total.
-        global_max_jobs: 12
+        global_max_jobs: 100
 
         # Don't run any jobs (across all temp dirs) more often than this, in minutes.
         global_stagger_m: 30
@@ -109,7 +109,7 @@ scheduling:
 # https://github.com/Chia-Network/chia-blockchain/wiki/CLI-Commands-Reference#create
 plotting:
         k: 32
-        e: False             # Use -e plotting option
+        e: True              # Use -e plotting option
         n_threads: 2         # Threads per job
         n_buckets: 128       # Number of buckets to split data into
         job_buffer: 4608     # Per job memory
