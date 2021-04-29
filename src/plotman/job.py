@@ -1,16 +1,9 @@
 # TODO do we use all these?
-import argparse
 import contextlib
-import logging
 import os
-import random
 import re
-import sys
-import threading
 import time
 from datetime import datetime
-from enum import Enum, auto
-from subprocess import call
 
 import pendulum
 import psutil
@@ -20,18 +13,21 @@ def job_phases_for_tmpdir(d, all_jobs):
     '''Return phase 2-tuples for jobs running on tmpdir d'''
     return sorted([j.progress() for j in all_jobs if j.tmpdir == d])
 
+
 def job_phases_for_dstdir(d, all_jobs):
     '''Return phase 2-tuples for jobs outputting to dstdir d'''
     return sorted([j.progress() for j in all_jobs if j.dstdir == d])
 
+
 def is_plotting_cmdline(cmdline):
     return (
-        len(cmdline) >= 4
-        and 'python' in cmdline[0]
-        and cmdline[1].endswith('/chia')
-        and 'plots' == cmdline[2]
-        and 'create' == cmdline[3]
+            len(cmdline) >= 4
+            and 'python' in cmdline[0]
+            and cmdline[1].endswith('/chia')
+            and 'plots' == cmdline[2]
+            and 'create' == cmdline[3]
     )
+
 
 # This is a cmdline argument fix for https://github.com/ericaltendorf/plotman/issues/41
 def cmdline_argfix(cmdline):
@@ -42,15 +38,17 @@ def cmdline_argfix(cmdline):
         # This is POSIX compliant but the arg parser was tripping over it.
         # In these cases, splitting that item up in separate key and value
         # elements results in a `cmdline` list that is correctly formatted.
-        if i[0]=='-' and i[1] in known_keys and len(i)>2:
+        if i[0] == '-' and i[1] in known_keys and len(i) > 2:
             yield i[0:2]  # key
             yield i[2:]  # value
         else:
             yield i
 
+
 def parse_chia_plot_time(s):
     # This will grow to try ISO8601 as well for when Chia logs that way
     return pendulum.from_format(s, 'ddd MMM DD HH:mm:ss YYYY', locale='en', tz=None)
+
 
 # TODO: be more principled and explicit about what we cache vs. what we look up
 # dynamically from the logfile
@@ -70,18 +68,18 @@ class Job:
     jobfile = ''
     job_id = 0
     plot_id = '--------'
-    proc = None   # will get a psutil.Process
+    proc = None  # will get a psutil.Process
     help = False
 
     # These are dynamic, cached, and need to be udpated periodically
-    phase = (None, None)   # Phase/subphase
+    phase = (None, None)  # Phase/subphase
 
     def get_running_jobs(logroot, cached_jobs=()):
         '''Return a list of running plot jobs.  If a cache of preexisting jobs is provided,
            reuse those previous jobs without updating their information.  Always look for
            new jobs not already in the cache.'''
         jobs = []
-        cached_jobs_by_pid = { j.proc.pid: j for j in cached_jobs }
+        cached_jobs_by_pid = {j.proc.pid: j for j in cached_jobs}
 
         for proc in psutil.process_iter(['pid', 'cmdline']):
             # Ignore processes which most likely have terminated between the time of
@@ -97,7 +95,6 @@ class Job:
 
         return jobs
 
- 
     def __init__(self, proc, logroot):
         '''Initialize from an existing psutil.Process object.  must know logroot in order to understand open files'''
         self.proc = proc
@@ -154,11 +151,9 @@ class Job:
                 self.init_from_logfile()
             else:
                 print('Found plotting process PID {pid}, but could not find '
-                        'logfile in its open files:'.format(pid = self.proc.pid))
+                      'logfile in its open files:'.format(pid=self.proc.pid))
                 for f in self.proc.open_files():
                     print(f.path)
-
-
 
     def init_from_logfile(self):
         '''Read plot ID and job start time from logfile.  Return true if we
@@ -237,13 +232,13 @@ class Job:
 
                 # "Time for phase 1 = 22796.7 seconds. CPU (98%) Tue Sep 29 17:57:19 2020"
                 # for phase in ['1', '2', '3', '4']:
-                    # m = re.match(r'^Time for phase ' + phase + ' = (\d+.\d+) seconds..*', line)
-                        # data.setdefault....
+                # m = re.match(r'^Time for phase ' + phase + ' = (\d+.\d+) seconds..*', line)
+                # data.setdefault....
 
                 # Total time = 49487.1 seconds. CPU (97.26%) Wed Sep 30 01:22:10 2020
                 # m = re.match(r'^Total time = (\d+.\d+) seconds.*', line)
                 # if m:
-                    # data.setdefault(key, {}).setdefault('total time', []).append(float(m.group(1)))
+                # data.setdefault(key, {}).setdefault('total time', []).append(float(m.group(1)))
 
         if phase_subphases:
             phase = max(phase_subphases.keys())
@@ -261,18 +256,18 @@ class Job:
     # TODO: make this more useful and complete, and/or make it configurable
     def status_str_long(self):
         return '{plot_id}\nk={k} r={r} b={b} u={u}\npid:{pid}\ntmp:{tmp}\ntmp2:{tmp2}\ndst:{dst}\nlogfile:{logfile}'.format(
-            plot_id = self.plot_id,
-            k = self.k,
-            r = self.r,
-            b = self.b,
-            u = self.u,
-            pid = self.proc.pid,
-            tmp = self.tmpdir,
-            tmp2 = self.tmp2dir,
-            dst = self.dstdir,
-            plotid = self.plot_id,
-            logfile = self.logfile
-            )
+            plot_id=self.plot_id,
+            k=self.k,
+            r=self.r,
+            b=self.b,
+            u=self.u,
+            pid=self.proc.pid,
+            tmp=self.tmpdir,
+            tmp2=self.tmp2dir,
+            dst=self.dstdir,
+            plotid=self.plot_id,
+            logfile=self.logfile
+        )
 
     def get_mem_usage(self):
         return self.proc.memory_info().vms  # Total, inc swapped

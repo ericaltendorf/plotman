@@ -1,27 +1,19 @@
-import logging
 import operator
 import os
 import random
-import re
-import readline  # For nice CLI
 import subprocess
-import sys
-import threading
-import time
 from datetime import datetime
 
 import psutil
-
 # Plotman libraries
-from plotman import \
-    archive  # for get_archdir_freebytes(). TODO: move to avoid import loop
-from plotman import job, plot_util
+from plotman import job
 
 # Constants
-MIN = 60    # Seconds
-HR = 3600   # Seconds
+MIN = 60  # Seconds
+HR = 3600  # Seconds
 
-MAX_AGE = 1000_000_000   # Arbitrary large number of seconds
+MAX_AGE = 1000_000_000  # Arbitrary large number of seconds
+
 
 def dstdirs_to_furthest_phase(all_jobs):
     '''Return a map from dst dir to a phase tuple for the most progressed job
@@ -32,6 +24,7 @@ def dstdirs_to_furthest_phase(all_jobs):
             result[j.dstdir] = j.progress()
     return result
 
+
 def dstdirs_to_youngest_phase(all_jobs):
     '''Return a map from dst dir to a phase tuple for the least progressed job
        that is emitting to that dst dir.'''
@@ -40,6 +33,7 @@ def dstdirs_to_youngest_phase(all_jobs):
         if not j.dstdir in result.keys() or result[j.dstdir] > j.progress():
             result[j.dstdir] = j.progress()
     return result
+
 
 def phases_permit_new_job(phases, d, sched_cfg, dir_cfg):
     '''Scheduling logic: return True if it's OK to start a new job on a tmp dir
@@ -67,6 +61,7 @@ def phases_permit_new_job(phases, d, sched_cfg, dir_cfg):
 
     return True
 
+
 def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
     jobs = job.Job.get_running_jobs(dir_cfg.log)
 
@@ -80,11 +75,11 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
         wait_reason = 'max jobs (%d)' % sched_cfg.global_max_jobs
     else:
         tmp_to_all_phases = [(d, job.job_phases_for_tmpdir(d, jobs)) for d in dir_cfg.tmp]
-        eligible = [ (d, phases) for (d, phases) in tmp_to_all_phases
-                if phases_permit_new_job(phases, d, sched_cfg, dir_cfg) ]
-        rankable = [ (d, phases[0]) if phases else (d, (999, 999))
-                for (d, phases) in eligible ]
-        
+        eligible = [(d, phases) for (d, phases) in tmp_to_all_phases
+                    if phases_permit_new_job(phases, d, sched_cfg, dir_cfg)]
+        rankable = [(d, phases[0]) if phases else (d, (999, 999))
+                    for (d, phases) in eligible]
+
         if not eligible:
             wait_reason = 'no eligible tempdirs'
         else:
@@ -92,11 +87,11 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
             tmpdir = max(rankable, key=operator.itemgetter(1))[0]
 
             # Select the dst dir least recently selected
-            dir2ph = { d:ph for (d, ph) in dstdirs_to_youngest_phase(jobs).items()
-                      if d in dir_cfg.dst }
+            dir2ph = {d: ph for (d, ph) in dstdirs_to_youngest_phase(jobs).items()
+                      if d in dir_cfg.dst}
             unused_dirs = [d for d in dir_cfg.dst if d not in dir2ph.keys()]
             dstdir = ''
-            if unused_dirs: 
+            if unused_dirs:
                 dstdir = random.choice(unused_dirs)
             else:
                 dstdir = max(dir2ph, key=dir2ph.get)
@@ -106,12 +101,12 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
             )
 
             plot_args = ['chia', 'plots', 'create',
-                    '-k', str(plotting_cfg.k),
-                    '-r', str(plotting_cfg.n_threads),
-                    '-u', str(plotting_cfg.n_buckets),
-                    '-b', str(plotting_cfg.job_buffer),
-                    '-t', tmpdir,
-                    '-d', dstdir ]
+                         '-k', str(plotting_cfg.k),
+                         '-r', str(plotting_cfg.n_threads),
+                         '-u', str(plotting_cfg.n_buckets),
+                         '-b', str(plotting_cfg.job_buffer),
+                         '-t', tmpdir,
+                         '-d', dstdir]
             if plotting_cfg.e:
                 plot_args.append('-e')
             if plotting_cfg.farmer_pk is not None:
@@ -128,14 +123,15 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
 
             # start_new_sessions to make the job independent of this controlling tty.
             p = subprocess.Popen(plot_args,
-                stdout=open(logfile, 'w'),
-                stderr=subprocess.STDOUT,
-                start_new_session=True)
+                                 stdout=open(logfile, 'w'),
+                                 stderr=subprocess.STDOUT,
+                                 start_new_session=True)
 
             psutil.Process(p.pid).nice(15)
             return (True, logmsg)
 
     return (False, wait_reason)
+
 
 def select_jobs_by_partial_id(jobs, partial_id):
     selected = []

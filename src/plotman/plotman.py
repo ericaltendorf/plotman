@@ -3,11 +3,11 @@ import importlib
 import importlib.resources
 import os
 import random
-from shutil import copyfile
 import time
+from shutil import copyfile
 
 # Plotman libraries
-from plotman import analyzer, archive, configuration, interactive, manager, plot_util, reporting
+from plotman import analyzer, archive, configuration, interactive, manager, reporting
 from plotman import resources as plotman_resources
 from plotman.job import Job
 
@@ -15,10 +15,10 @@ from plotman.job import Job
 class PlotmanArgParser:
     def add_idprefix_arg(self, subparser):
         subparser.add_argument(
-                'idprefix',
-                type=str,
-                nargs='+',
-                help='disambiguating prefix of plot ID')
+            'idprefix',
+            type=str,
+            nargs='+',
+            help='disambiguating prefix of plot ID')
 
     def parse_args(self):
         parser = argparse.ArgumentParser(description='Chia plotting manager.')
@@ -27,7 +27,7 @@ class PlotmanArgParser:
         sp.add_parser('version', help='print the version')
 
         sp.add_parser('status', help='show current plotting status')
- 
+
         sp.add_parser('dirs', help='show directories info')
 
         sp.add_parser('interactive', help='run interactive control/monitoring mode')
@@ -61,21 +61,22 @@ class PlotmanArgParser:
         p_analyze = sp.add_parser('analyze', help='analyze timing stats of completed jobs')
 
         p_analyze.add_argument('--clipterminals',
-                action='store_true',
-                help='Ignore first and last plot in a logfile, useful for '
-                     'focusing on the steady-state in a staggered parallel '
-                     'plotting test (requires plotting  with -n>2)')
+                               action='store_true',
+                               help='Ignore first and last plot in a logfile, useful for '
+                                    'focusing on the steady-state in a staggered parallel '
+                                    'plotting test (requires plotting  with -n>2)')
         p_analyze.add_argument('--bytmp',
-                action='store_true',
-                help='slice by tmp dirs')
+                               action='store_true',
+                               help='slice by tmp dirs')
         p_analyze.add_argument('--bybitfield',
-                action='store_true',
-                help='slice by bitfield/non-bitfield sorting')
+                               action='store_true',
+                               help='slice by bitfield/non-bitfield sorting')
         p_analyze.add_argument('logfile', type=str, nargs='+',
-                help='logfile(s) to analyze')
+                               help='logfile(s) to analyze')
 
         args = parser.parse_args()
         return args
+
 
 def get_term_width():
     columns = 0
@@ -85,6 +86,7 @@ def get_term_width():
     except:
         columns = 120  # 80 is typically too narrow.  TODO: make a command line arg.
     return columns
+
 
 def main():
     random.seed()
@@ -113,7 +115,7 @@ def main():
                     overwrite = input(
                         f"A 'plotman.yaml' file already exists at the default location: '{config_file_path}' \n\n"
                         "\tInput 'y' to overwrite existing file, or 'n' to exit without overwrite."
-                      ).lower()
+                    ).lower()
                     if overwrite == 'n':
                         print("\nExited without overrwriting file")
                         return
@@ -154,7 +156,7 @@ def main():
     elif args.cmd == 'analyze':
 
         analyzer.analyze(args.logfile, args.clipterminals,
-                args.bytmp, args.bybitfield)
+                         args.bytmp, args.bybitfield)
 
     else:
         jobs = Job.get_running_jobs(cfg.directories.log)
@@ -186,11 +188,11 @@ def main():
         elif args.cmd == 'dsched':
             for (d, ph) in manager.dstdirs_to_furthest_phase(jobs).items():
                 print('  %s : %s' % (d, str(ph)))
-        
+
         #
         # Job control commands
         #
-        elif args.cmd in [ 'details', 'files', 'kill', 'suspend', 'resume' ]:
+        elif args.cmd in ['details', 'files', 'kill', 'suspend', 'resume']:
             print(args)
 
             selected = []

@@ -3,7 +3,6 @@ import os
 
 import psutil
 import texttable as tt  # from somewhere?
-
 from plotman import archive, job, manager, plot_util
 
 
@@ -12,11 +11,13 @@ def abbr_path(path, putative_prefix):
         return os.path.relpath(path, putative_prefix)
     else:
         return path
-    
+
+
 def phase_str(phase_pair):
     (ph, subph) = phase_pair
     return ((str(ph) if ph is not None else '?') + ':'
             + (str(subph) if subph is not None else '?'))
+
 
 def phases_str(phases, max_num=None):
     '''Take a list of phase-subphase pairs and return them as a compact string'''
@@ -31,18 +32,21 @@ def phases_str(phases, max_num=None):
         last = ' '.join([phase_str(pair) for pair in phases[n_first + n_elided:]])
         return first + elided + last
 
+
 def n_at_ph(jobs, ph):
     return sum([1 for j in jobs if j.progress() == ph])
 
+
 def n_to_char(n):
     n_to_char_map = dict(enumerate(" .:;!"))
-    
+
     if n < 0:
         return 'X'  # Should never be negative
     elif n >= len(n_to_char_map):
         n = len(n_to_char_map) - 1
-    
+
     return n_to_char_map[n]
+
 
 def job_viz(jobs):
     # TODO: Rewrite this in a way that ensures we count every job
@@ -61,6 +65,7 @@ def job_viz(jobs):
     result += n_to_char(n_at_ph(jobs, (4, 0)))
     return result
 
+
 def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
     '''height, if provided, will limit the number of rows in the table,
        showing first and last rows, row numbers and an elipsis in the middle.'''
@@ -77,7 +82,7 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
 
     tab = tt.Texttable()
     headings = ['plot id', 'k', 'tmp', 'dst', 'wall', 'phase', 'tmp',
-            'pid', 'stat', 'mem', 'user', 'sys', 'io']
+                'pid', 'stat', 'mem', 'user', 'sys', 'io']
     if height:
         headings.insert(0, '#')
     tab.header(headings)
@@ -96,19 +101,19 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
         else:
             try:
                 row = [j.plot_id[:8],
-                    j.k,
-                    abbr_path(j.tmpdir, tmp_prefix),
-                    abbr_path(j.dstdir, dst_prefix),
-                    plot_util.time_format(j.get_time_wall()),
-                    phase_str(j.progress()),
-                    plot_util.human_format(j.get_tmp_usage(), 0),
-                    j.proc.pid,
-                    j.get_run_status(),
-                    plot_util.human_format(j.get_mem_usage(), 1),
-                    plot_util.time_format(j.get_time_user()),
-                    plot_util.time_format(j.get_time_sys()),
-                    plot_util.time_format(j.get_time_iowait())
-                    ]
+                       j.k,
+                       abbr_path(j.tmpdir, tmp_prefix),
+                       abbr_path(j.dstdir, dst_prefix),
+                       plot_util.time_format(j.get_time_wall()),
+                       phase_str(j.progress()),
+                       plot_util.human_format(j.get_tmp_usage(), 0),
+                       j.proc.pid,
+                       j.get_run_status(),
+                       plot_util.human_format(j.get_mem_usage(), 1),
+                       plot_util.time_format(j.get_time_user()),
+                       plot_util.time_format(j.get_time_sys()),
+                       plot_util.time_format(j.get_time_iowait())
+                       ]
             except psutil.NoSuchProcess:
                 # In case the job has disappeared
                 row = [j.plot_id[:8]] + (['--'] * 12)
@@ -122,6 +127,7 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
     tab.set_deco(0)  # No borders
     # return ('tmp dir prefix: %s ; dst dir prefix: %s\n' % (tmp_prefix, dst_prefix)
     return tab.draw()
+
 
 def tmp_dir_report(jobs, dir_cfg, sched_cfg, width, start_row=None, end_row=None, prefix=''):
     '''start_row, end_row let you split the table up if you want'''
@@ -139,10 +145,11 @@ def tmp_dir_report(jobs, dir_cfg, sched_cfg, width, start_row=None, end_row=None
         tab.add_row(row)
 
     tab.set_max_width(width)
-    tab.set_deco(tt.Texttable.BORDER | tt.Texttable.HEADER )
+    tab.set_deco(tt.Texttable.BORDER | tt.Texttable.HEADER)
     tab.set_deco(0)  # No borders
     return tab.draw()
- 
+
+
 def dst_dir_report(jobs, dstdirs, width, prefix=''):
     tab = tt.Texttable()
     dir2oldphase = manager.dstdirs_to_furthest_phase(jobs)
@@ -160,18 +167,19 @@ def dst_dir_report(jobs, dstdirs, width, prefix=''):
         dir_plots = plot_util.list_k32_plots(d)
         gb_free = int(plot_util.df_b(d) / plot_util.GB)
         n_plots = len(dir_plots)
-        priority = archive.compute_priority(eldest_ph, gb_free, n_plots) 
+        priority = archive.compute_priority(eldest_ph, gb_free, n_plots)
         row = [abbr_path(d, prefix), n_plots, gb_free,
-                phases_str(phases, 5), priority]
+               phases_str(phases, 5), priority]
         tab.add_row(row)
     tab.set_max_width(width)
-    tab.set_deco(tt.Texttable.BORDER | tt.Texttable.HEADER )
+    tab.set_deco(tt.Texttable.BORDER | tt.Texttable.HEADER)
     tab.set_deco(0)  # No borders
     return tab.draw()
 
+
 def arch_dir_report(archdir_freebytes, width, prefix=''):
     cells = ['%s:%5dGB' % (abbr_path(d, prefix), int(int(space) / plot_util.GB))
-            for (d, space) in sorted(archdir_freebytes.items())]
+             for (d, space) in sorted(archdir_freebytes.items())]
     if not cells:
         return ''
 
@@ -184,12 +192,12 @@ def arch_dir_report(archdir_freebytes, width, prefix=''):
     tab.set_deco(tt.Texttable.VLINES)
     return tab.draw()
 
+
 # TODO: remove this
 def dirs_report(jobs, dir_cfg, sched_cfg, width):
     return (
-        tmp_dir_report(jobs, dir_cfg, sched_cfg, width) + '\n' +
-        dst_dir_report(jobs, dir_cfg.dst, width) + '\n' +
-        'archive dirs free space:\n' +
-        arch_dir_report(archive.get_archdir_freebytes(dir_cfg.archive), width) + '\n'
+            tmp_dir_report(jobs, dir_cfg, sched_cfg, width) + '\n' +
+            dst_dir_report(jobs, dir_cfg.dst, width) + '\n' +
+            'archive dirs free space:\n' +
+            arch_dir_report(archive.get_archdir_freebytes(dir_cfg.archive), width) + '\n'
     )
-
