@@ -59,11 +59,14 @@ directories:
         # archiving operation, comment this section out.
         #
         # Currently archival depends on an rsync daemon running on the remote
-        # host, and that the module is configured to match the local path.
-        # See code for details.
+        # host.
+        # The archival also uses ssh to connect to the remote host and check 
+        # for available directories. Set up ssh keys on the remote host to 
+        # allow public key login from rsyncd_user.
         archive:
-                rsyncd_module: plots
-                rsyncd_path: /plots
+                rsyncd_module: plots # Define this in remote rsyncd.conf.
+                rsyncd_path: /plots # This is used via ssh. Should match path 
+                                    # defined in the module referenced above.
                 rsyncd_bwlimit: 80000  # Bandwidth limit in KB/s
                 rsyncd_host: myfarmer
                 rsyncd_user: chia
