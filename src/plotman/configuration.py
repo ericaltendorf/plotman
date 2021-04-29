@@ -46,7 +46,12 @@ class Archive:
     rsyncd_host: str
     rsyncd_user: str
     index: int = 0  # If not explicit, "index" will default to 0
-    mode: str = 'remote'
+    mode: str = desert.field(
+        default='remote',
+        marshmallow_field=marshmallow.fields.String(
+            validate=marshmallow.validate.OneOf(choices=['remote', 'local']),
+        ),
+    )
 
 @dataclass
 class TmpOverrides:
