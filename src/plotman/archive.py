@@ -26,9 +26,7 @@ def spawn_archive_process(dir_cfg, all_jobs):
     # even though the scheduler should only run one at a time.
     arch_jobs = get_running_archive_jobs(dir_cfg.archive)
     
-    if arch_jobs:
-        archiving_status = 'pid: ' + ', '.join(map(str, arch_jobs))
-    else:
+    if not arch_jobs:
         (should_start, status_or_cmd) = archive(dir_cfg, all_jobs)
         if not should_start:
             archiving_status = status_or_cmd
@@ -41,6 +39,11 @@ def spawn_archive_process(dir_cfg, all_jobs):
                     stderr=subprocess.STDOUT,
                     start_new_session=True) 
             log_message = 'Starting archive: ' + cmd
+            arch_jobs = get_running_archive_jobs(dir_cfg.archive)
+
+    if archiving_status is None:
+        archiving_status = 'pid: ' + ', '.join(map(str, arch_jobs))
+
     return archiving_status, log_message
             
 def compute_priority(phase, gb_free, n_plots):
