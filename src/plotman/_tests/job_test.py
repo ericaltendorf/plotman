@@ -21,7 +21,7 @@ class FauxJobWithLogfile:
 
 @pytest.fixture(name='logfile_path')
 def logfile_fixture(tmp_path):
-    log_name = '2021-04-04-19:00:47.log'
+    log_name = '2021-04-04T19_00_47.681088-0400.log'
     log_contents = importlib.resources.read_binary(resources, log_name)
     log_file_path = tmp_path.joinpath(log_name)
     log_file_path.write_bytes(log_contents)
@@ -45,7 +45,7 @@ with set_locale('C'):
 
 @pytest.mark.parametrize(
     argnames=['locale_name'],
-    argvalues=[['C'], ['en_US.utf8'], ['de_DE.utf8']],
+    argvalues=[['C'], ['en_US.UTF-8'], ['de_DE.UTF-8']],
 )
 def test_job_parses_time_with_non_english_locale(logfile_path, locale_name):
     faux_job_with_logfile = FauxJobWithLogfile(logfile_path=logfile_path)

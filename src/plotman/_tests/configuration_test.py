@@ -12,7 +12,7 @@ from plotman import resources as plotman_resources
 def config_fixture(tmp_path):
     """Return direct path to plotman.yaml"""
     with importlib.resources.path(plotman_resources, "plotman.yaml") as path:
-        return path
+        yield path
 
 
 def test_get_validated_configs__default(mocker, config_path):
@@ -50,3 +50,18 @@ def test_get_validated_configs__missing(mocker, config_path):
         f"No 'plotman.yaml' file exists at expected location: '{nonexistent_config}'. To generate "
         f"default config file, run: 'plotman config generate'"
     )
+
+
+def test_loads_without_user_interface(mocker, config_path, tmp_path):
+    with open(config_path, "r") as file:
+        loaded_yaml = yaml.load(file, Loader=yaml.SafeLoader)
+
+    del loaded_yaml["user_interface"]
+
+    temporary_configuration_path = tmp_path.joinpath("config.yaml")
+    temporary_configuration_path.write_text(yaml.safe_dump(loaded_yaml))
+
+    mocker.patch("plotman.configuration.get_path", return_value=temporary_configuration_path)
+    reloaded_yaml = configuration.get_validated_configs()
+
+    assert reloaded_yaml.user_interface == configuration.UserInterface()

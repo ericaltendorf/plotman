@@ -101,11 +101,11 @@ def main():
         config_file_path = configuration.get_path()
         if args.config_subcommand == 'path':
             if os.path.isfile(config_file_path):
-                return config_file_path
-            return (
-                f"No 'plotman.yaml' file exists at expected location: '{config_file_path}'. To generate "
-                f"default config file, run: 'plotman config generate'"
-            )
+                print(config_file_path)
+                return
+            print(f"No 'plotman.yaml' file exists at expected location: '{config_file_path}'")
+            print(f"To generate a default config file, run: 'plotman config generate'")
+            return 1
         if args.config_subcommand == 'generate':
             if os.path.isfile(config_file_path):
                 overwrite = None
@@ -115,7 +115,8 @@ def main():
                         "\tInput 'y' to overwrite existing file, or 'n' to exit without overwrite."
                       ).lower()
                     if overwrite == 'n':
-                        return "\nExited without overrwriting file"
+                        print("\nExited without overrwriting file")
+                        return
 
             # Copy the default plotman.yaml (packaged in plotman/resources/) to the user's config file path,
             # creating the parent plotman file/directory if it does not yet exist
@@ -124,10 +125,12 @@ def main():
 
                 os.makedirs(config_dir, exist_ok=True)
                 copyfile(default_config, config_file_path)
-                return f"\nWrote default plotman.yaml to: {config_file_path}"
+                print(f"\nWrote default plotman.yaml to: {config_file_path}")
+                return
 
         if not args.config_subcommand:
-            return "No action requested, add 'generate' or 'path'."
+            print("No action requested, add 'generate' or 'path'.")
+            return
 
     cfg = configuration.get_validated_configs()
 
@@ -177,7 +180,11 @@ def main():
                     time.sleep(60)
                     jobs = Job.get_running_jobs(cfg.directories.log)
                 firstit = False
-                archive.archive(cfg.directories, jobs)
+
+                archiving_status, log_message = archive.spawn_archive_process(cfg.directories, jobs)
+                if log_message:
+                    print(log_message)
+
 
         # Debugging: show the destination drive usage schedule
         elif args.cmd == 'dsched':
@@ -199,9 +206,9 @@ def main():
                 # TODO: allow multiple idprefixes, not just take the first
                 selected = manager.select_jobs_by_partial_id(jobs, args.idprefix[0])
                 if (len(selected) == 0):
-                    print('Error: %s matched no jobs.' % id_spec)
+                    print('Error: %s matched no jobs.' % args.idprefix[0])
                 elif len(selected) > 1:
-                    print('Error: "%s" matched multiple jobs:' % id_spec)
+                    print('Error: "%s" matched multiple jobs:' % args.idprefix[0])
                     for j in selected:
                         print('  %s' % j.plot_id)
                     selected = []
