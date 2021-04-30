@@ -129,7 +129,7 @@ class Job:
 
         return jobs
 
- 
+
     def __init__(self, proc, parsed_command, logroot):
         '''Initialize from an existing psutil.Process object.  must know logroot in order to understand open files'''
         self.proc = proc
