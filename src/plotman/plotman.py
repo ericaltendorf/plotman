@@ -206,9 +206,9 @@ def main():
                 # TODO: allow multiple idprefixes, not just take the first
                 selected = manager.select_jobs_by_partial_id(jobs, args.idprefix[0])
                 if (len(selected) == 0):
-                    print('Error: %s matched no jobs.' % id_spec)
+                    print('Error: %s matched no jobs.' % args.idprefix[0])
                 elif len(selected) > 1:
-                    print('Error: "%s" matched multiple jobs:' % id_spec)
+                    print('Error: "%s" matched multiple jobs:' % args.idprefix[0])
                     for j in selected:
                         print('  %s' % j.plot_id)
                     selected = []
