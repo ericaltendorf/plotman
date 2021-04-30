@@ -123,7 +123,11 @@ def curses_main(stdscr):
 
             if archiving_configured:
                 if archiving_active:
-                    archiving_status, log_message = archive.spawn_archive_process(cfg.directories, jobs)
+                    archiving_status, log_message = archive.spawn_archive_process(
+                        cfg.directories,
+                        jobs,
+                        previous_archiving_status=archiving_status,
+                    )
                     if log_message:
                         log.log(log_message)
 
