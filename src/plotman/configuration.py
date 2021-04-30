@@ -50,6 +50,7 @@ class Archive:
 @dataclass
 class TmpOverrides:
     tmpdir_max_jobs: Optional[int] = None
+    tmpdir_stagger_phase_limit: Optional[int] = None
 
 @dataclass
 class Directories:
