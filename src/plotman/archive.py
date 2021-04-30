@@ -26,9 +26,7 @@ def spawn_archive_process(dir_cfg, all_jobs):
     # even though the scheduler should only run one at a time.
     arch_jobs = get_running_archive_jobs(dir_cfg.archive)
     
-    if arch_jobs:
-        archiving_status = 'pid: ' + ', '.join(map(str, arch_jobs))
-    else:
+    if not arch_jobs:
         (should_start, status_or_cmd) = archive(dir_cfg, all_jobs)
         if not should_start:
             archiving_status = status_or_cmd
@@ -41,6 +39,17 @@ def spawn_archive_process(dir_cfg, all_jobs):
                     stderr=subprocess.STDOUT,
                     start_new_session=True) 
             log_message = 'Starting archive: ' + cmd
+            # At least for now it seems that even if we get a new running
+            # archive jobs list it doesn't contain the new rsync process.
+            # My guess is that this is because the bash in the middle due to
+            # shell=True is still starting up and really hasn't launched the
+            # new rsync process yet.  So, just put a placeholder here.  It
+            # will get filled on the next cycle.
+            arch_jobs.append('<pending>')
+
+    if archiving_status is None:
+        archiving_status = 'pid: ' + ', '.join(map(str, arch_jobs))
+
     return archiving_status, log_message
             
 def compute_priority(phase, gb_free, n_plots):
