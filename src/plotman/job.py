@@ -35,7 +35,7 @@ def is_plotting_cmdline(cmdline):
 
 # This is a cmdline argument fix for https://github.com/ericaltendorf/plotman/issues/41
 def cmdline_argfix(cmdline):
-    known_keys = 'krbut2dne'
+    known_keys = 'krbut2dnea'
     for i in cmdline:
         # If the argument starts with dash and a known key and is longer than 2,
         # then an argument is passed with no space between its key and value.
@@ -97,7 +97,7 @@ class Job:
 
         return jobs
 
- 
+
     def __init__(self, proc, logroot):
         '''Initialize from an existing psutil.Process object.  must know logroot in order to understand open files'''
         self.proc = proc
@@ -132,7 +132,7 @@ class Job:
                     self.n = val
                 elif arg in {'-h', '--help'}:
                     self.help = True
-                elif arg in {'-e', '--nobitfield', '-f', '--farmer_public_key', '-p', '--pool_public_key'}:
+                elif arg in {'-e', '--nobitfield', '-f', '--farmer_public_key', '-p', '--pool_public_key', '-a', '--alt_fingerprint'}:
                     pass
                     # TODO: keep track of these
                 elif arg == '--override-k':
