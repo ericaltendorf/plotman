@@ -11,10 +11,11 @@ from datetime import datetime
 from enum import Enum, auto
 from subprocess import call
 
-import chia.cmds.plots
 import click
 import pendulum
 import psutil
+
+from plotman import chia
 
 
 def job_phases_for_tmpdir(d, all_jobs):
@@ -61,7 +62,10 @@ def parse_chia_plots_create_command_line(command_line):
         if argument not in help_option_names
     ]
 
-    command = chia.cmds.plots.create_cmd
+    # TODO: We could at some point do chia version detection and pick the
+    #       associated command.  For now we'll just use the latest one we have
+    #       copied.
+    command = chia.commands.latest_command()
     try:
         context = command.make_context(info_name='', args=list(command_arguments))
     except click.ClickException as e:

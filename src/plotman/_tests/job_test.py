@@ -133,7 +133,7 @@ def test_chia_plots_create_parsing_handles_argument_forms(arguments):
     ],
     ids=str,
 )
-def test_chia_plots_create_parsing_handles_argument_forms(arguments):
+def test_chia_plots_create_parsing_identifies_errors(arguments):
     parsed = job.parse_chia_plots_create_command_line(
         command_line=['python', 'chia', 'plots', 'create', *arguments],
     )
