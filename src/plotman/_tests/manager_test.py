@@ -14,7 +14,8 @@ def sched_cfg():
         polling_time_s=2,
         tmpdir_stagger_phase_major=3,
         tmpdir_stagger_phase_minor=0,
-        tmpdir_max_jobs=3
+        tmpdir_max_jobs=3,
+        stop_when_dst_full=False
     )
 
 @pytest.fixture

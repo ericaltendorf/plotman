@@ -158,8 +158,7 @@ def archive(dir_cfg, all_jobs):
         return(False, 'No free archive dirs found.')
     
     archdir = ''
-    available = [(d, space) for (d, space) in archdir_freebytes.items() if 
-                 space > 1.2 * plot_util.get_k32_plotsize()]
+    available = [(d, space) for (d, space) in archdir_freebytes.items() if plot_util.enough_space_for_k32(space)]
     if len(available) > 0:
         index = min(dir_cfg.archive.index, len(available) - 1)
         (archdir, freespace) = sorted(available)[index]

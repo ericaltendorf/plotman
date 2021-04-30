@@ -109,6 +109,10 @@ scheduling:
         # How often the daemon wakes to consider starting a new plot job, in seconds.
         polling_time_s: 20
 
+        # Stop initiating new plots when a dst is full, default to False since
+        # archiving job should move other plots before plotting is completed
+        stop_when_dst_full: False
+
 
 # Plotting parameters.  These are pass-through parameters to chia plots create.
 # See documentation at
