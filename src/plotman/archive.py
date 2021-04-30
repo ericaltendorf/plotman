@@ -15,12 +15,12 @@ from plotman import manager, plot_util
 
 # TODO : write-protect and delete-protect archived plots
 
-def spawn_archive_process(dir_cfg, all_jobs, previous_archiving_status):
+def spawn_archive_process(dir_cfg, all_jobs):
     '''Spawns a new archive process using the command created 
     in the archive() function. Returns archiving status and a log message to print.'''
 
     log_message = None
-    archiving_status = previous_archiving_status
+    archiving_status = None
     
     # Look for running archive jobs.  Be robust to finding more than one
     # even though the scheduler should only run one at a time.

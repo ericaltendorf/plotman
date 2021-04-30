@@ -181,11 +181,7 @@ def main():
                     jobs = Job.get_running_jobs(cfg.directories.log)
                 firstit = False
 
-                archiving_status, log_message = archive.spawn_archive_process(
-                    cfg.directories,
-                    jobs,
-                    previous_archiving_status=archiving_status,
-                )
+                archiving_status, log_message = archive.spawn_archive_process(cfg.directories, jobs)
                 if log_message:
                     print(log_message)
 
