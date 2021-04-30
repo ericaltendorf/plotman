@@ -9,6 +9,9 @@ from plotman import archive, configuration, manager, reporting
 from plotman.job import Job
 
 
+class TerminalTooSmallError(Exception):
+    pass
+
 class Log:
     def __init__(self):
         self.entries = []
@@ -333,4 +336,9 @@ def run_interactive():
     code = locale.getpreferredencoding()
     # Then use code as the encoding for str.encode() calls.
 
-    curses.wrapper(curses_main)
+    try:
+        curses.wrapper(curses_main)
+    except curses.error as e:
+        raise TerminalTooSmallError(
+            "Your terminal may be too small, try making it bigger.",
+        ) from e
