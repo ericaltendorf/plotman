@@ -194,7 +194,7 @@ jobs:
       matrix:
         task:
           - name: Coverage
-            tox: combined-coverage
+            tox: check-coverage
             download_coverage: true
         os:
           - name: Linux
