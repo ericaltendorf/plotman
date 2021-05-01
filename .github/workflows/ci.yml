@@ -106,6 +106,7 @@ jobs:
         task:
           - name: Test
             tox: test
+            coverage: true
         include:
           - task:
               name: Check
