@@ -67,6 +67,8 @@ directories:
                 rsyncd_bwlimit: 80000  # Bandwidth limit in KB/s
                 rsyncd_host: myfarmer
                 rsyncd_user: chia
+                # Optional: How often the daemon wakes to consider starting a new archive job, in seconds.
+                sleep_time_s: 60 
                 # Optional index.  If omitted or set to 0, plotman will archive
                 # to the first archive dir with free space.  If specified,
                 # plotman will skip forward up to 'index' drives (if they exist).

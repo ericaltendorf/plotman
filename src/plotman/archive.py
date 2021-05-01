@@ -130,7 +130,7 @@ def archive(dir_cfg, all_jobs):
     if not archdir:
         return(False, 'No archive directories found with enough free space')
     
-    msg = 'Found %s with ~%d GB free' % (archdir, freespace / plot_util.GB)
+    print('Found %s with ~%d GB free' % (archdir, freespace / plot_util.GB))
 
     bwlimit = dir_cfg.archive.rsyncd_bwlimit
     throttle_arg = ('--bwlimit=%d' % bwlimit) if bwlimit else ''

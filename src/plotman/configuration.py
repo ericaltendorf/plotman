@@ -45,6 +45,7 @@ class Archive:
     rsyncd_bwlimit: int
     rsyncd_host: str
     rsyncd_user: str
+    sleep_time_s: int = 60 # If not explicit, "sleep_time_s" will default to 60
     index: int = 0  # If not explicit, "index" will default to 0
 
 @dataclass
