@@ -11,7 +11,7 @@ from datetime import datetime
 import psutil
 import texttable as tt
 
-from plotman import manager, plot_util
+from plotman import manager, plot_util, configuration
 
 # TODO : write-protect and delete-protect archived plots
 
@@ -61,7 +61,7 @@ def get_archdir_freebytes(arch_cfg):
                 freebytes = int(fields[3][:-1]) * 1024  # Strip the final 'K'
                 archdir = (fields[5]).decode('ascii')
                 archdir_freebytes[archdir] = freebytes
-    else if arch_cfg.method == 'move':
+    elif arch_cfg.method == 'move':
         df_cmd = ('df -aBK | grep " %s/"' %
             (arch_cfg.archive_move.move_path) )
         with subprocess.Popen(df_cmd, shell=True, stdout=subprocess.PIPE) as proc:
@@ -97,7 +97,7 @@ def get_running_archive_jobs(arch_cfg):
                     for arg in args:
                         if arg.startswith(dest):
                             jobs.append(proc.pid)
-    else if(arch_cfg.method == 'move'):
+    elif(arch_cfg.method == 'move'):
             with contextlib.suppress(psutil.NoSuchProcess):
                 if proc.name() == 'mv':
                     args = proc.cmdline()
@@ -153,13 +153,13 @@ def archive(dir_cfg, all_jobs):
     
     msg = 'Found %s with ~%d GB free' % (archdir, freespace / plot_util.GB)
 
-    if dir_cfg.archive.method == 'rsync'
+    if dir_cfg.archive.method == 'rsync':
         bwlimit = dir_cfg.archive.archive_rsync.rsyncd_bwlimit
         throttle_arg = ('--bwlimit=%d' % bwlimit) if bwlimit else ''
         cmd = ('rsync %s --remove-source-files -P %s %s' %
                 (throttle_arg, chosen_plot, rsync_dest(dir_cfg.archive.archive_rsync, archdir)))
         return (True, cmd)
-    else if dir_cfg.archive.method == 'move'
+    elif dir_cfg.archive.method == 'move':
         (file_path, file_name) = os.path.split(chosen_plot)
         # cmd1 = ('mv %s %s.2.tmp' %
                 # (chosen_plot, chosen_plot))
@@ -174,5 +174,5 @@ def archive(dir_cfg, all_jobs):
                  (tmp_file_name, tmp_file_name))
         result3 = os.system(cmd3)
         msg = '`%s` ran with exit code %d' % (cmd3, result3)
-    else
+    else:
         return (False, 'Archive method error, only rsync and move can be used')
