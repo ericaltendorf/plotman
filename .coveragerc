@@ -1,6 +1,7 @@
 [paths]
 source =
    src
+   */site-packages
 
 [report]
 precision = 1
