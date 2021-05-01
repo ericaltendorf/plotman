@@ -49,17 +49,30 @@ def compute_priority(phase, gb_free, n_plots):
 
 def get_archdir_freebytes(arch_cfg):
     archdir_freebytes = {}
-    df_cmd = ('ssh %s@%s df -aBK | grep " %s/"' %
-        (arch_cfg.rsyncd_user, arch_cfg.rsyncd_host, arch_cfg.rsyncd_path) )
-    with subprocess.Popen(df_cmd, shell=True, stdout=subprocess.PIPE) as proc:
-        for line in proc.stdout.readlines():
-            fields = line.split()
-            if fields[3] == b'-':
-                # not actually mounted
-                continue
-            freebytes = int(fields[3][:-1]) * 1024  # Strip the final 'K'
-            archdir = (fields[5]).decode('ascii')
-            archdir_freebytes[archdir] = freebytes
+    if arch_cfg.method == 'rsync':
+        df_cmd = ('ssh %s@%s df -aBK | grep " %s/"' %
+            (arch_cfg.archive_rsync.rsyncd_user, arch_cfg.archive_rsync.rsyncd_host, arch_cfg.archive_rsync.rsyncd_path) )
+        with subprocess.Popen(df_cmd, shell=True, stdout=subprocess.PIPE) as proc:
+            for line in proc.stdout.readlines():
+                fields = line.split()
+                if fields[3] == b'-':
+                    # not actually mounted
+                    continue
+                freebytes = int(fields[3][:-1]) * 1024  # Strip the final 'K'
+                archdir = (fields[5]).decode('ascii')
+                archdir_freebytes[archdir] = freebytes
+    else if arch_cfg.method == 'move':
+        df_cmd = ('df -aBK | grep " %s/"' %
+            (arch_cfg.archive_move.move_path) )
+        with subprocess.Popen(df_cmd, shell=True, stdout=subprocess.PIPE) as proc:
+            for line in proc.stdout.readlines():
+                fields = line.split()
+                if fields[3] == b'-':
+                    # not actually mounted
+                    continue
+                freebytes = int(fields[3][:-1]) * 1024  # Strip the final 'K'
+                archdir = (fields[5]).decode('ascii')
+                archdir_freebytes[archdir] = freebytes
     return archdir_freebytes
 
 def rsync_dest(arch_cfg, arch_dir):
@@ -69,20 +82,28 @@ def rsync_dest(arch_cfg, arch_dir):
     rsync_url = 'rsync://%s@%s:12000/%s' % (
             arch_cfg.rsyncd_user, arch_cfg.rsyncd_host, rsync_path)
     return rsync_url
-
+    
 # TODO: maybe consolidate with similar code in job.py?
 def get_running_archive_jobs(arch_cfg):
     '''Look for running rsync jobs that seem to match the pattern we use for archiving
        them.  Return a list of PIDs of matching jobs.'''
     jobs = []
-    dest = rsync_dest(arch_cfg, '/')
-    for proc in psutil.process_iter(['pid', 'name']):
-        with contextlib.suppress(psutil.NoSuchProcess):
-            if proc.name() == 'rsync':
-                args = proc.cmdline()
-                for arg in args:
-                    if arg.startswith(dest):
-                        jobs.append(proc.pid)
+    if(arch_cfg.method == 'rsync'):
+        dest = rsync_dest(arch_cfg.archive_rsync, '/')
+        for proc in psutil.process_iter(['pid', 'name']):
+            with contextlib.suppress(psutil.NoSuchProcess):
+                if proc.name() == 'rsync':
+                    args = proc.cmdline()
+                    for arg in args:
+                        if arg.startswith(dest):
+                            jobs.append(proc.pid)
+    else if(arch_cfg.method == 'move'):
+            with contextlib.suppress(psutil.NoSuchProcess):
+                if proc.name() == 'mv':
+                    args = proc.cmdline()
+                    for arg in args:
+                        if arg.startswith(arch_cfg.archive_move.move_path):
+                            jobs.append(proc.pid)
     return jobs
 
 def archive(dir_cfg, all_jobs):
@@ -132,9 +153,26 @@ def archive(dir_cfg, all_jobs):
     
     msg = 'Found %s with ~%d GB free' % (archdir, freespace / plot_util.GB)
 
-    bwlimit = dir_cfg.archive.rsyncd_bwlimit
-    throttle_arg = ('--bwlimit=%d' % bwlimit) if bwlimit else ''
-    cmd = ('rsync %s --remove-source-files -P %s %s' %
-            (throttle_arg, chosen_plot, rsync_dest(dir_cfg.archive, archdir)))
-
-    return (True, cmd)
+    if dir_cfg.archive.method == 'rsync'
+        bwlimit = dir_cfg.archive.archive_rsync.rsyncd_bwlimit
+        throttle_arg = ('--bwlimit=%d' % bwlimit) if bwlimit else ''
+        cmd = ('rsync %s --remove-source-files -P %s %s' %
+                (throttle_arg, chosen_plot, rsync_dest(dir_cfg.archive.archive_rsync, archdir)))
+        return (True, cmd)
+    else if dir_cfg.archive.method == 'move'
+        (file_path, file_name) = os.path.split(chosen_plot)
+        # cmd1 = ('mv %s %s.2.tmp' %
+                # (chosen_plot, chosen_plot))
+        # result1 = os.system(cmd1)
+        # msg = '`%s` ran with exit code %d' % (cmd1, result1)
+        tmp_file_name = os.path.join(archdir, file_name)
+        cmd2 = ('mv %s %s.2.tmp' %
+                 (chosen_plot, tmp_file_name))
+        result2 = os.system(cmd2)
+        msg = '`%s` ran with exit code %d' % (cmd2, result2)
+        cmd3 = ('mv %s.2.tmp %s' %
+                 (tmp_file_name, tmp_file_name))
+        result3 = os.system(cmd3)
+        msg = '`%s` ran with exit code %d' % (cmd3, result3)
+    else
+        return (False, 'Archive method error, only rsync and move can be used')

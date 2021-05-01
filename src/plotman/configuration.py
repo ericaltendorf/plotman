@@ -44,15 +44,24 @@ def get_dst_directories(dir_cfg):
         (True, dir_cfg.dst)
 
 # Data models used to deserializing/formatting plotman.yaml files.
-
 @dataclass
 class Archive:
+    method: str = rsync # If not explicit, "method" will default to rsync
+    index: int = 0  # If not explicit, "index" will default to 0
+    archive_rsync: Optional[Archive_Rsync] = None
+    archive_move: Optional[Archive_Move] = None
+
+@dataclass
+class Archive_Rsync:
     rsyncd_module: str
     rsyncd_path: str
     rsyncd_bwlimit: int
     rsyncd_host: str
     rsyncd_user: str
-    index: int = 0  # If not explicit, "index" will default to 0
+
+@dataclass
+class Archive_Move:
+    move_path: str
 
 @dataclass
 class TmpOverrides:

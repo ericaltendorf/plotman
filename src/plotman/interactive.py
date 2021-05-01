@@ -66,7 +66,15 @@ def curses_main(stdscr):
     cfg = configuration.get_validated_configs()
 
     plotting_active = True
-    archiving_configured = cfg.directories.archive is not None
+    archiving_configured = False
+    if cfg.directories.archive is not None:
+        if cfg.directories.archive.method == 'rsync':
+            if cfg.directories.archive.archive_rsync is not None:
+                archiving_configured = True
+        else if cfg.directories.archive.method == 'move':
+            if cfg.directories.archive.archive_move is not None:
+                archiving_configured = True
+
     archiving_active = archiving_configured
 
     plotting_status = '<startup>'    # todo rename these msg?
@@ -176,7 +184,10 @@ def curses_main(stdscr):
         (is_dst, dst_dir) = configuration.get_dst_directories(cfg.directories)
         dst_prefix = os.path.commonpath(dst_dir)
         if archiving_configured:
-            arch_prefix = cfg.directories.archive.rsyncd_path
+            if cfg.directories.archive.method == 'rsync'
+                arch_prefix = cfg.directories.archive.archive_rsync.rsyncd_path
+            if cfg.directories.archive.method == 'move'
+                arch_prefix = cfg.directories.archive.archive_move.move_path
 
         n_tmpdirs = len(cfg.directories.tmp)
         n_tmpdirs_half = int(n_tmpdirs / 2)
