@@ -188,56 +188,87 @@ jobs:
     runs-on: ${{ matrix.os.runs-on }}
     needs:
       - test
-    container: ${{ matrix.os.container[matrix.python.docker] }}
     strategy:
       fail-fast: false
       matrix:
-        task:
-          - name: Coverage
-            tox: check-coverage
-            download_coverage: true
-        os:
-          - name: Linux
-            runs-on: ubuntu-latest
-            python_platform: linux
-            container:
-              3.8: docker://python:3.8-buster
-        python:
-          - name: CPython 3.8
-            tox: py38
-            action: 3.8
-            docker: 3.8
+        include:
+          - os:
+              name: Linux
+              runs-on: ubuntu-latest
+            python:
+              name: CPython 3.8
+              action: 3.8
+            task:
+              name: Coverage
+              tox: check-coverage
+              coverage: false
+              download_coverage: true
 
     env:
       # Should match name above
       JOB_NAME: ${{ matrix.task.name }} - ${{ matrix.os.name }} ${{ matrix.python.name }}
+      TOXENV: ${{ matrix.task.tox }}${{ fromJSON('["", "-"]')[matrix.task.tox != null && matrix.python.tox != null] }}${{ matrix.python.tox }}
 
     steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Install tox
-        run: |
-          pip install --upgrade pip setuptools wheel
-          pip install --upgrade tox
+    - name: Download package files
+      uses: actions/download-artifact@v2
+      with:
+        name: dist
+        path: dist/
 
-      - uses: twisted/python-info-action@v1.0.1
+    - name: Download Coverage
+      if: matrix.task.download_coverage
+      uses: actions/download-artifact@v2
+      with:
+        name: coverage
+        path: coverage_reports
 
-      - name: Download Coverage
-        if: matrix.task.download_coverage
-        uses: actions/download-artifact@v2
-        with:
-          name: coverage
-          path: coverage_reports
+    - name: Set up ${{ matrix.python.name }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python.action }}
 
-      - name: Setup tox environment
-        run: |
-          tox -vv --notest -e ${{ matrix.task.tox }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        pip install tox
 
-      - name: Test
-        run: |
-          tox -e ${{ matrix.task.tox }}
+    - name: Prepare tox environment
+      run: |
+        tox --notest --installpkg dist/*.whl
+
+    - name: Runner info
+      uses: twisted/python-info-action@v1
+
+    - name: Tox info
+      uses: twisted/python-info-action@v1
+      with:
+        python-path: .tox/${{ env.TOXENV }}/*/python
+
+    - name: Run tox environment
+      env:
+        BASE_REF: ${{ fromJSON(format('[{0}, {1}]', toJSON(github.event.before), toJSON(format('origin/{0}', github.base_ref))))[github.base_ref != ''] }}
+      run: |
+        tox --skip-pkg-install -- --compare-branch="${BASE_REF}"
+
+    - name: Coverage Processing
+      if: always()
+      run: |
+        mkdir all_coverage_report
+        cp .coverage "all_coverage_report/.coverage.all"
+        cp coverage.xml "all_coverage_report/coverage.all.xml"
+
+    - name: Upload Coverage
+      if: always()
+      uses: actions/upload-artifact@v2
+      with:
+        name: coverage
+        path: all_coverage_report/*
 
   all:
     name: All
