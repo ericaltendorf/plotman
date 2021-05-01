@@ -182,7 +182,7 @@ jobs:
         name: coverage
         path: coverage_reports/*
 
-  check:
+  coverage:
     # Should match JOB_NAME below
     name: ${{ matrix.task.name }} - ${{ matrix.os.name }} ${{ matrix.python.name }} ${{ matrix.arch.name }}
     runs-on: ${{ matrix.os.runs-on }}
@@ -245,6 +245,7 @@ jobs:
     needs:
       - build
       - test
+      - coverage
     steps:
       - name: This
         shell: python
