@@ -186,9 +186,10 @@ def arch_dir_report(archdir_freebytes, width, prefix=''):
 
 # TODO: remove this
 def dirs_report(jobs, dir_cfg, sched_cfg, width):
+    (is_dst, dst_dir) = configuration.get_dst_directories(dir_cfg)
     return (
         tmp_dir_report(jobs, dir_cfg, sched_cfg, width) + '\n' +
-        dst_dir_report(jobs, dir_cfg.dst, width) + '\n' +
+        dst_dir_report(jobs, dst_dir, width) + '\n' +
         'archive dirs free space:\n' +
         arch_dir_report(archive.get_archdir_freebytes(dir_cfg.archive), width) + '\n'
     )

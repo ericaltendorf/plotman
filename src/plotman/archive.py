@@ -96,8 +96,8 @@ def archive(dir_cfg, all_jobs):
     dir2ph = manager.dstdirs_to_furthest_phase(all_jobs)
     best_priority = -100000000
     chosen_plot = None
-
-    for d in dir_cfg.dst:
+    (is_dst, dst_dir) = configuration.get_dst_directories(dir_cfg)
+    for d in dst_dir:
         ph = dir2ph.get(d, (0, 0))
         dir_plots = plot_util.list_k32_plots(d)
         gb_free = plot_util.df_b(d) / plot_util.GB
