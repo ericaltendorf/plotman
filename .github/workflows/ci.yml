@@ -185,6 +185,8 @@ jobs:
     # Should match JOB_NAME below
     name: ${{ matrix.task.name }} - ${{ matrix.os.name }} ${{ matrix.python.name }} ${{ matrix.arch.name }}
     runs-on: ${{ matrix.os.runs-on }}
+    needs:
+      - test
     container: ${{ matrix.os.container[matrix.python.docker] }}
     strategy:
       fail-fast: false
