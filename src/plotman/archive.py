@@ -62,7 +62,7 @@ def get_archdir_freebytes(arch_cfg):
                 archdir = (fields[5]).decode('ascii')
                 archdir_freebytes[archdir] = freebytes
     elif arch_cfg.method == 'move':
-        df_cmd = ('df -aBK | grep " %s/"' %
+        df_cmd = ('df -aBK | grep " %s"' %
             (arch_cfg.archive_move.move_path) )
         with subprocess.Popen(df_cmd, shell=True, stdout=subprocess.PIPE) as proc:
             for line in proc.stdout.readlines():
@@ -151,7 +151,7 @@ def archive(dir_cfg, all_jobs):
     if not archdir:
         return(False, 'No archive directories found with enough free space')
     
-    msg = 'Found %s with ~%d GB free' % (archdir, freespace / plot_util.GB)
+    print('Found %s with ~%d GB free' % (archdir, freespace / plot_util.GB))
 
     if dir_cfg.archive.method == 'rsync':
         bwlimit = dir_cfg.archive.archive_rsync.rsyncd_bwlimit
@@ -169,10 +169,11 @@ def archive(dir_cfg, all_jobs):
         cmd2 = ('mv %s %s.2.tmp' %
                  (chosen_plot, tmp_file_name))
         result2 = os.system(cmd2)
-        msg = '`%s` ran with exit code %d' % (cmd2, result2)
+        print('`%s` ran with exit code %d' % (cmd2, result2))
         cmd3 = ('mv %s.2.tmp %s' %
                  (tmp_file_name, tmp_file_name))
         result3 = os.system(cmd3)
-        msg = '`%s` ran with exit code %d' % (cmd3, result3)
+        print('`%s` ran with exit code %d' % (cmd3, result3))
+        return (True, 'Move done.')
     else:
         return (False, 'Archive method error, only rsync and move can be used')

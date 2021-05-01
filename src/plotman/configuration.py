@@ -39,9 +39,9 @@ def get_dst_directories(dir_cfg):
     """Returns either (True, <Directories.dst>) or (False, <Directories.tmp>). If Directories.dst is None,
     Use Directories.tmp as dst directory."""
     if dir_cfg.dst is None:
-        (False, dir_cfg.tmp)
+        return (False, dir_cfg.tmp)
     else:
-        (True, dir_cfg.dst)
+        return (True, dir_cfg.dst)
 
 # Data models used to deserializing/formatting plotman.yaml files.
 @dataclass

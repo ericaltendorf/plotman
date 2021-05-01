@@ -177,10 +177,11 @@ def main():
             while True:
                 if not firstit:
                     print('Sleeping 60s until next iteration...')
-                    time.sleep(60)
+                    time.sleep(6)
                     jobs = Job.get_running_jobs(cfg.directories.log)
                 firstit = False
-                archive.archive(cfg.directories, jobs)
+                (result, msg) = archive.archive(cfg.directories, jobs)
+                print('%s, %s' % (result, msg))
 
         # Debugging: show the destination drive usage schedule
         elif args.cmd == 'dsched':
