@@ -16,7 +16,7 @@ defaults:
 jobs:
   build:
     # Should match JOB_NAME below
-    name: ${{ matrix.task.name }} - ${{ matrix.os.name }} ${{ matrix.python.name }} ${{ matrix.arch.name }}
+    name: ${{ matrix.task.name }} - ${{ matrix.os.name }} ${{ matrix.python.name }}
     runs-on: ${{ matrix.os.runs-on }}
     strategy:
       fail-fast: false
@@ -35,7 +35,7 @@ jobs:
 
     env:
       # Should match name above
-      JOB_NAME: ${{ matrix.task.name }} - ${{ matrix.os.name }} ${{ matrix.python.name }} ${{ matrix.arch.name }}
+      JOB_NAME: ${{ matrix.task.name }} - ${{ matrix.os.name }} ${{ matrix.python.name }}
 
     steps:
     - uses: actions/checkout@v2
@@ -79,7 +79,7 @@ jobs:
 
   test:
     # Should match JOB_NAME below
-    name: ${{ matrix.task.name }} - ${{ matrix.os.name }} ${{ matrix.python.name }} ${{ matrix.arch.name }}
+    name: ${{ matrix.task.name }} - ${{ matrix.os.name }} ${{ matrix.python.name }}
     runs-on: ${{ matrix.os.runs-on }}
     needs:
       - build
@@ -121,7 +121,7 @@ jobs:
 
     env:
       # Should match name above
-      JOB_NAME: ${{ matrix.task.name }} - ${{ matrix.os.name }} ${{ matrix.python.name }} ${{ matrix.arch.name }}
+      JOB_NAME: ${{ matrix.task.name }} - ${{ matrix.os.name }} ${{ matrix.python.name }}
       TOXENV: ${{ matrix.task.tox }}${{ fromJSON('["", "-"]')[matrix.python.tox != null] }}${{ matrix.python.tox }}
 
     steps:
@@ -172,7 +172,7 @@ jobs:
       if: matrix.task.coverage
       run: |
         mkdir coverage_reports
-        cp .coverage "coverage_reports/coverage.${{ env.JOB_NAME }}"
+        cp .coverage "coverage_reports/.coverage.${{ env.JOB_NAME }}"
         cp coverage.xml "coverage_reports/coverage.${{ env.JOB_NAME }}.xml"
 
     - name: Publish Coverage
@@ -184,7 +184,7 @@ jobs:
 
   coverage:
     # Should match JOB_NAME below
-    name: ${{ matrix.task.name }} - ${{ matrix.os.name }} ${{ matrix.python.name }} ${{ matrix.arch.name }}
+    name: ${{ matrix.task.name }} - ${{ matrix.os.name }} ${{ matrix.python.name }}
     runs-on: ${{ matrix.os.runs-on }}
     needs:
       - test
@@ -210,7 +210,7 @@ jobs:
 
     env:
       # Should match name above
-      JOB_NAME: ${{ matrix.task.name }} - ${{ matrix.os.name }} ${{ matrix.python.name }} ${{ matrix.arch.name }}
+      JOB_NAME: ${{ matrix.task.name }} - ${{ matrix.os.name }} ${{ matrix.python.name }}
 
     steps:
       - uses: actions/checkout@v2
