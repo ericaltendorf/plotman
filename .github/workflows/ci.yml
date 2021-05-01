@@ -15,7 +15,8 @@ defaults:
 
 jobs:
   build:
-    name: ${{ matrix.task.name}} - ${{ matrix.os.name }} ${{ matrix.python.name }}
+    # Should match JOB_NAME below
+    name: ${{ matrix.task.name }} - ${{ matrix.os.name }} ${{ matrix.python.name }} ${{ matrix.arch.name }}
     runs-on: ${{ matrix.os.runs-on }}
     strategy:
       fail-fast: false
@@ -31,6 +32,10 @@ jobs:
         task:
           - name: Build
             tox: build
+
+    env:
+      # Should match name above
+      JOB_NAME: ${{ matrix.task.name }} - ${{ matrix.os.name }} ${{ matrix.python.name }} ${{ matrix.arch.name }}
 
     steps:
     - uses: actions/checkout@v2
@@ -73,7 +78,8 @@ jobs:
         path: dist/
 
   test:
-    name: ${{ matrix.task.name}} - ${{ matrix.os.name }} ${{ matrix.python.name }}
+    # Should match JOB_NAME below
+    name: ${{ matrix.task.name }} - ${{ matrix.os.name }} ${{ matrix.python.name }} ${{ matrix.arch.name }}
     runs-on: ${{ matrix.os.runs-on }}
     needs:
       - build
@@ -113,6 +119,8 @@ jobs:
 
 
     env:
+      # Should match name above
+      JOB_NAME: ${{ matrix.task.name }} - ${{ matrix.os.name }} ${{ matrix.python.name }} ${{ matrix.arch.name }}
       TOXENV: ${{ matrix.task.tox }}${{ fromJSON('["", "-"]')[matrix.python.tox != null] }}${{ matrix.python.tox }}
 
     steps:
@@ -158,6 +166,75 @@ jobs:
     - name: Test
       run: |
         tox --skip-pkg-install
+
+    - name: Coverage Processing
+      if: matrix.task.coverage
+      run: |
+        mkdir coverage_reports
+        cp .coverage "coverage_reports/coverage.${{ env.JOB_NAME }}"
+        cp coverage.xml "coverage_reports/coverage.${{ env.JOB_NAME }}.xml"
+
+    - name: Publish Coverage
+      if: matrix.task.coverage
+      uses: actions/upload-artifact@v2
+      with:
+        name: coverage
+        path: coverage_reports/*
+
+  check:
+    # Should match JOB_NAME below
+    name: ${{ matrix.task.name }} - ${{ matrix.os.name }} ${{ matrix.python.name }} ${{ matrix.arch.name }}
+    runs-on: ${{ matrix.os.runs-on }}
+    container: ${{ matrix.os.container[matrix.python.docker] }}
+    strategy:
+      fail-fast: false
+      matrix:
+        task:
+          - name: Coverage
+            tox: combined-coverage
+            download_coverage: true
+        os:
+          - name: Linux
+            runs-on: ubuntu-latest
+            python_platform: linux
+            container:
+              3.8: docker://python:3.8-buster
+        python:
+          - name: CPython 3.8
+            tox: py38
+            action: 3.8
+            docker: 3.8
+
+    env:
+      # Should match name above
+      JOB_NAME: ${{ matrix.task.name }} - ${{ matrix.os.name }} ${{ matrix.python.name }} ${{ matrix.arch.name }}
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Install tox
+        run: |
+          pip install --upgrade pip setuptools wheel
+          pip install --upgrade tox
+
+      - uses: twisted/python-info-action@v1.0.1
+
+      - name: Download Coverage
+        if: matrix.task.download_coverage
+        uses: actions/download-artifact@v2
+        with:
+          name: coverage
+          path: coverage_reports
+
+      - name: Setup tox environment
+        run: |
+          tox -vv --notest -e ${{ matrix.task.tox }}
+
+      - name: Test
+        run: |
+          tox -e ${{ matrix.task.tox }}
 
   all:
     name: All
