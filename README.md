@@ -200,6 +200,22 @@ Installation for Linux:
 4. That's it! You can now run Plotman by typing `plotman version` to verify its version.
    Run `plotman --help` to learn about the available commands.
 
+*Note:* If you see `ModuleNotFoundError: No module named 'readline'` when using `plotman` on [RHEL based linux](https://github.com/ericaltendorf/plotman/issues/195) after installing using [chia's guide](https://github.com/Chia-Network/chia-blockchain/wiki/INSTALL#centos--red-hat--fedora), install `readline-devel` then reinstall chia starting at compiling python in a new build environment; or consider using a project like `pyenv`.
+
+## Basic Usage:
+
+1. Install
+
+2. Generate initial config
+
+3. Configure (default location can be found with `plotman config path`). Options explained in the default config file (step 2)
+
+4. Create log directory specified in `directories: { log: "" }`
+
+5. Start plotman: `plotman plot` or `plotman interactive`
+
+6. Check status: `plotman status`
+
 ### Development note:
 
 If you are forking Plotman, simply replace the installation step with `pip install --editable .[dev]` from the project root directory to install *your* version of plotman with test and development extras.
