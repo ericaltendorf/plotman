@@ -14,7 +14,7 @@ import psutil
 
 # Plotman libraries
 from plotman import \
-    archive  # for get_archdir_freebytes(). TODO: move to avoid import loop
+    archive, configuration  # for get_archdir_freebytes(). TODO: move to avoid import loop
 from plotman import job, plot_util
 
 # Constants
