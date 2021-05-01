@@ -161,19 +161,21 @@ def archive(dir_cfg, all_jobs):
         return (True, cmd)
     elif dir_cfg.archive.method == 'move':
         (file_path, file_name) = os.path.split(chosen_plot)
-        # cmd1 = ('mv %s %s.2.tmp' %
-                # (chosen_plot, chosen_plot))
-        # result1 = os.system(cmd1)
-        # msg = '`%s` ran with exit code %d' % (cmd1, result1)
         tmp_file_name = os.path.join(archdir, file_name)
         cmd2 = ('mv %s %s.2.tmp' %
                  (chosen_plot, tmp_file_name))
+        print('start move: `%s`' % cmd2)
         result2 = os.system(cmd2)
-        print('`%s` ran with exit code %d' % (cmd2, result2))
+        if not result2 == 0:
+            return (False, 'Move Error with code %d.' % result2)
+        
         cmd3 = ('mv %s.2.tmp %s' %
                  (tmp_file_name, tmp_file_name))
+        print('rename: `%s`' % cmd3)
         result3 = os.system(cmd3)
-        print('`%s` ran with exit code %d' % (cmd3, result3))
+        if not result3 == 0:
+            return (False, 'Rename Error with code %d.' % result3)
+        
         return (True, 'Move done.')
     else:
         return (False, 'Archive method error, only rsync and move can be used')

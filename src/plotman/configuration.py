@@ -59,6 +59,7 @@ class Archive_Move:
 @dataclass
 class Archive:
     method: str = 'rsync' # If not explicit, "method" will default to rsync
+    sleep_time_s: int = 60 # If not explicit, "sleep_time_s" will default to 60
     index: int = 0  # If not explicit, "index" will default to 0
     archive_rsync: Optional[Archive_Rsync] = None
     archive_move: Optional[Archive_Move] = None
