@@ -173,7 +173,8 @@ def curses_main(stdscr):
 
         # Directory prefixes, for abbreviation
         tmp_prefix = os.path.commonpath(cfg.directories.tmp)
-        dst_prefix = os.path.commonpath(cfg.directories.dst)
+        (is_dst, dst_dir) = configuration.get_dst_directories(cfg.directories)
+        dst_prefix = os.path.commonpath(dst_dir)
         if archiving_configured:
             arch_prefix = cfg.directories.archive.rsyncd_path
 
@@ -186,7 +187,7 @@ def curses_main(stdscr):
         tmp_report_2 = reporting.tmp_dir_report(
             jobs, cfg.directories, cfg.scheduling, n_cols, n_tmpdirs_half, n_tmpdirs, tmp_prefix)
         dst_report = reporting.dst_dir_report(
-            jobs, cfg.directories.dst, n_cols, dst_prefix)
+            jobs, dst_dir, n_cols, dst_prefix)
         if archiving_configured:
             arch_report = reporting.arch_dir_report(archdir_freebytes, n_cols, arch_prefix)
             if not arch_report:
