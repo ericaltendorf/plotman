@@ -276,7 +276,8 @@ jobs:
     needs:
       - build
       - test
-      - coverage
+      # TODO: make this required when we have a better testing situation
+      # - coverage
     steps:
       - name: This
         shell: python
