@@ -8,7 +8,7 @@ assignees: ''
 ---
 
 **Should I file this?**
-Use this template to report *observed bugs in current Plotman*.  Do not use this to request tech support or troubleshooting; we are unable to provide that support here, so please use the user channel(s) on Keybase instead.  Do not use this to report issues with the core Chia plotter.  If you are using `main` branch, try pulling `development` to see if your problem is already fixed.
+Use this template to report *observed bugs in current Plotman*.  Do not use this to request tech support or troubleshooting; we are unable to provide that support here, so please use the user channel(s) on Keybase, or GitHub Discussions instead.  Do not use this to report issues with the core Chia plotter.  If you are using `main` branch, try pulling `development` to see if your problem is already fixed.
 
 **Describe the bug**
 A clear and concise description of what the bug is.
