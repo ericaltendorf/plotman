@@ -34,6 +34,7 @@ commands = Commands()
 @click.command()
 # https://github.com/Chia-Network/chia-blockchain/blob/v1.1.2/LICENSE
 # https://github.com/Chia-Network/chia-blockchain/blob/v1.1.2/chia/cmds/plots.py#L39-L83
+# start copied code
 @click.option("-k", "--size", help="Plot size", type=int, default=32, show_default=True)
 @click.option("--override-k", help="Force size smaller than 32", default=False, show_default=True, is_flag=True)
 @click.option("-n", "--num", help="Number of plots or challenges", type=int, default=1, show_default=True)
@@ -79,5 +80,6 @@ commands = Commands()
 @click.option(
     "-x", "--exclude_final_dir", help="Skips adding [final dir] to harvester for farming", default=False, is_flag=True
 )
+# end copied code
 def _cli():
     pass
