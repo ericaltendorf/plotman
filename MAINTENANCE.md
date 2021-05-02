@@ -8,7 +8,7 @@ This document holds guidance on maintaining aspects of plotman.
 
 In [src/plotman/chia.py](src/plotman/chia.py) there is code copied from the `chia plots create` subcommand's CLI parser definition.
 When new versions of `chia-blockchain` are released, their interface code should be added to plotman.
-plotman commit [1b5db4e](https://github.com/altendky/plotman/commit/1b5db4e342b9ec1f7910663a453aec3a97ba51a6) provides an example of adding a new version.
+plotman commit [1b5db4e](https://github.com/ericaltendorf/plotman/commit/1b5db4e342b9ec1f7910663a453aec3a97ba51a6) provides an example of adding a new version.
 
 In many cases, copying code is a poor choice.
 It is believed that in this case it is appropriate since the chia code that plotman could import is not necessarily the code that is parsing the plotting process command lines anyways.
