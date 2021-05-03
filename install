@@ -1,0 +1,1 @@
+sudo pip3 install --force-reinstall git+https://github.com/tokenchain/plotman@main

@@ -156,8 +156,11 @@ class Job:
                     print(f.path)
 
     def init_from_logfile(self):
-        '''Read plot ID and job start time from logfile.  Return true if we
-           find all the info as expected, false otherwise'''
+        """
+        Read plot ID and job start time from logfile.  Return true if we
+           find all the info as expected, false otherwise
+        """
+
         assert self.logfile
         # Try reading for a while; it can take a while for the job to get started as it scans
         # existing plot dirs (especially if they are NFS).
