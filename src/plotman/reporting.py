@@ -104,7 +104,7 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
                     plot_util.human_format(j.get_tmp_usage(), 0),
                     j.proc.pid,
                     j.get_run_status(),
-                    plot_util.human_format(j.get_mem_usage(), 1),
+                    plot_util.human_format(j.get_mem_usage(), 1, True),
                     plot_util.time_format(j.get_time_user()),
                     plot_util.time_format(j.get_time_sys()),
                     plot_util.time_format(j.get_time_iowait())

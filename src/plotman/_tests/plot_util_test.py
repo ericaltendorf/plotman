@@ -11,6 +11,8 @@ def test_human_format():
     assert (plot_util.human_format(3542000, 2) == '3.54M')
     assert (plot_util.human_format(354, 0) == '354')
     assert (plot_util.human_format(354, 2) == '354.00')
+    assert (plot_util.human_format(422399296143, 2) == '422.40G')
+    assert (plot_util.human_format(422399296143, 2, True) == '393.39G')
 
 def test_time_format():
     assert (plot_util.time_format(34) == '34s')
