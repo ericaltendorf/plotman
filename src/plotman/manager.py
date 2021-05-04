@@ -11,6 +11,7 @@ from datetime import datetime
 
 import pendulum
 import psutil
+import shutil
 
 # Plotman libraries
 from plotman import \
@@ -66,6 +67,26 @@ def phases_permit_new_job(phases, d, sched_cfg, dir_cfg):
         return False
 
     return True
+
+def drive_can_hold_new_plot(directory, plotting_cfg):                  
+    max_plot_size_by_k = {
+        32 : 116930484634,  #108.9GB
+        33 : 240732916941,  #224.2GB
+        34 : 495531851776,  #461.5GB
+        35 : 1019303113524, #949.3GB
+    }
+    (_, _, free) = shutil.disk_usage(directory) 
+    return free > max_plot_size_by_k[plotting_cfg.k]
+
+def kill_frozen_jobs(dir_cfg):
+    jobs = job.Job.get_running_jobs(dir_cfg.log)
+    frozen_jobs = [j for j in jobs if j.is_frozen()]
+
+    if len(frozen_jobs) > 0:
+        print(str(len(frozen_jobs)) + ' frozen jobs detected')
+
+    for j in frozen_jobs:
+        j.kill()
 
 def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
     jobs = job.Job.get_running_jobs(dir_cfg.log)

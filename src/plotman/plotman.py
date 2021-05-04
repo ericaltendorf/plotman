@@ -26,6 +26,8 @@ class PlotmanArgParser:
 
         sp.add_parser('version', help='print the version')
 
+        sp.add_parser('check', help='check resources for future plot jobs')
+
         sp.add_parser('status', help='show current plotting status')
  
         sp.add_parser('dirs', help='show directories info')
@@ -134,17 +136,23 @@ def main():
 
     cfg = configuration.get_validated_configs()
 
+    if args.cmd == 'check':
+        for dirdst in cfg.directories.dst:
+            print(dirdst + " has free space?: "+ ("YES" if manager.drive_can_hold_new_plot(dirdst, cfg.plotting) else "NOP"))
+        return
+
     #
     # Stay alive, spawning plot jobs
     #
     if args.cmd == 'plot':
         print('...starting plot loop')
         while True:
-            wait_reason = manager.maybe_start_new_plot(cfg.directories, cfg.scheduling, cfg.plotting)
+            manager.kill_frozen_jobs(cfg.directories)
+            (started, reason) = manager.maybe_start_new_plot(cfg.directories, cfg.scheduling, cfg.plotting)
 
             # TODO: report this via a channel that can be polled on demand, so we don't spam the console
-            if wait_reason:
-                print('...sleeping %d s: %s' % (cfg.scheduling.polling_time_s, wait_reason))
+            if started:
+                print(reason)
 
             time.sleep(cfg.scheduling.polling_time_s)
 

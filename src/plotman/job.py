@@ -296,7 +296,10 @@ class Job:
         assert self.logfile
         updatedAt = os.path.getmtime(self.logfile)
         now = datetime.now().timestamp() 
-        self.last_updated_time_in_min = int((now-updatedAt)/60);
+        self.last_updated_time_in_min = int((now-updatedAt)/60)
+    
+    def is_frozen(self):
+        return self.last_updated_time_in_min > 60
 
     def progress(self):
         '''Return a 2-tuple with the job phase and subphase (by reading the logfile)'''
@@ -399,3 +402,18 @@ class Job:
         # TODO: check that this is best practice for killing a job.
         self.proc.resume()
         self.proc.terminate()
+
+    def kill(self):
+        print('killing job', self.status_str_long())
+
+        # First suspend so job doesn't create new files
+        self.suspend()
+
+        temp_files = self.get_temp_files()
+        self.cancel()
+        
+        for f in temp_files:
+            os.remove(f)
+
+        print('killed plot %s' % (self.plot_id_prefix()))
+    
