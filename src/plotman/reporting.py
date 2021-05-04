@@ -77,7 +77,7 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
 
     tab = tt.Texttable()
     headings = ['plot id', 'k', 'tmp', 'dst', 'wall', 'phase', 'tmp',
-            'pid', 'stat', 'mem', 'user', 'sys', 'io']
+            'pid', 'stat', 'mem', 'user', 'sys', 'io', 'freezed', 'logfile']
     if height:
         headings.insert(0, '#')
     tab.header(headings)
@@ -108,7 +108,9 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
                         plot_util.human_format(j.get_mem_usage(), 1),
                         plot_util.time_format(j.get_time_user()),
                         plot_util.time_format(j.get_time_sys()),
-                        plot_util.time_format(j.get_time_iowait())
+                        plot_util.time_format(j.get_time_iowait()),
+                        plot_util.is_freezed(j),
+                        os.path.basename(j.logfile)
                         ]
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 # In case the job has disappeared

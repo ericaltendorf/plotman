@@ -70,3 +70,5 @@ def column_wrap(items, n_cols, filler=None):
         rows.append( (row_items + ([filler] * n_cols))[:n_cols] )
     return rows
 
+def is_freezed(job):
+    return 'YES' if job.last_updated_time_in_min > 60 else 'NO';
