@@ -4,11 +4,13 @@ import locale
 import math
 import os
 import subprocess
-import threading
 
 from plotman import archive, configuration, manager, reporting
 from plotman.job import Job
 
+
+class TerminalTooSmallError(Exception):
+    pass
 
 class Log:
     def __init__(self):
@@ -87,6 +89,7 @@ def curses_main(stdscr):
     pressed_key = ''   # For debugging
 
     archdir_freebytes = None
+    aging_reason = None
 
     while True:
 
@@ -113,33 +116,23 @@ def curses_main(stdscr):
                     cfg.directories, cfg.scheduling, cfg.plotting
                 )
                 if (started):
+                    if aging_reason is not None:
+                        log.log(aging_reason)
+                        aging_reason = None
                     log.log(msg)
                     plotting_status = '<just started job>'
                     jobs = Job.get_running_jobs(cfg.directories.log, cached_jobs=jobs)
                 else:
+                    # If a plot is delayed for any reason other than stagger, log it
+                    if msg.find("stagger") < 0:
+                        aging_reason = msg
                     plotting_status = msg
 
             if archiving_configured:
                 if archiving_active:
-                    # Look for running archive jobs.  Be robust to finding more than one
-                    # even though the scheduler should only run one at a time.
-                    arch_jobs = archive.get_running_archive_jobs(cfg.directories.archive)
-                    if arch_jobs:
-                        archiving_status = 'pid: ' + ', '.join(map(str, arch_jobs))
-                    else:
-                        (should_start, status_or_cmd) = archive.archive(cfg.directories, jobs)
-                        if not should_start:
-                            archiving_status = status_or_cmd
-                        else:
-                            cmd = status_or_cmd
-                            log.log('Starting archive: ' + cmd)
-
-                            # TODO: do something useful with output instead of DEVNULL
-                            p = subprocess.Popen(cmd,
-                                    shell=True,
-                                    stdout=subprocess.DEVNULL,
-                                    stderr=subprocess.STDOUT,
-                                    start_new_session=True)
+                    archiving_status, log_message = archive.spawn_archive_process(cfg.directories, jobs)
+                    if log_message:
+                        log.log(log_message)
 
                 archdir_freebytes = archive.get_archdir_freebytes(cfg.directories.archive)
 
@@ -350,4 +343,9 @@ def run_interactive():
     code = locale.getpreferredencoding()
     # Then use code as the encoding for str.encode() calls.
 
-    curses.wrapper(curses_main)
+    try:
+        curses.wrapper(curses_main)
+    except curses.error as e:
+        raise TerminalTooSmallError(
+            "Your terminal may be too small, try making it bigger.",
+        ) from e
