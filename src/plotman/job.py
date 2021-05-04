@@ -383,6 +383,12 @@ class Job:
                 temp_files.add(f.path)
             if self.tmp2dir is not None and self.tmp2dir in f.path:
                 temp_files.add(f.path)
+        
+        all_temp_files = os.listdir(self.tmpdir)
+        for f in os.listdir(self.tmpdir):
+            if self.plot_id in f:
+                temp_files.add(os.path.abspath(os.path.join(self.tmpdir, f)))
+
         return temp_files
 
     def cancel(self):
