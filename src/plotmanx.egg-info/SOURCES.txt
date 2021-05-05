@@ -12,13 +12,6 @@ setup.py
 tox.ini
 update.sh
 .github/workflows/ci.yml
-.idea/.gitignore
-.idea/misc.xml
-.idea/modules.xml
-.idea/plotman.iml
-.idea/vcs.xml
-.idea/inspectionProfiles/Project_Default.xml
-.idea/inspectionProfiles/profiles_settings.xml
 src/plotmanx/__init__.py
 src/plotmanx/__main__.py
 src/plotmanx/analyzer.py
