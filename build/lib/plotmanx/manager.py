@@ -2,7 +2,7 @@ import operator
 import os
 import random
 import subprocess
-from datetime import datetime
+
 import pendulum
 import psutil
 
@@ -63,9 +63,9 @@ def phases_permit_new_job(phases, d, sched_cfg, dir_cfg):
     return True
 
 
-def get_size(dir_cfg):
-    dir = str(dir_cfg)
+def get_size(dir):
     total_size = 0
+
     for dirpath, dirnames, filenames in os.walk(dir):
         for f in filenames:
             fp = os.path.join(dirpath, f)
@@ -74,6 +74,14 @@ def get_size(dir_cfg):
                 total_size += (os.path.getsize(fp)) / 1000000000
 
     return total_size
+
+
+def anyTmpDirIsNearlyFull(dir_cfg):
+    for dir in dir_cfg.tmp:
+        total_size = get_size(dir)
+        if total_size > MAX_PLOT_SIZE:
+            return (True, total_size, dir)
+    return (False, 0, "")
 
 
 def select_jobs_by_partial_id(jobs, partial_id):
@@ -91,12 +99,15 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
 
     youngest_job_age = min(jobs, key=job.Job.get_time_wall).get_time_wall() if jobs else MAX_AGE
     global_stagger = int(sched_cfg.global_stagger_m * MIN)
-    if (youngest_job_age < global_stagger):
+
+    (disksizeBool, disksize, pathdi) = anyTmpDirIsNearlyFull(dir_cfg)
+
+    if youngest_job_age < global_stagger:
         wait_reason = 'stagger (%ds/%ds)' % (youngest_job_age, global_stagger)
     elif len(jobs) >= sched_cfg.global_max_jobs:
         wait_reason = 'max jobs (%d)' % sched_cfg.global_max_jobs
-    elif (get_size(dir_cfg) < MAX_PLOT_SIZE):
-        wait_reason = '(%s) gb size of (%d) < require size (%d)' % (dir_cfg, get_size(dir_cfg), MAX_PLOT_SIZE)
+    elif disksizeBool:
+        wait_reason = '(%s) gb size of (%d) < require size (%d)' % (disksize, get_size(pathdi), MAX_PLOT_SIZE)
     else:
         tmp_to_all_phases = [(d, job.job_phases_for_tmpdir(d, jobs)) for d in dir_cfg.tmp]
         eligible = [(d, phases) for (d, phases) in tmp_to_all_phases
@@ -120,8 +131,8 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
                 dstdir = max(dir2ph, key=dir2ph.get)
 
             logfile = os.path.join(
-#                dir_cfg.log, datetime.now().strftime('%Y-%m-%d-%H:%M:%S.log')
-                 dir_cfg.log, pendulum.now().isoformat(timespec='microseconds').replace(':', '_') + '.log'
+                #                dir_cfg.log, datetime.now().strftime('%Y-%m-%d-%H:%M:%S.log')
+                dir_cfg.log, pendulum.now().isoformat(timespec='microseconds').replace(':', '_') + '.log'
             )
 
             plot_args = ['chia', 'plots', 'create',
