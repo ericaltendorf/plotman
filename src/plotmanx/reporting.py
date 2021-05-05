@@ -66,16 +66,16 @@ def job_viz(jobs):
     # TODO: Rewrite this in a way that ensures we count every job
     # even if the reported phases don't line up with expectations.
     result = ''
-    result += '1:'
+    result += '(1)'
     for i in range(0, 8):
         result += n_to_char_emo(n_at_ph(jobs, (1, i)))
-    result += '|2:'
+    result += '(2)'
     for i in range(0, 8):
         result += n_to_char_emo(n_at_ph(jobs, (2, i)))
-    result += '|3:'
+    result += '(3)'
     for i in range(0, 7):
         result += n_to_char_emo(n_at_ph(jobs, (3, i)))
-    result += '|4:'
+    result += '(4)'
     result += n_to_char_emo(n_at_ph(jobs, (4, 0)))
     return result
 
@@ -97,7 +97,8 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
         n_end_rows = n_rows - n_begin_rows
 
     tab = tt.Texttable()
-    headings = ['plot id', 'k', 'tmp', 'dst', 'wall', 'phase', 'tmp', 'pid', 'stat', 'mem', 'user', 'sys', 'io', 'freezed', 'logfile', '']
+    headings = ['plot id', 'k', 'tmp', 'dst', 'wall', 'phase', 'tmp', 'pid', 'stat', 'mem', 'user', 'sys', 'io', 'freezed', 'logfile']
+    headingwidth = len(headings)
     if height:
         headings.insert(0, '#')
     tab.header(headings)
@@ -107,7 +108,7 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
     for i, j in enumerate(sorted(jobs, key=job.Job.get_time_wall)):
         # Elipsis row
         if abbreviate_jobs_list and i == n_begin_rows:
-            row = ['...'] + ([''] * 13)
+            row = ['...'] + ([''] * headingwidth)
         # Omitted row
         elif abbreviate_jobs_list and i > n_begin_rows and i < (len(jobs) - n_end_rows):
             continue
@@ -134,7 +135,7 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
                            ]
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 # In case the job has disappeared
-                row = [j.plot_id[:8]] + (['--'] * 12)
+                row = [j.plot_id[:8]] + (['--'] * headingwidth)
 
             if height:
                 row.insert(0, '%3d' % i)
