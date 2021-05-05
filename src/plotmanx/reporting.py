@@ -242,7 +242,7 @@ def status_report_api(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
 
     tab = tt.Texttable()
     headings = ['plot id', 'k', 'tmp', 'dst', 'wall', 'phase', 'tmp',
-                'pid', 'stat', 'mem', 'user', 'sys', 'io']
+                'pid', 'stat', 'mem', 'user', 'sys', 'io', 'freeze', 'logfile']
     if height:
         headings.insert(0, '#')
     tab.header(headings)
