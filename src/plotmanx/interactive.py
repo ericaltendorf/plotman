@@ -168,6 +168,7 @@ def curses_main_v2(stdscr):
         #
 
         # Directory prefixes, for abbreviation
+        arch_prefix = ''
         tmp_prefix = os.path.commonpath(cfg.directories.tmp)
         dst_prefix = os.path.commonpath(cfg.directories.dst)
         if archiving_configured:
@@ -453,6 +454,7 @@ def curses_main_v1(stdscr):
         # Directory prefixes, for abbreviation
         tmp_prefix = os.path.commonpath(cfg.directories.tmp)
         dst_prefix = os.path.commonpath(cfg.directories.dst)
+        arch_prefix = ''
         if archiving_configured:
             arch_prefix = cfg.directories.archive.rsyncd_path
 
@@ -546,8 +548,7 @@ def curses_main_v1(stdscr):
         header_win.addnstr(' (remote)', linecap)
 
         # Jobs
-        jobs_win.addstr(0, 0, reporting.status_report(jobs, n_cols, jobs_h,
-                                                      tmp_prefix, dst_prefix))
+        jobs_win.addstr(0, 0, reporting.status_report(jobs, n_cols, jobs_h, tmp_prefix, dst_prefix))
         jobs_win.chgat(0, 0, curses.A_REVERSE)
 
         # Dirs
@@ -629,7 +630,7 @@ def run_interactive():
     # Then use code as the encoding for str.encode() calls.
 
     try:
-        curses.wrapper(curses_main_v1)
+        curses.wrapper(curses_main_v2)
     except curses.error as e:
         raise TerminalTooSmallError(
             "Your terminal may be too small, try making it bigger.",
