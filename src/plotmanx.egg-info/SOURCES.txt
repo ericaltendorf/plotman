@@ -38,8 +38,11 @@ src/plotmanp/_tests/job_test.py
 src/plotmanp/_tests/manager_test.py
 src/plotmanp/_tests/plot_util_test.py
 src/plotmanp/_tests/reporting_test.py
+src/plotmanp/_tests/resources/2021-04-04-19:00:47.log
+src/plotmanp/_tests/resources/2021-04-04-19:00:47.notes
 src/plotmanp/_tests/resources/__init__.py
 src/plotmanp/resources/__init__.py
+src/plotmanp/resources/plotman.yaml
 src/plotmanx.egg-info/PKG-INFO
 src/plotmanx.egg-info/SOURCES.txt
 src/plotmanx.egg-info/dependency_links.txt

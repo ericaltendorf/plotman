@@ -5,13 +5,14 @@ import subprocess
 from datetime import datetime
 
 import psutil
+
 # Plotman libraries
 from . import job
 
 # Constants
 MIN = 60  # Seconds
 HR = 3600  # Seconds
-
+MAX_PLOT_SIZE = 332  # Minimum gb required for k32 plot
 MAX_AGE = 1000_000_000  # Arbitrary large number of seconds
 
 
@@ -62,6 +63,27 @@ def phases_permit_new_job(phases, d, sched_cfg, dir_cfg):
     return True
 
 
+def get_size(dir_cfg):
+    dir = str(dir_cfg)
+    total_size = 0
+    for dirpath, dirnames, filenames in os.walk(dir):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            # skip if it is symbolic link
+            if not os.path.islink(fp):
+                total_size += (os.path.getsize(fp)) / 1000000000
+
+    return total_size
+
+
+def select_jobs_by_partial_id(jobs, partial_id):
+    selected = []
+    for j in jobs:
+        if j.plot_id.startswith(partial_id):
+            selected.append(j)
+    return selected
+
+
 def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
     jobs = job.Job.get_running_jobs(dir_cfg.log)
 
@@ -73,6 +95,8 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
         wait_reason = 'stagger (%ds/%ds)' % (youngest_job_age, global_stagger)
     elif len(jobs) >= sched_cfg.global_max_jobs:
         wait_reason = 'max jobs (%d)' % sched_cfg.global_max_jobs
+    elif (get_size(dir_cfg) < MAX_PLOT_SIZE):
+        wait_reason = '(%s) gb size of (%d) < require size (%d)' % (dir_cfg, get_size(dir_cfg), MAX_PLOT_SIZE)
     else:
         tmp_to_all_phases = [(d, job.job_phases_for_tmpdir(d, jobs)) for d in dir_cfg.tmp]
         eligible = [(d, phases) for (d, phases) in tmp_to_all_phases
@@ -120,9 +144,24 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
 
             logmsg = ('Starting plot job: %s ; logging to %s' % (' '.join(plot_args), logfile))
 
+            try:
+                open_log_file = open(logfile, 'x')
+            except FileExistsError:
+                # The desired log file name already exists.  Most likely another
+                # plotman process already launched a new process in response to
+                # the same scenario that triggered us.  Let's at least not
+                # confuse things further by having two plotting processes
+                # logging to the same file.  If we really should launch another
+                # plotting process, we'll get it at the next check cycle anyways.
+                message = (
+                    f'Plot log file already exists, skipping attempt to start a'
+                    f' new plot: {logfile!r}'
+                )
+                return (False, logmsg)
+
             # start_new_sessions to make the job independent of this controlling tty.
             p = subprocess.Popen(plot_args,
-                                 stdout=open(logfile, 'w'),
+                                 stdout=open_log_file,
                                  stderr=subprocess.STDOUT,
                                  start_new_session=True)
 
@@ -130,11 +169,3 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
             return (True, logmsg)
 
     return (False, wait_reason)
-
-
-def select_jobs_by_partial_id(jobs, partial_id):
-    selected = []
-    for j in jobs:
-        if j.plot_id.startswith(partial_id):
-            selected.append(j)
-    return selected

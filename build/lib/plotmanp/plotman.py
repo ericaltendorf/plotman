@@ -104,6 +104,20 @@ def plotting(cfg: any):
             continue
 
 
+def archivePlots(cfg: any):
+    print('...starting archive loop')
+    firstit = True
+    jobs = Job.get_running_jobs(cfg.directories.log)
+    while True:
+        if not firstit:
+            print('Sleeping 60s until next iteration...')
+            time.sleep(60)
+            jobs = Job.get_running_jobs(cfg.directories.log)
+        firstit = False
+        (result, msg) = archive.archive(cfg.directories, jobs)
+        print('%s, %s' % (result, msg))
+
+
 def main():
     random.seed()
 
@@ -183,15 +197,8 @@ def main():
 
         # Start running archival
         elif args.cmd == 'archive':
-            print('...starting archive loop')
-            firstit = True
-            while True:
-                if not firstit:
-                    print('Sleeping 60s until next iteration...')
-                    time.sleep(60)
-                    jobs = Job.get_running_jobs(cfg.directories.log)
-                firstit = False
-                archive.archive(cfg.directories, jobs)
+            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+                executor.submit(archivePlots, cfg)
 
         # Debugging: show the destination drive usage schedule
         elif args.cmd == 'dsched':
