@@ -1,7 +1,7 @@
 # TODO: migrate away from unittest patch
 from unittest.mock import patch
 
-from .. import reporting
+from plotmanx import reporting
 
 
 def test_phases_str_basic():

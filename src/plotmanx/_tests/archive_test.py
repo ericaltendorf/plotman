@@ -1,4 +1,4 @@
-from . import archive, configuration, manager
+from plotmanx import archive, configuration, manager
 
 
 def test_compute_priority():

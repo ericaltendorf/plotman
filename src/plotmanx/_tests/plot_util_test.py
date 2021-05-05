@@ -1,7 +1,7 @@
 import pyfakefs
 
-from .. import plot_util
-from ..plot_util import GB
+from plotmanx import plot_util
+from plotmanx.plot_util import GB
 
 
 def test_human_format():

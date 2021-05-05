@@ -53,7 +53,7 @@ def split_path_prefix(items):
 
 
 def list_k32_plots(d):
-    'List completed k32 plots in a directory (not recursive)'
+    """List completed k32 plots in a directory (not recursive)"""
     plots = []
     for plot in os.listdir(d):
         if re.match(r'^plot-k32-.*plot$', plot):
