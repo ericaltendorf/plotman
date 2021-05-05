@@ -1,9 +1,9 @@
 Metadata-Version: 2.1
 Name: plotmanx
-Version: 0.2.5
+Version: 0.2.6
 Summary: Chia plotting manager
 Home-page: https://github.com/ericaltendorf/plotman
-Author: Eric Altendorf & Heskemo
+Author: Eric Altendorf and Heskemo
 License: Apache 2.0
 Project-URL: Bug Tracker, https://github.com/ericaltendorf/plotman/issues
 Project-URL: Changelog, https://github.com/ericaltendorf/plotman/blob/main/CHANGELOG.md
