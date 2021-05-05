@@ -84,3 +84,7 @@ clean_repo() {
   # echo "ready and install it again.."
   # sudo pip3 install --proxy 127.0.0.1:1087 tronpytool==$VERSION
 }
+
+testup(){
+  python3 -m pytest
+}

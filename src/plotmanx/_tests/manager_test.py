@@ -60,7 +60,7 @@ def test_permit_new_job_override_tmp_dir(sched_cfg, dir_cfg):
         dir_cfg)
 
 
-@patch('plotman.job.Job')
+@patch('plotmanx.job.Job')
 def job_w_tmpdir_phase(tmpdir, phase, MockJob):
     j = MockJob()
     j.progress.return_value = phase
@@ -68,7 +68,7 @@ def job_w_tmpdir_phase(tmpdir, phase, MockJob):
     return j
 
 
-@patch('plotman.job.Job')
+@patch('plotmanx.job.Job')
 def job_w_dstdir_phase(dstdir, phase, MockJob):
     j = MockJob()
     j.progress.return_value = phase

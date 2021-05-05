@@ -25,10 +25,10 @@ def test_phases_str_none():
 
 
 def test_job_viz_empty():
-    assert (reporting.job_viz([]) == '1        2        3       4 ')
+    assert (reporting.job_viz([]) == '1:        |2...3:       |4: ')
 
 
-@patch('plotman.job.Job')
+@patch('plotmanx.job.Job')
 def job_w_phase(ph, MockJob):
     j = MockJob()
     j.progress.return_value = ph
@@ -42,7 +42,7 @@ def test_job_viz_positions():
             job_w_phase((2, 7)),
             job_w_phase((4, 0))]
 
-    assert (reporting.job_viz(jobs) == '1 .      2.   .  .3       4.')
+    assert (reporting.job_viz(jobs) == '1: 1      |2...3:       |4:1')
 
 
 def test_job_viz_counts():
@@ -64,4 +64,4 @@ def test_job_viz_counts():
             job_w_phase((3, 1)),
             ]
 
-    assert (reporting.job_viz(jobs) == '1        2  .:;!  3 !     4 ')
+    assert (reporting.job_viz(jobs) == '1:        |2...3: 5     |4: ')

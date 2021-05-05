@@ -4,7 +4,6 @@ LICENSE
 MANIFEST.in
 README.md
 VERSION
-install
 n.sh
 pyproject.toml
 setup.cfg
