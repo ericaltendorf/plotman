@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: plotmanx
-Version: 0.2.6
+Version: 0.2.9
 Summary: Chia plotting manager
 Home-page: https://github.com/ericaltendorf/plotman
 Author: Eric Altendorf and Heskemo
@@ -197,20 +197,23 @@ Description: # PlotmanX: a Chia plotting manager
            `source /path/to/your/chia/install/activate`.
         2. Then, install Plotman using the following command:
            ```shell
-            > pip install --force-reinstall git+https://github.com/ericaltendorf/plotman@main
+            pip install --force-reinstall git+https://github.com/ericaltendorf/plotman@main
             ```
            
            With the new installation we can install this
            ```shell
-            > pip install plotmanx
+            pip install plotmanx
             ```
-           
+           or with this
+           ```shell
+            python3 -m pip install plotmanx
+           ```
            
         3. Plotman will look for `plotman.yaml` within your computer at an OS-based
            default location. To create a default `plotman.yaml` and display its location,
            run the following command:
            ```shell
-           > plotman config generate
+           plotman config generate
            ```
            The default configuration file used as a starting point is located [here](src/plotmanp/resources/plotman.yaml)
         4. That's it! You can now run Plotman by typing `plotman version` to verify its version.
