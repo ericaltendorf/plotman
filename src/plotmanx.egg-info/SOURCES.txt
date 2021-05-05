@@ -44,6 +44,8 @@ src/plotmanx/_tests/job_test.py
 src/plotmanx/_tests/manager_test.py
 src/plotmanx/_tests/plot_util_test.py
 src/plotmanx/_tests/reporting_test.py
+src/plotmanx/_tests/resources/2021-04-04-19:00:47.log
+src/plotmanx/_tests/resources/2021-04-04-19:00:47.notes
 src/plotmanx/_tests/resources/__init__.py
 src/plotmanx/resources/__init__.py
 src/plotmanx/resources/plotman.yaml
