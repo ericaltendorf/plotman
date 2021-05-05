@@ -219,6 +219,7 @@ def main():
             else:
                 # TODO: allow multiple idprefixes, not just take the first
                 selected = manager.select_jobs_by_partial_id(jobs, args.idprefix[0])
+                id_spec = args.idprefix[0]
                 if (len(selected) == 0):
                     print('Error: %s matched no jobs.' % id_spec)
                 elif len(selected) > 1:

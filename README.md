@@ -206,7 +206,7 @@ Installation for Linux:
    ```shell
    plotman config generate
    ```
-   The default configuration file used as a starting point is located [here](src/plotmanp/resources/plotman.yaml)
+   The default configuration file used as a starting point is located [here](src/plotmanx/resources/plotman.yaml)
 4. That's it! You can now run Plotman by typing `plotman version` to verify its version.
    Run `plotman --help` to learn about the available commands.
 

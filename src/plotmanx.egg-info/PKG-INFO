@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: plotmanx
-Version: 0.3.2
+Version: 0.3.3
 Summary: Chia plotting manager
 Home-page: https://github.com/ericaltendorf/plotman
 Author: Eric Altendorf and Heskemo
@@ -215,7 +215,7 @@ Description: # PlotmanX: a Chia plotting manager
            ```shell
            plotman config generate
            ```
-           The default configuration file used as a starting point is located [here](src/plotmanp/resources/plotman.yaml)
+           The default configuration file used as a starting point is located [here](src/plotmanx/resources/plotman.yaml)
         4. That's it! You can now run Plotman by typing `plotman version` to verify its version.
            Run `plotman --help` to learn about the available commands.
         
