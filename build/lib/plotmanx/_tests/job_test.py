@@ -5,8 +5,8 @@ import importlib.resources
 
 import pytest
 
-from . import resources
-from ..job import Job
+from plotmanx import resources
+from plotmanx.job import Job
 
 
 class FauxJobWithLogfile:

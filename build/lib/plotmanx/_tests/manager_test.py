@@ -2,7 +2,7 @@
 from unittest.mock import patch
 
 import pytest
-from .. import configuration, manager
+from plotmanx import configuration, manager
 
 
 @pytest.fixture

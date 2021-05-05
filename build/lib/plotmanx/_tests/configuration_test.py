@@ -4,8 +4,8 @@ import importlib.resources
 import pytest
 import yaml
 
-from . import configuration
-from . import resources as plotman_resources
+from plotmanx import configuration
+from plotmanx import resources as plotman_resources
 
 
 @pytest.fixture(name='config_path')

@@ -8,6 +8,7 @@ from datetime import datetime
 import pendulum
 import psutil
 
+
 def job_phases_for_tmpdir(d, all_jobs):
     '''Return phase 2-tuples for jobs running on tmpdir d'''
     return sorted([j.progress() for j in all_jobs if j.tmpdir == d])
@@ -255,7 +256,7 @@ class Job:
         assert self.logfile
         updatedAt = os.path.getmtime(self.logfile)
         now = datetime.now().timestamp()
-        self.last_updated_time_in_min = int((now-updatedAt)/60);
+        self.last_updated_time_in_min = int((now - updatedAt) / 60);
 
     def progress(self):
         '''Return a 2-tuple with the job phase and subphase (by reading the logfile)'''
