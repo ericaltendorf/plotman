@@ -62,3 +62,36 @@ instruction(){
   echo "pc googlesheettranslate==$VERSION"
   echo "wait 30 seconds until it gets uploaded online... "
 }
+
+
+clean_repo() {
+  VERSION=$(cat VERSION)
+  increment_version $VERSION >version
+  VERSION=$(cat VERSION)
+
+  sudo rm -rf dist
+  rm -rf html
+  rm -rf doc
+  python3 -m pdoc --html src/plotman
+  mv html/plotman docs/plotman
+  rm html
+
+  python3 -m pip install --user --upgrade setuptools wheel
+  # python3 -m pip install --upgrade setuptools wheel
+
+  sudo python3 setup.py clean sdist bdist_wheel
+
+  # python3 -m pip install --user --upgrade twine
+  # python3 -m twine upload --repository testpypi dist/*
+
+  python3 -m twine upload dist/* --verbose
+
+  echo "please update the package by using this command"
+  echo "pip3 install plotmanx==$VERSION"
+  echo "pi plotmanx==$VERSION"
+  echo "pc plotmanx==$VERSION"
+  echo "wait 30 seconds until it gets uploaded online..."
+
+  # echo "ready and install it again.."
+  # sudo pip3 install --proxy 127.0.0.1:1087 tronpytool==$VERSION
+}
