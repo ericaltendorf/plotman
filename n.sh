@@ -55,15 +55,6 @@ fined() {
   #sudo pip3 install --proxy 127.0.0.1:1087 tronpytool==$VERSION
 }
 
-instruction(){
-  echo "please update the package by using this command"
-  echo "pip3 install googlesheettranslate==$VERSION"
-  echo "pi googlesheettranslate==$VERSION"
-  echo "pc googlesheettranslate==$VERSION"
-  echo "wait 30 seconds until it gets uploaded online... "
-}
-
-
 clean_repo() {
   VERSION=$(cat VERSION)
   increment_version $VERSION >version
@@ -78,12 +69,9 @@ clean_repo() {
 
   python3 -m pip install --user --upgrade setuptools wheel
   # python3 -m pip install --upgrade setuptools wheel
-
   sudo python3 setup.py clean sdist bdist_wheel
-
   # python3 -m pip install --user --upgrade twine
-  # python3 -m twine upload --repository testpypi dist/*
-
+  python3 -m twine upload --repository testpypi dist/*
   python3 -m twine upload dist/* --verbose
 
   echo "please update the package by using this command"

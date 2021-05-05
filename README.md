@@ -1,4 +1,4 @@
-# `plotman`: a Chia plotting manager
+# PlotmanX: a Chia plotting manager
 
 This is a tool for managing [Chia](https://github.com/Chia-Network/chia-blockchain)
 plotting operations.  The tool runs on the plotting machine and provides
@@ -190,6 +190,13 @@ Installation for Linux:
    ```shell
     > pip install --force-reinstall git+https://github.com/ericaltendorf/plotman@main
     ```
+   
+   With the new installation we can install this
+   ```shell
+    > pip install plotmanx
+    ```
+   
+   
 3. Plotman will look for `plotman.yaml` within your computer at an OS-based
    default location. To create a default `plotman.yaml` and display its location,
    run the following command:

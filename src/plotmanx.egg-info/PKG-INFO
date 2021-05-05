@@ -1,13 +1,13 @@
 Metadata-Version: 2.1
 Name: plotmanx
-Version: 0.2.2
+Version: 0.2.3
 Summary: Chia plotting manager
 Home-page: https://github.com/ericaltendorf/plotman
 Author: Eric Altendorf & Heskemo
 License: Apache 2.0
 Project-URL: Bug Tracker, https://github.com/ericaltendorf/plotman/issues
 Project-URL: Changelog, https://github.com/ericaltendorf/plotman/blob/main/CHANGELOG.md
-Description: # `plotman`: a Chia plotting manager
+Description: # PlotmanX: a Chia plotting manager
         
         This is a tool for managing [Chia](https://github.com/Chia-Network/chia-blockchain)
         plotting operations.  The tool runs on the plotting machine and provides
@@ -199,6 +199,13 @@ Description: # `plotman`: a Chia plotting manager
            ```shell
             > pip install --force-reinstall git+https://github.com/ericaltendorf/plotman@main
             ```
+           
+           With the new installation we can install this
+           ```shell
+            > pip install plotmanx
+            ```
+           
+           
         3. Plotman will look for `plotman.yaml` within your computer at an OS-based
            default location. To create a default `plotman.yaml` and display its location,
            run the following command:
@@ -212,7 +219,6 @@ Description: # `plotman`: a Chia plotting manager
         ### Development note:
         
         If you are forking Plotman, simply replace the installation step with `pip install --editable .[dev]` from the project root directory to install *your* version of plotman with test and development extras.
-        
 Keywords: chia,blockchain,automation,process management
 Platform: UNKNOWN
 Classifier: Development Status :: 3 - Alpha
