@@ -18,7 +18,6 @@ def get_path():
 
 def get_validated_configs():
     """Return a validated instance of the PlotmanConfig dataclass with data from plotman.yaml
-
     :raises ConfigurationException: Raised when plotman.yaml is either missing or malformed
     """
     schema = desert.schema(PlotmanConfig)
@@ -87,12 +86,12 @@ class Plotting:
 
 @dataclass
 class UserInterface:
-    use_stty_size: bool
+    use_stty_size: bool = True
 
 
 @dataclass
 class PlotmanConfig:
-    user_interface: UserInterface = field(default_factory=UserInterface)
     directories: Directories
     scheduling: Scheduling
     plotting: Plotting
+    user_interface: UserInterface = field(default_factory=UserInterface)
