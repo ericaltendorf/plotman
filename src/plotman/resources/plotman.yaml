@@ -61,6 +61,8 @@ directories:
         # Currently archival depends on an rsync daemon running on the remote
         # host, and that the module is configured to match the local path.
         # See code for details.
+        #
+        # Complete example: https://github.com/ericaltendorf/plotman/wiki/Archiving
         archive:
                 rsyncd_module: plots
                 rsyncd_path: /plots
