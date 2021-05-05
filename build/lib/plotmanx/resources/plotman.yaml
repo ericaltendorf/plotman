@@ -112,7 +112,7 @@ plotting:
         e: True              # Use -e plotting option
         n_threads: 2         # Threads per job
         n_buckets: 128       # Number of buckets to split data into
-        job_buffer: 4608     # Per job memory
+        job_buffer: 3389     # Per job memory
         # If specified, pass through to the -f and -p options.  See CLI reference.
         #   farmer_pk: ...
         #   pool_pk: ...

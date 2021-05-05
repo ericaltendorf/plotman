@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
 import appdirs
@@ -92,7 +92,7 @@ class UserInterface:
 
 @dataclass
 class PlotmanConfig:
-    user_interface: UserInterface
+    user_interface: UserInterface = field(default_factory=UserInterface)
     directories: Directories
     scheduling: Scheduling
     plotting: Plotting

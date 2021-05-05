@@ -2,7 +2,48 @@ import contextlib
 import subprocess
 
 import psutil
+
 from . import manager, plot_util
+
+
+# TODO : write-protect and delete-protect archived plots
+
+def spawn_archive_process(dir_cfg, all_jobs):
+    '''Spawns a new archive process using the command created
+    in the archive() function. Returns archiving status and a log message to print.'''
+
+    log_message = None
+    archiving_status = None
+
+    # Look for running archive jobs.  Be robust to finding more than one
+    # even though the scheduler should only run one at a time.
+    arch_jobs = get_running_archive_jobs(dir_cfg.archive)
+
+    if not arch_jobs:
+        (should_start, status_or_cmd) = archive(dir_cfg, all_jobs)
+        if not should_start:
+            archiving_status = status_or_cmd
+        else:
+            cmd = status_or_cmd
+            # TODO: do something useful with output instead of DEVNULL
+            p = subprocess.Popen(cmd,
+                                 shell=True,
+                                 stdout=subprocess.DEVNULL,
+                                 stderr=subprocess.STDOUT,
+                                 start_new_session=True)
+            log_message = 'Starting archive: ' + cmd
+            # At least for now it seems that even if we get a new running
+            # archive jobs list it doesn't contain the new rsync process.
+            # My guess is that this is because the bash in the middle due to
+            # shell=True is still starting up and really hasn't launched the
+            # new rsync process yet.  So, just put a placeholder here.  It
+            # will get filled on the next cycle.
+            arch_jobs.append('<pending>')
+
+    if archiving_status is None:
+        archiving_status = 'pid: ' + ', '.join(map(str, arch_jobs))
+
+    return archiving_status, log_message
 
 
 # TODO : write-protect and delete-protect archived plots
@@ -115,7 +156,7 @@ def archive(dir_cfg, all_jobs):
     archdir_freebytes = get_archdir_freebytes(dir_cfg.archive)
     if not archdir_freebytes:
         return (False, 'No free archive dirs found.')
-
+    freespace = 0
     archdir = ''
     available = [(d, space) for (d, space) in archdir_freebytes.items() if
                  space > 1.2 * plot_util.get_k32_plotsize()]

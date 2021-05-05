@@ -22,7 +22,7 @@ class FauxJobWithLogfile:
 
 @pytest.fixture(name='logfile_path')
 def logfile_fixture(tmp_path):
-    log_name = '2021-04-04-19:00:47.log'
+    log_name = '2021-04-04T19_00_47.681088-0400.log'
     log_contents = importlib.resources.read_binary(resources, log_name)
     log_file_path = tmp_path.joinpath(log_name)
     log_file_path.write_bytes(log_contents)

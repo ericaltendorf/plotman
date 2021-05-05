@@ -3,7 +3,7 @@ import os
 import random
 import subprocess
 from datetime import datetime
-
+import pendulum
 import psutil
 
 # Plotman libraries
@@ -120,7 +120,8 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
                 dstdir = max(dir2ph, key=dir2ph.get)
 
             logfile = os.path.join(
-                dir_cfg.log, datetime.now().strftime('%Y-%m-%d-%H:%M:%S.log')
+#                dir_cfg.log, datetime.now().strftime('%Y-%m-%d-%H:%M:%S.log')
+                 dir_cfg.log, pendulum.now().isoformat(timespec='microseconds').replace(':', '_') + '.log'
             )
 
             plot_args = ['chia', 'plots', 'create',

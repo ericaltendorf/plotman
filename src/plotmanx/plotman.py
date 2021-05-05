@@ -114,8 +114,9 @@ def archivePlots(cfg: any):
             time.sleep(60)
             jobs = Job.get_running_jobs(cfg.directories.log)
         firstit = False
-        (result, msg) = archive.archive(cfg.directories, jobs)
-        print('%s, %s' % (result, msg))
+        archiving_status, log_message = archive.spawn_archive_process(cfg.directories, jobs)
+        if log_message:
+            print('%s, %s' % (archiving_status, log_message))
 
 
 def main():

@@ -24,6 +24,7 @@ src/plotmanx/__main__.py
 src/plotmanx/analyzer.py
 src/plotmanx/api.py
 src/plotmanx/archive.py
+src/plotmanx/chia.py
 src/plotmanx/configuration.py
 src/plotmanx/interactive.py
 src/plotmanx/job.py
