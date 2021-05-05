@@ -59,7 +59,7 @@ clean_repo() {
   VERSION=$(cat VERSION)
   increment_version $VERSION >version
   VERSION=$(cat VERSION)
-
+  sudo rm -rf src/plotmanx.egg-info
   sudo rm -rf dist
   rm -rf html
   rm -rf doc
