@@ -90,8 +90,15 @@ class UserInterface:
 
 
 @dataclass
+class Api:
+    port: int = 199992
+    api_polling_throttle_s: int = 5
+
+
+@dataclass
 class PlotmanConfig:
     directories: Directories
     scheduling: Scheduling
     plotting: Plotting
+    apis: Api
     user_interface: UserInterface = field(default_factory=UserInterface)

@@ -116,3 +116,8 @@ plotting:
         # If specified, pass through to the -f and -p options.  See CLI reference.
         #   farmer_pk: ...
         #   pool_pk: ...
+
+#the external api for data reporting
+apis:
+        port: 19992
+        api_polling_throttle_s: 5

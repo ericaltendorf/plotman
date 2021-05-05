@@ -10,6 +10,7 @@ from shutil import copyfile
 # Plotman libraries
 from . import analyzer, archive, configuration, interactive, manager, reporting
 from . import resources as plotman_resources
+from .api import apiOpen
 from .job import Job
 
 
@@ -119,6 +120,7 @@ def archivePlots(cfg: any):
             print('%s, %s' % (archiving_status, log_message))
 
 
+
 def main():
     random.seed()
 
@@ -195,6 +197,9 @@ def main():
 
         elif args.cmd == 'interactive':
             interactive.run_interactive()
+
+        elif args.cmd == 'api':
+            apiOpen(cfg.apis)
 
         # Start running archival
         elif args.cmd == 'archive':
