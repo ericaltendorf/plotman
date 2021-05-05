@@ -404,8 +404,6 @@ class Job:
         self.proc.terminate()
 
     def kill(self):
-        print('killing job', self.status_str_long())
-
         # First suspend so job doesn't create new files
         self.suspend()
 
@@ -415,5 +413,5 @@ class Job:
         for f in temp_files:
             os.remove(f)
 
-        print('killed plot %s' % (self.plot_id_prefix()))
+        print('> killed plot %s with dst %s' % (self.plot_id_prefix(), self.dstdir))
     

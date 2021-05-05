@@ -114,13 +114,18 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
 
             # Select the dst dir least recently selected
             dir2ph = { d:ph for (d, ph) in dstdirs_to_youngest_phase(jobs).items()
-                      if d in dir_cfg.dst }
-            unused_dirs = [d for d in dir_cfg.dst if d not in dir2ph.keys()]
+                      if d in dir_cfg.dst and drive_can_hold_new_plot(d, plotting_cfg)}
+            unused_dirs = [d for d in dir_cfg.dst if d not in dir2ph.keys() and drive_can_hold_new_plot(d, plotting_cfg)]
             dstdir = ''
             if unused_dirs: 
                 dstdir = random.choice(unused_dirs)
             else:
                 dstdir = max(dir2ph, key=dir2ph.get)
+
+            if drive_can_hold_new_plot(dstdir, plotting_cfg) is False:
+                wait_reason = 'destination %s does not have enough space' % (dstdir)
+                print(wait_reason)
+                return (False, wait_reason)
 
             logfile = os.path.join(
                 dir_cfg.log, pendulum.now().isoformat(timespec='microseconds').replace(':', '_') + '.log'
