@@ -106,8 +106,6 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
         wait_reason = 'stagger (%ds/%ds)' % (youngest_job_age, global_stagger)
     elif len(jobs) >= sched_cfg.global_max_jobs:
         wait_reason = 'max jobs (%d)' % sched_cfg.global_max_jobs
-    elif disksizeBool:
-        wait_reason = '(%s) gb size of (%d) < require size (%d)' % (disksize, get_size(pathdi), MAX_PLOT_SIZE)
     else:
         tmp_to_all_phases = [(d, job.job_phases_for_tmpdir(d, jobs)) for d in dir_cfg.tmp]
         eligible = [(d, phases) for (d, phases) in tmp_to_all_phases
@@ -125,7 +123,7 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
                       if d in dir_cfg.dst}
             unused_dirs = [d for d in dir_cfg.dst if d not in dir2ph.keys()]
             dstdir = ''
-            if unused_dirs:
+            if len(unused_dirs) > 0:
                 dstdir = random.choice(unused_dirs)
             else:
                 dstdir = max(dir2ph, key=dir2ph.get)
