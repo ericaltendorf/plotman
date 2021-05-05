@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: plotmanx
-Version: 0.3.8
+Version: 0.3.9
 Summary: Chia plotting manager
 Home-page: https://github.com/ericaltendorf/plotman
 Author: Eric Altendorf and Heskemo
@@ -201,9 +201,6 @@ Description: # PlotmanX: a Chia plotting manager
             ```
            
            With the new installation we can install this
-           ```shell
-            pip install plotmanx
-            ```
            or with this
            ```shell
             python3 -m pip install plotmanx

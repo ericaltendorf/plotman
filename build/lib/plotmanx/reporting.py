@@ -3,6 +3,7 @@ import os
 
 import psutil
 import texttable as tt  # from somewhere?
+
 from . import archive, job, manager, plot_util
 
 
@@ -96,8 +97,7 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
         n_end_rows = n_rows - n_begin_rows
 
     tab = tt.Texttable()
-    headings = ['plot id', 'k', 'tmp', 'dst', 'wall', 'phase', 'tmp',
-                'pid', 'stat', 'mem', 'user', 'sys', 'io']
+    headings = ['plot id', 'k', 'tmp', 'dst', 'wall', 'phase', 'tmp', 'pid', 'stat', 'mem', 'user', 'sys', 'io', 'freezed', 'logfile']
     if height:
         headings.insert(0, '#')
     tab.header(headings)
@@ -128,7 +128,9 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
                            plot_util.human_format(j.get_mem_usage(), 1),
                            plot_util.time_format(j.get_time_user()),
                            plot_util.time_format(j.get_time_sys()),
-                           plot_util.time_format(j.get_time_iowait())
+                           plot_util.time_format(j.get_time_iowait()),
+                           plot_util.is_freezed(j),
+                           os.path.basename(j.logfile)
                            ]
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 # In case the job has disappeared
@@ -222,6 +224,7 @@ def dirs_report(jobs, dir_cfg, sched_cfg, width):
         ])
 
     return '\n'.join(reports) + '\n'
+
 
 def status_report_api(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
     '''height, if provided, will limit the number of rows in the table,

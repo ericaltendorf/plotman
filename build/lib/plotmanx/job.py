@@ -8,7 +8,6 @@ from datetime import datetime
 import pendulum
 import psutil
 
-
 def job_phases_for_tmpdir(d, all_jobs):
     '''Return phase 2-tuples for jobs running on tmpdir d'''
     return sorted([j.progress() for j in all_jobs if j.tmpdir == d])
@@ -73,6 +72,8 @@ class Job:
 
     # These are dynamic, cached, and need to be udpated periodically
     phase = (None, None)  # Phase/subphase
+
+    last_updated_time_in_min = 0
 
     def get_running_jobs(logroot, cached_jobs=()):
         '''Return a list of running plot jobs.  If a cache of preexisting jobs is provided,
@@ -197,6 +198,7 @@ class Job:
 
     def update_from_logfile(self):
         self.set_phase_from_logfile()
+        self.check_freeze()
 
     def set_phase_from_logfile(self):
         assert self.logfile
@@ -248,6 +250,12 @@ class Job:
             self.phase = (phase, phase_subphases[phase])
         else:
             self.phase = (0, 0)
+
+    def check_freeze(self):
+        assert self.logfile
+        updatedAt = os.path.getmtime(self.logfile)
+        now = datetime.now().timestamp()
+        self.last_updated_time_in_min = int((now-updatedAt)/60);
 
     def progress(self):
         '''Return a 2-tuple with the job phase and subphase (by reading the logfile)'''

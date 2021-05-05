@@ -192,9 +192,6 @@ Installation for Linux:
     ```
    
    With the new installation we can install this
-   ```shell
-    pip install plotmanx
-    ```
    or with this
    ```shell
     python3 -m pip install plotmanx
