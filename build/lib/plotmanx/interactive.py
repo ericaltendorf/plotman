@@ -5,8 +5,8 @@ import math
 import os
 import subprocess
 
-from . import archive, configuration, manager, reporting
-from .job import Job
+from plotman import archive, configuration, manager, reporting
+from plotman.job import Job
 
 
 class TerminalTooSmallError(Exception):
@@ -70,8 +70,8 @@ def curses_main(stdscr):
     log = Log()
 
     cfg = configuration.get_validated_configs()
-    plotting_active = True
 
+    plotting_active = True
     archiving_configured = cfg.directories.archive is not None
     archiving_active = archiving_configured
 
@@ -93,6 +93,7 @@ def curses_main(stdscr):
     pressed_key = ''  # For debugging
 
     archdir_freebytes = None
+    aging_reason = None
 
     while True:
 
@@ -119,10 +120,16 @@ def curses_main(stdscr):
                     cfg.directories, cfg.scheduling, cfg.plotting
                 )
                 if (started):
+                    if aging_reason is not None:
+                        log.log(aging_reason)
+                        aging_reason = None
                     log.log(msg)
                     plotting_status = '<just started job>'
                     jobs = Job.get_running_jobs(cfg.directories.log, cached_jobs=jobs)
                 else:
+                    # If a plot is delayed for any reason other than stagger, log it
+                    if msg.find("stagger") < 0:
+                        aging_reason = msg
                     plotting_status = msg
 
             if archiving_configured:
@@ -163,26 +170,17 @@ def curses_main(stdscr):
         # Directory prefixes, for abbreviation
         tmp_prefix = os.path.commonpath(cfg.directories.tmp)
         dst_prefix = os.path.commonpath(cfg.directories.dst)
-        arch_prefix = ""
         if archiving_configured:
             arch_prefix = cfg.directories.archive.rsyncd_path
 
         n_tmpdirs = len(cfg.directories.tmp)
-
-        #v1 n_tmpdirs_half = int(n_tmpdirs / 2)
+        n_tmpdirs_half = int(n_tmpdirs / 2)
 
         # Directory reports.
-        """v1
         tmp_report_1 = reporting.tmp_dir_report(
             jobs, cfg.directories, cfg.scheduling, n_cols, 0, n_tmpdirs_half, tmp_prefix)
         tmp_report_2 = reporting.tmp_dir_report(
             jobs, cfg.directories, cfg.scheduling, n_cols, n_tmpdirs_half, n_tmpdirs, tmp_prefix)
-            
-        """
-
-        tmp_report = reporting.tmp_dir_report(
-            jobs, cfg.directories, cfg.scheduling, n_cols, 0, n_tmpdirs, tmp_prefix)
-
         dst_report = reporting.dst_dir_report(
             jobs, cfg.directories.dst, n_cols, dst_prefix)
         if archiving_configured:
@@ -196,17 +194,10 @@ def curses_main(stdscr):
         # Layout
         #
 
-        """v1
-        
         tmp_h = max(len(tmp_report_1.splitlines()),
                     len(tmp_report_2.splitlines()))
         tmp_w = len(max(tmp_report_1.splitlines() +
                         tmp_report_2.splitlines(), key=len)) + 1
-        """
-
-        tmp_h = len(tmp_report.splitlines())
-        tmp_w = len(max(tmp_report.splitlines(), key=len)) + 1
-
         dst_h = len(dst_report.splitlines())
         dst_w = len(max(dst_report.splitlines(), key=len)) + 1
         arch_h = len(arch_report.splitlines()) + 1
@@ -277,12 +268,11 @@ def curses_main(stdscr):
         jobs_win.chgat(0, 0, curses.A_REVERSE)
 
         # Dirs
-        # tmpwin_12_gutter = 3
+        tmpwin_12_gutter = 3
         tmpwin_dstwin_gutter = 6
 
         maxtd_h = max([tmp_h, dst_h])
 
-        """v1
         tmpwin_1 = curses.newwin(
             tmp_h, tmp_w,
             dirs_pos + int((maxtd_h - tmp_h) / 2), 0)
@@ -293,22 +283,13 @@ def curses_main(stdscr):
             dirs_pos + int((maxtd_h - tmp_h) / 2),
             tmp_w + tmpwin_12_gutter)
         tmpwin_2.addstr(tmp_report_2)
-        
 
         tmpwin_1.chgat(0, 0, curses.A_REVERSE)
         tmpwin_2.chgat(0, 0, curses.A_REVERSE)
-        """
-
-        tmpwin = curses.newwin(
-            tmp_h, tmp_w,
-            dirs_pos + int(maxtd_h - tmp_h), 0)
-        tmpwin.addstr(tmp_report)
-        tmpwin.chgat(0, 0, curses.A_REVERSE)
-
 
         dstwin = curses.newwin(
             dst_h, dst_w,
-            dirs_pos + int((maxtd_h - dst_h) / 2), tmp_w + tmpwin_dstwin_gutter)
+            dirs_pos + int((maxtd_h - dst_h) / 2), 2 * tmp_w + tmpwin_12_gutter + tmpwin_dstwin_gutter)
         dstwin.addstr(dst_report)
         dstwin.chgat(0, 0, curses.A_REVERSE)
 
@@ -326,7 +307,8 @@ def curses_main(stdscr):
         stdscr.noutrefresh()
         header_win.noutrefresh()
         jobs_win.noutrefresh()
-        tmpwin.noutrefresh()
+        tmpwin_1.noutrefresh()
+        tmpwin_2.noutrefresh()
         dstwin.noutrefresh()
         archwin.noutrefresh()
         log_win.noutrefresh()
