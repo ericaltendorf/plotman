@@ -52,7 +52,7 @@ def n_to_char(n):
 
 
 def n_to_char_emo(n):
-    n_to_char_map = dict(enumerate("Z12345"))
+    n_to_char_map = dict(enumerate(" 12345"))
 
     if n < 0:
         return 'X️'  # Should never be negative
@@ -66,16 +66,16 @@ def job_viz(jobs):
     # TODO: Rewrite this in a way that ensures we count every job
     # even if the reported phases don't line up with expectations.
     result = ''
-    result += '1'
+    result += '1:'
     for i in range(0, 8):
         result += n_to_char_emo(n_at_ph(jobs, (1, i)))
-    result += '2'
+    result += '|2:'
     for i in range(0, 8):
         result += n_to_char_emo(n_at_ph(jobs, (2, i)))
-    result += '3'
+    result += '|3:'
     for i in range(0, 7):
         result += n_to_char_emo(n_at_ph(jobs, (3, i)))
-    result += '4'
+    result += '|4:'
     result += n_to_char_emo(n_at_ph(jobs, (4, 0)))
     return result
 
