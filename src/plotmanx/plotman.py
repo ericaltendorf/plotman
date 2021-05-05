@@ -126,7 +126,7 @@ def main():
 
     if args.cmd == 'version':
         import pkg_resources
-        print(pkg_resources.get_distribution('plotmanp'))
+        print(pkg_resources.get_distribution('plotmanx'))
         return
 
     elif args.cmd == 'config':

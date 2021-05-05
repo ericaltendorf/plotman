@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from plotman import plotman
+from . import plotman
 
 
 """Plotman module launcher.
