@@ -135,7 +135,7 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
                            ]
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 # In case the job has disappeared
-                row = [j.plot_id[:8]] + (['--'] * headingwidth)
+                row = [j.plot_id[:8]] + (['--'] * (headingwidth - 1))
 
             if height:
                 row.insert(0, '%3d' % i)
@@ -225,4 +225,3 @@ def dirs_report(jobs, dir_cfg, sched_cfg, width):
         ])
 
     return '\n'.join(reports) + '\n'
-
