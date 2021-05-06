@@ -142,12 +142,25 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
                     f' new plot: {logfile!r}'
                 )
                 return (False, logmsg)
+            except FileNotFoundError as e:
+                message = (
+                    f'Unable to open log file.  Verify that the directory exists'
+                    f' and has proper write permissions: {logfile!r}'
+                )
+                raise Exception(message) from e
 
-            # start_new_sessions to make the job independent of this controlling tty.
-            p = subprocess.Popen(plot_args,
-                stdout=open_log_file,
-                stderr=subprocess.STDOUT,
-                start_new_session=True)
+            # Preferably, do not add any code between the try block above
+            # and the with block below.  IOW, this space intentionally left
+            # blank...  As is, this provides a good chance that our handle
+            # of the log file will get closed explicitly while still
+            # allowing handling of just the log file opening error.
+
+            with open_log_file:
+                # start_new_sessions to make the job independent of this controlling tty.
+                p = subprocess.Popen(plot_args,
+                    stdout=open_log_file,
+                    stderr=subprocess.STDOUT,
+                    start_new_session=True)
 
             psutil.Process(p.pid).nice(15)
             return (True, logmsg)
