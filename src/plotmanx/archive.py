@@ -123,10 +123,12 @@ def get_running_archive_jobs(arch_cfg):
 
 
 def archive(dir_cfg, all_jobs):
-    '''Configure one archive job.  Needs to know all jobs so it can avoid IO
+    """
+    Configure one archive job.  Needs to know all jobs so it can avoid IO
     contention on the plotting dstdir drives.  Returns either (False, <reason>) 
     if we should not execute an archive job or (True, <cmd>) with the archive
-    command if we should.'''
+    command if we should.
+    """
     if dir_cfg.archive is None:
         return (False, "No 'archive' settings declared in plotman.yaml")
 

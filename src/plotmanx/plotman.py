@@ -9,6 +9,9 @@ import time
 from shutil import copyfile
 
 # Plotman libraries
+from marshmallow import ValidationError
+from plotmanx.configuration import ConfigurationException
+
 from . import analyzer, archive, configuration, interactive, manager, reporting
 from . import resources as plotman_resources
 from .api import apiOpen
@@ -105,8 +108,11 @@ def plotting(cfg: any):
 
             time.sleep(cfg.scheduling.polling_time_s)
 
-        except TypeError as te:
-            print('got TypeError from io', te)
+        except ConfigurationException as te:
+            print('got ConfigurationException from io', te)
+            continue
+        except ValidationError as te:
+            print('got ConfigurationException from io', te)
             continue
         except ConnectionError as cc:
             print('got ConnectionError from io', cc)
@@ -120,6 +126,7 @@ def plotting(cfg: any):
         except IOError as io:
             print('got IOError from io', io)
             continue
+
 
     print('exit from error unknown...')
 
