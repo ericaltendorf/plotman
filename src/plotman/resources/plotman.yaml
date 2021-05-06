@@ -63,6 +63,7 @@ directories:
         # The archival also uses ssh to connect to the remote host and check 
         # for available directories. Set up ssh keys on the remote host to 
         # allow public key login from rsyncd_user.
+        # Complete example: https://github.com/ericaltendorf/plotman/wiki/Archiving
         archive:
                 rsyncd_module: plots # Define this in remote rsyncd.conf.
                 rsyncd_path: /plots # This is used via ssh. Should match path 
