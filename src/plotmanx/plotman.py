@@ -1,5 +1,6 @@
 import argparse
 import concurrent.futures
+import datetime
 import importlib
 import importlib.resources
 import os
@@ -37,6 +38,8 @@ class PlotmanArgParser:
         sp.add_parser('dsched', help='print destination dir schedule')
 
         sp.add_parser('plot', help='run plotting loop')
+
+        sp.add_parser('api', help='open api port for external applications')
 
         sp.add_parser('archive', help='move completed plots to farming location')
 
@@ -91,17 +94,31 @@ def get_term_width():
 
 
 def plotting(cfg: any):
-    print('...starting plot loop')
+    print('starting plot loop')
     while True:
         try:
             (tmp, wait_reason) = manager.maybe_start_new_plot(cfg.directories, cfg.scheduling, cfg.plotting)
             # TODO: report this via a channel that can be polled on demand, so we don't spam the console
             if wait_reason:
-                print('...sleeping %d s: %s' % (cfg.scheduling.polling_time_s, wait_reason))
+                ts = datetime.datetime.now().strftime('%m-%d %H:%M:%S')
+                print('...%s, s, %s' % (ts, wait_reason))
 
             time.sleep(cfg.scheduling.polling_time_s)
 
         except TypeError as te:
+            print('got TypeError from io', te)
+            continue
+        except ConnectionError as cc:
+            print('got ConnectionError from io', cc)
+            continue
+        except ValueError as v:
+            print('got ValueError from io', v)
+            continue
+        except TimeoutError as th:
+            print('got TimeoutError from io', th)
+            continue
+        except IOError as io:
+            print('got IOError from io', io)
             continue
 
 
@@ -118,7 +135,6 @@ def archivePlots(cfg: any):
         archiving_status, log_message = archive.spawn_archive_process(cfg.directories, jobs)
         if log_message:
             print('%s, %s' % (archiving_status, log_message))
-
 
 
 def main():
@@ -199,7 +215,8 @@ def main():
             interactive.run_interactive()
 
         elif args.cmd == 'api':
-            apiOpen(cfg.apis)
+            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+                executor.submit(apiOpen, cfg)
 
         # Start running archival
         elif args.cmd == 'archive':

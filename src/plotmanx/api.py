@@ -39,4 +39,7 @@ def apiOpen(cfg: PlotmanConfig):
     appc = Flask(__name__)
     appc.add_url_rule('status', '/status')
     appc.view_functions['status'] = status
+    print("api port %s is now listening".format(cfg.apis.port))
+
+
     appc.run(host="0.0.0.0", port=cfg.apis.port)

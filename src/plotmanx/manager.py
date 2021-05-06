@@ -100,7 +100,7 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
     youngest_job_age = min(jobs, key=job.Job.get_time_wall).get_time_wall() if jobs else MAX_AGE
     global_stagger = int(sched_cfg.global_stagger_m * MIN)
 
-    (disksizeBool, disksize, pathdi) = anyTmpDirIsNearlyFull(dir_cfg)
+    # (disksizeBool, disksize, pathdi) = anyTmpDirIsNearlyFull(dir_cfg)
 
     if youngest_job_age < global_stagger:
         wait_reason = 'stagger (%ds/%ds)' % (youngest_job_age, global_stagger)
@@ -176,6 +176,7 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
                                  start_new_session=True)
 
             psutil.Process(p.pid).nice(15)
+
             return (True, logmsg)
 
     return (False, wait_reason)
