@@ -1,4 +1,4 @@
-# `plotman`: Менеджер засева Chia
+# `plotman`: менеджер засева Chia
 [English](README.md) / [Русский](README.RU.md)
 
 Эта утилита служит для управления засевом [Chia](https://github.com/Chia-Network/chia-blockchain). 
