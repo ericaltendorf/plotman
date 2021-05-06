@@ -121,6 +121,7 @@ def plotting(cfg: any):
             print('got IOError from io', io)
             continue
 
+    print('exit from error unknown...')
 
 def archivePlots(cfg: any):
     print('...starting archive loop')
