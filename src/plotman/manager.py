@@ -128,9 +128,24 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
 
             logmsg = ('Starting plot job: %s ; logging to %s' % (' '.join(plot_args), logfile))
 
+            try:
+                open_log_file = open(logfile, 'x')
+            except FileExistsError:
+                # The desired log file name already exists.  Most likely another
+                # plotman process already launched a new process in response to
+                # the same scenario that triggered us.  Let's at least not
+                # confuse things further by having two plotting processes
+                # logging to the same file.  If we really should launch another
+                # plotting process, we'll get it at the next check cycle anyways.
+                message = (
+                    f'Plot log file already exists, skipping attempt to start a'
+                    f' new plot: {logfile!r}'
+                )
+                return (False, logmsg)
+
             # start_new_sessions to make the job independent of this controlling tty.
             p = subprocess.Popen(plot_args,
-                stdout=open(logfile, 'w'),
+                stdout=open_log_file,
                 stderr=subprocess.STDOUT,
                 start_new_session=True)
 
