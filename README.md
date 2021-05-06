@@ -1,4 +1,5 @@
 # `plotman`: a Chia plotting manager
+[English](README.md) / [Русский](README.RU.md)
 
 This is a tool for managing [Chia](https://github.com/Chia-Network/chia-blockchain)
 plotting operations.  The tool runs on the plotting machine and provides
