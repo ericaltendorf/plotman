@@ -58,7 +58,7 @@ def get_archdir_freebytes(arch_cfg):
                 # not actually mounted
                 continue
             freebytes = int(fields[3][:-1]) * 1024  # Strip the final 'K'
-            archdir = (fields[5]).decode('ascii')
+            archdir = (fields[5]).decode('utf-8')
             archdir_freebytes[archdir] = freebytes
     return archdir_freebytes
 
