@@ -21,7 +21,7 @@ class FauxJobWithLogfile:
 
 @pytest.fixture(name='logfile_path')
 def logfile_fixture(tmp_path):
-    log_name = '2021-04-04-19:00:47.log'
+    log_name = '2021-04-04T19_00_47.681088-0400.log'
     log_contents = importlib.resources.read_binary(resources, log_name)
     log_file_path = tmp_path.joinpath(log_name)
     log_file_path.write_bytes(log_contents)
@@ -54,3 +54,88 @@ def test_job_parses_time_with_non_english_locale(logfile_path, locale_name):
         job.Job.init_from_logfile(self=faux_job_with_logfile)
 
     assert faux_job_with_logfile.start_time == log_file_time
+
+
+@pytest.mark.parametrize(
+    argnames=['arguments'],
+    argvalues=[
+        [['-h']],
+        [['--help']],
+        [['-k', '32']],
+        [['-k32']],
+        [['-k', '32', '--help']],
+    ],
+    ids=str,
+)
+def test_chia_plots_create_parsing_does_not_fail(arguments):
+    job.parse_chia_plots_create_command_line(
+        command_line=['python', 'chia', 'plots', 'create', *arguments],
+    )
+
+
+@pytest.mark.parametrize(
+    argnames=['arguments'],
+    argvalues=[
+        [['-h']],
+        [['--help']],
+        [['-k', '32', '--help']],
+    ],
+    ids=str,
+)
+def test_chia_plots_create_parsing_detects_help(arguments):
+    parsed = job.parse_chia_plots_create_command_line(
+        command_line=['python', 'chia', 'plots', 'create', *arguments],
+    )
+
+    assert parsed.help
+
+
+@pytest.mark.parametrize(
+    argnames=['arguments'],
+    argvalues=[
+        [[]],
+        [['-k32']],
+        [['-k', '32']],
+    ],
+    ids=str,
+)
+def test_chia_plots_create_parsing_detects_not_help(arguments):
+    parsed = job.parse_chia_plots_create_command_line(
+        command_line=['python', 'chia', 'plots', 'create', *arguments],
+    )
+
+    assert not parsed.help
+
+
+@pytest.mark.parametrize(
+    argnames=['arguments'],
+    argvalues=[
+        [[]],
+        [['-k32']],
+        [['-k', '32']],
+        [['--size', '32']],
+    ],
+    ids=str,
+)
+def test_chia_plots_create_parsing_handles_argument_forms(arguments):
+    parsed = job.parse_chia_plots_create_command_line(
+        command_line=['python', 'chia', 'plots', 'create', *arguments],
+    )
+
+    assert parsed.parameters['size'] == 32
+
+
+@pytest.mark.parametrize(
+    argnames=['arguments'],
+    argvalues=[
+        [['--size32']],
+        [['--not-an-actual-option']],
+    ],
+    ids=str,
+)
+def test_chia_plots_create_parsing_identifies_errors(arguments):
+    parsed = job.parse_chia_plots_create_command_line(
+        command_line=['python', 'chia', 'plots', 'create', *arguments],
+    )
+
+    assert parsed.error is not None

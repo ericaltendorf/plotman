@@ -6,14 +6,16 @@ import os
 import random
 import re
 import sys
-import threading
 import time
 from datetime import datetime
 from enum import Enum, auto
 from subprocess import call
 
+import click
 import pendulum
 import psutil
+
+from plotman import chia
 
 
 def job_phases_for_tmpdir(d, all_jobs):
@@ -25,53 +27,76 @@ def job_phases_for_dstdir(d, all_jobs):
     return sorted([j.progress() for j in all_jobs if j.dstdir == d])
 
 def is_plotting_cmdline(cmdline):
+    if cmdline and 'python' in cmdline[0].lower():
+        cmdline = cmdline[1:]
     return (
-        len(cmdline) >= 4
-        and 'python' in cmdline[0]
-        and cmdline[1].endswith('/chia')
-        and 'plots' == cmdline[2]
-        and 'create' == cmdline[3]
+        len(cmdline) >= 3
+        and cmdline[0].endswith("chia")
+        and 'plots' == cmdline[1]
+        and 'create' == cmdline[2]
     )
-
-# This is a cmdline argument fix for https://github.com/ericaltendorf/plotman/issues/41
-def cmdline_argfix(cmdline):
-    known_keys = 'krbut2dne'
-    for i in cmdline:
-        # If the argument starts with dash and a known key and is longer than 2,
-        # then an argument is passed with no space between its key and value.
-        # This is POSIX compliant but the arg parser was tripping over it.
-        # In these cases, splitting that item up in separate key and value
-        # elements results in a `cmdline` list that is correctly formatted.
-        if i[0]=='-' and i[1] in known_keys and len(i)>2:
-            yield i[0:2]  # key
-            yield i[2:]  # value
-        else:
-            yield i
 
 def parse_chia_plot_time(s):
     # This will grow to try ISO8601 as well for when Chia logs that way
     return pendulum.from_format(s, 'ddd MMM DD HH:mm:ss YYYY', locale='en', tz=None)
+
+def parse_chia_plots_create_command_line(command_line):
+    command_line = list(command_line)
+    # Parse command line args
+    if 'python' in command_line[0].lower():
+        command_line = command_line[1:]
+    assert len(command_line) >= 3
+    assert 'chia' in command_line[0]
+    assert 'plots' == command_line[1]
+    assert 'create' == command_line[2]
+
+    all_command_arguments = command_line[3:]
+
+    # nice idea, but this doesn't include -h
+    # help_option_names = command.get_help_option_names(ctx=context)
+    help_option_names = {'--help', '-h'}
+
+    command_arguments = [
+        argument
+        for argument in all_command_arguments
+        if argument not in help_option_names
+    ]
+
+    # TODO: We could at some point do chia version detection and pick the
+    #       associated command.  For now we'll just use the latest one we have
+    #       copied.
+    command = chia.commands.latest_command()
+    try:
+        context = command.make_context(info_name='', args=list(command_arguments))
+    except click.ClickException as e:
+        error = e
+        params = {}
+    else:
+        error = None
+        params = context.params
+
+    return ParsedChiaPlotsCreateCommand(
+        error=error,
+        help=len(all_command_arguments) > len(command_arguments),
+        parameters=params,
+    )
+
+class ParsedChiaPlotsCreateCommand:
+    def __init__(self, error, help, parameters):
+        self.error = error
+        self.help = help
+        self.parameters = parameters
 
 # TODO: be more principled and explicit about what we cache vs. what we look up
 # dynamically from the logfile
 class Job:
     'Represents a plotter job'
 
-    # These are constants, not updated during a run.
-    k = 0
-    r = 0
-    u = 0
-    b = 0
-    n = 0  # probably not used
-    tmpdir = ''
-    tmp2dir = ''
-    dstdir = ''
     logfile = ''
     jobfile = ''
     job_id = 0
     plot_id = '--------'
     proc = None   # will get a psutil.Process
-    help = False
 
     # These are dynamic, cached, and need to be udpated periodically
     phase = (None, None)   # Phase/subphase
@@ -91,72 +116,85 @@ class Job:
                     if proc.pid in cached_jobs_by_pid.keys():
                         jobs.append(cached_jobs_by_pid[proc.pid])  # Copy from cache
                     else:
-                        job = Job(proc, logroot)
-                        if not job.help:
+                        with proc.oneshot():
+                            parsed_command = parse_chia_plots_create_command_line(
+                                command_line=proc.cmdline(),
+                            )
+                            if parsed_command.error is not None:
+                                continue
+                            job = Job(
+                                proc=proc,
+                                parsed_command=parsed_command,
+                                logroot=logroot,
+                            )
+                            if job.help:
+                                continue
                             jobs.append(job)
 
         return jobs
 
- 
-    def __init__(self, proc, logroot):
+
+    def __init__(self, proc, parsed_command, logroot):
         '''Initialize from an existing psutil.Process object.  must know logroot in order to understand open files'''
         self.proc = proc
 
-        with self.proc.oneshot():
-            # Parse command line args
-            args = self.proc.cmdline()
-            assert len(args) > 4
-            assert 'python' in args[0]
-            assert 'chia' in args[1]
-            assert 'plots' == args[2]
-            assert 'create' == args[3]
-            args_iter = iter(cmdline_argfix(args[4:]))
-            for arg in args_iter:
-                val = None if arg in {'-e', '--nobitfield', '-h', '--help', '--override-k'} else next(args_iter)
-                if arg in {'-k', '--size'}:
-                    self.k = val
-                elif arg in {'-r', '--num_threads'}:
-                    self.r = val
-                elif arg in {'-b', '--buffer'}:
-                    self.b = val
-                elif arg in {'-u', '--buckets'}:
-                    self.u = val
-                elif arg in {'-t', '--tmp_dir'}:
-                    self.tmpdir = val
-                elif arg in {'-2', '--tmp2_dir'}:
-                    self.tmp2dir = val
-                elif arg in {'-d', '--final_dir'}:
-                    self.dstdir = val
-                elif arg in {'-n', '--num'}:
-                    self.n = val
-                elif arg in {'-h', '--help'}:
-                    self.help = True
-                elif arg in {'-e', '--nobitfield', '-f', '--farmer_public_key', '-p', '--pool_public_key'}:
-                    pass
-                    # TODO: keep track of these
-                elif arg == '--override-k':
-                    pass
+        self.help = parsed_command.help
+        self.args = parsed_command.parameters
+
+        # an example as of 1.0.5
+        # {
+        #     'size': 32,
+        #     'num_threads': 4,
+        #     'buckets': 128,
+        #     'buffer': 6000,
+        #     'tmp_dir': '/farm/yards/901',
+        #     'final_dir': '/farm/wagons/801',
+        #     'override_k': False,
+        #     'num': 1,
+        #     'alt_fingerprint': None,
+        #     'pool_contract_address': None,
+        #     'farmer_public_key': None,
+        #     'pool_public_key': None,
+        #     'tmp2_dir': None,
+        #     'plotid': None,
+        #     'memo': None,
+        #     'nobitfield': False,
+        #     'exclude_final_dir': False,
+        # }
+
+        self.k = self.args['size']
+        self.r = self.args['num_threads']
+        self.u = self.args['buckets']
+        self.b = self.args['buffer']
+        self.n = self.args['num']
+        self.tmpdir = self.args['tmp_dir']
+        self.tmp2dir = self.args['tmp2_dir']
+        self.dstdir = self.args['final_dir']
+
+        plot_cwd = self.proc.cwd()
+        self.tmpdir = os.path.join(plot_cwd, self.tmpdir)
+        if self.tmp2dir is not None:
+            self.tmp2dir = os.path.join(plot_cwd, self.tmp2dir)
+        self.dstdir = os.path.join(plot_cwd, self.dstdir)
+
+        # Find logfile (whatever file is open under the log root).  The
+        # file may be open more than once, e.g. for STDOUT and STDERR.
+        for f in self.proc.open_files():
+            if logroot in f.path:
+                if self.logfile:
+                    assert self.logfile == f.path
                 else:
-                    print('Warning: unrecognized args: %s %s' % (arg, val))
+                    self.logfile = f.path
+                break
 
-            # Find logfile (whatever file is open under the log root).  The
-            # file may be open more than once, e.g. for STDOUT and STDERR.
+        if self.logfile:
+            # Initialize data that needs to be loaded from the logfile
+            self.init_from_logfile()
+        else:
+            print('Found plotting process PID {pid}, but could not find '
+                    'logfile in its open files:'.format(pid = self.proc.pid))
             for f in self.proc.open_files():
-                if logroot in f.path:
-                    if self.logfile:
-                        assert self.logfile == f.path
-                    else:
-                        self.logfile = f.path
-                    break
-
-            if self.logfile:
-                # Initialize data that needs to be loaded from the logfile
-                self.init_from_logfile()
-            else:
-                print('Found plotting process PID {pid}, but could not find '
-                        'logfile in its open files:'.format(pid = self.proc.pid))
-                for f in self.proc.open_files():
-                    print(f.path)
+                print(f.path)
 
 
 
