@@ -13,7 +13,7 @@ def get_k32_plotsize():
     return 108 * GB
 
 def human_format(num, precision, powerOfTwo=False):
-    divisor = 1024 if power_of_two else 1000
+    divisor = 1024 if powerOfTwo else 1000
     
     magnitude = 0
     while abs(num) >= divisor:
