@@ -59,11 +59,15 @@ directories:
         # archiving operation, comment this section out.
         #
         # Currently archival depends on an rsync daemon running on the remote
-        # host, and that the module is configured to match the local path.
-        # See code for details.
+        # host.
+        # The archival also uses ssh to connect to the remote host and check 
+        # for available directories. Set up ssh keys on the remote host to 
+        # allow public key login from rsyncd_user.
+        # Complete example: https://github.com/ericaltendorf/plotman/wiki/Archiving
         archive:
-                rsyncd_module: plots
-                rsyncd_path: /plots
+                rsyncd_module: plots # Define this in remote rsyncd.conf.
+                rsyncd_path: /plots # This is used via ssh. Should match path 
+                                    # defined in the module referenced above.
                 rsyncd_bwlimit: 80000  # Bandwidth limit in KB/s
                 rsyncd_host: myfarmer
                 rsyncd_user: chia
@@ -81,11 +85,14 @@ directories:
 # Plotting scheduling parameters
 scheduling:
         # Run a job on a particular temp dir only if the number of existing jobs
-        # before tmpdir_stagger_phase_major tmpdir_stagger_phase_minor
+        # before [tmpdir_stagger_phase_major : tmpdir_stagger_phase_minor]
         # is less than tmpdir_stagger_phase_limit.
         # Phase major corresponds to the plot phase, phase minor corresponds to
         # the table or table pair in sequence, phase limit corresponds to
-        # the number of plots allowed before [phase major, phase minor]
+        # the number of plots allowed before [phase major : phase minor].
+        # e.g, with default settings, a new plot will start only when your plot
+        # reaches phase [2 : 1] on your temp drive. This setting takes precidence 
+        # over global_stagger_m 
         tmpdir_stagger_phase_major: 2
         tmpdir_stagger_phase_minor: 1
         # Optional: default is 1
@@ -112,7 +119,7 @@ plotting:
         e: False             # Use -e plotting option
         n_threads: 2         # Threads per job
         n_buckets: 128       # Number of buckets to split data into
-        job_buffer: 4608     # Per job memory
+        job_buffer: 3389     # Per job memory
         # If specified, pass through to the -f and -p options.  See CLI reference.
         #   farmer_pk: ...
         #   pool_pk: ...
