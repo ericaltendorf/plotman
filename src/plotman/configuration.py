@@ -1,3 +1,4 @@
+import contextlib
 from typing import Dict, List, Optional
 
 import appdirs
@@ -16,24 +17,33 @@ def get_path():
     return appdirs.user_config_dir("plotman") + "/plotman.yaml"
 
 
-def get_validated_configs():
+def read_configuration_text(config_path):
+    try:
+        with open(config_path, "r") as file:
+            return file.read()
+    except FileNotFoundError as e:
+        raise ConfigurationException(
+            f"No 'plotman.yaml' file exists at expected location: '{config_path}'. To generate "
+            f"default config file, run: 'plotman config generate'"
+        ) from e
+
+
+def get_validated_configs(config_text, config_path):
     """Return a validated instance of PlotmanConfig with data from plotman.yaml
 
     :raises ConfigurationException: Raised when plotman.yaml is either missing or malformed
     """
     schema = desert.schema(PlotmanConfig)
-    config_file_path = get_path()
+    config_objects = yaml.load(config_text, Loader=yaml.SafeLoader)
+
     try:
-        with open(config_file_path, "r") as file:
-            config_file = yaml.load(file, Loader=yaml.SafeLoader)
-            return schema.load(config_file)
-    except FileNotFoundError as e:
-        raise ConfigurationException(
-            f"No 'plotman.yaml' file exists at expected location: '{config_file_path}'. To generate "
-            f"default config file, run: 'plotman config generate'"
-        ) from e
+        loaded = schema.load(config_objects)
     except marshmallow.exceptions.ValidationError as e:
-        raise ConfigurationException(f"Config file at: '{config_file_path}' is malformed") from e
+        raise ConfigurationException(
+            f"Config file at: '{config_path}' is malformed"
+        ) from e
+
+    return loaded
 
 
 # Data models used to deserializing/formatting plotman.yaml files.
