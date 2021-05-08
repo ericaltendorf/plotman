@@ -9,8 +9,11 @@ def df_b(d):
     stat = os.statvfs(d)
     return stat.f_frsize * stat.f_bavail
 
-def get_k32_plotsize():
-    return 108 * GB
+def get_kxx_plotsize(k):
+    assert k == 25 or k == 32
+
+    plot_size = {25: 0.68 * GB, 32: 108 * GB}
+    return plot_size[k]
 
 def human_format(num, precision):
     magnitude = 0
@@ -45,14 +48,17 @@ def split_path_prefix(items):
         remainders = [ os.path.relpath(i, prefix) for i in items ]
         return (prefix, remainders)
 
-def list_k32_plots(d):
+def list_kxx_plots(d):
     'List completed k32 plots in a directory (not recursive)'
     plots = []
     for plot in os.listdir(d):
-        if re.match(r'^plot-k32-.*plot$', plot):
+        # if re.match(r'^plot-k[0-9][0-9]-.*plot$', plot):
+        r = re.findall("plot-k([0-9][0-9])", plot)
+        k = int(r[0]) if r else None
+        if k == 25 or k == 32:
             plot = os.path.join(d, plot)
             try:
-                if os.stat(plot).st_size > (0.95 * get_k32_plotsize()):
+                if os.stat(plot).st_size > (0.95 * get_kxx_plotsize(k)):
                     plots.append(plot)
             except FileNotFoundError:
                 continue

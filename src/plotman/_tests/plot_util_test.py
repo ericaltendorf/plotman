@@ -50,7 +50,7 @@ def test_list_k32_plots(fs: pyfakefs.fake_filesystem.FakeFilesystem):
     fs.create_file('/t/plot-k32-4.plot', st_size=100 * GB)
     fs.create_file('/t/plot-k32-5.plot', st_size=108 * GB)
 
-    assert (plot_util.list_k32_plots('/t/') ==
+    assert (plot_util.list_kxx_plots('/t/') ==
             [ '/t/plot-k32-0.plot',
               '/t/plot-k32-1.plot',
               '/t/plot-k32-5.plot' ] )

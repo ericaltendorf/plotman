@@ -106,6 +106,7 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
             )
 
             plot_args = ['chia', 'plots', 'create',
+                    '--override-k',
                     '-k', str(plotting_cfg.k),
                     '-r', str(plotting_cfg.n_threads),
                     '-u', str(plotting_cfg.n_buckets),
