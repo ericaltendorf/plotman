@@ -86,13 +86,12 @@ def compute_priority(phase, gb_free, n_plots):
 
 def get_archdir_freebytes(arch_cfg):
     archdir_freebytes = {}
-    if arch_cfg.mode == 'remote':
+    if arch_cfg.mode == 'legacy':
         df_cmd = ('ssh %s@%s df -aBK | grep " %s/"' %
             (arch_cfg.rsyncd_user, arch_cfg.rsyncd_host, arch_cfg.rsyncd_path) )
-    elif arch_cfg.mode == 'local':
-        df_cmd = ('df -BK | grep " %s/"' % arch_cfg.rsyncd_path )
     else:
-        raise KeyError(f'Archive mode must be "remote" or "local" ({arch_cfg.mode!r} given). Please inspect plotman.yaml.')
+        arch_cfg_custom = getattr(arch_cfg, arch_cfg.mode)
+        df_cmd = (arch_cfg_custom.df_cmd.format(arch_cfg_custom.path))
     with subprocess.Popen(df_cmd, shell=True, stdout=subprocess.PIPE) as proc:
         for line in proc.stdout.readlines():
             fields = line.split()
@@ -105,17 +104,15 @@ def get_archdir_freebytes(arch_cfg):
     return archdir_freebytes
 
 def rsync_dest(arch_cfg, arch_dir):
-    if arch_cfg.mode == 'remote':
+    if arch_cfg.mode == 'legacy':
         rsync_path = arch_dir.replace(arch_cfg.rsyncd_path, arch_cfg.rsyncd_module)
         if rsync_path.startswith('/'):
             rsync_path = rsync_path[1:]  # Avoid dup slashes.  TODO use path join?
-        rsync_url = 'rsync://%s@%s:12000/%s' % (
+        return 'rsync://%s@%s:12000/%s' % (
                 arch_cfg.rsyncd_user, arch_cfg.rsyncd_host, rsync_path)
-    elif arch_cfg.mode == 'local':
-        rsync_url = arch_dir
     else:
-        raise KeyError(f'Archive mode must be "remote" or "local" ("{arch_cfg.mode!r}" given). Please inspect plotman.yaml.')
-    return rsync_url
+        arch_cfg_custom = getattr(arch_cfg, arch_cfg.mode)
+        return arch_cfg_custom.path
 
 # TODO: maybe consolidate with similar code in job.py?
 def get_running_archive_jobs(arch_cfg):
@@ -125,7 +122,11 @@ def get_running_archive_jobs(arch_cfg):
     dest = rsync_dest(arch_cfg, '/')
     for proc in psutil.process_iter(['pid', 'name']):
         with contextlib.suppress(psutil.NoSuchProcess):
-            if proc.name() == 'rsync':
+            if arch_cfg.mode == 'legacy':
+                proc_name = 'rsync' 
+            else:
+                proc_name = getattr(arch_cfg, arch_cfg.mode).archive_tool
+            if proc.name() == proc_name:
                 args = proc.cmdline()
                 for arg in args:
                     if arg.startswith(dest):
@@ -166,7 +167,7 @@ def archive(dir_cfg, all_jobs):
     archdir_freebytes = get_archdir_freebytes(dir_cfg.archive)
     if not archdir_freebytes:
         return(False, 'No free archive dirs found.')
-    
+
     archdir = ''
     available = [(d, space) for (d, space) in archdir_freebytes.items() if 
                  space > 1.2 * plot_util.get_k32_plotsize()]
@@ -178,10 +179,17 @@ def archive(dir_cfg, all_jobs):
         return(False, 'No archive directories found with enough free space')
     
     msg = 'Found %s with ~%d GB free' % (archdir, freespace / plot_util.GB)
-
-    bwlimit = dir_cfg.archive.rsyncd_bwlimit
-    throttle_arg = ('--bwlimit=%d' % bwlimit) if bwlimit else ''
-    cmd = ('rsync %s --no-compress --remove-source-files -P %s %s' %
-            (throttle_arg, chosen_plot, rsync_dest(dir_cfg.archive, archdir)))
-
+    if dir_cfg.archive.mode == 'legacy':
+        bwlimit = dir_cfg.archive.rsyncd_bwlimit
+        throttle_arg = ('--bwlimit=%d' % bwlimit) if bwlimit else ''
+        cmd = ('rsync %s --no-compress --remove-source-files -P %s %s' %
+                (throttle_arg, chosen_plot, rsync_dest(dir_cfg.archive, archdir)))
+    else:
+        arch_cfg_custom = getattr(dir_cfg.archive, dir_cfg.archive.mode)
+        cmd = arch_cfg_custom.archive_cmd.format(
+            arch_cfg_custom.archive_tool,
+            arch_cfg_custom.parameters,
+            chosen_plot,
+            rsync_dest(dir_cfg.archive, archdir)
+        )
     return (True, cmd)

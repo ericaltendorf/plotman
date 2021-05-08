@@ -49,6 +49,14 @@ def get_validated_configs(config_text, config_path):
 # Data models used to deserializing/formatting plotman.yaml files.
 
 @attr.frozen
+class ArchiveLocal:
+    path: str
+    df_cmd: str = 'df -BK | grep " {}/"'
+    archive_tool: str = 'rsync'
+    archive_cmd: str = '{} {} {} {}'
+    parameters: str = '--bwlimit=80000 --no-compress --remove-source-files -P'
+
+@attr.frozen
 class Archive:
     rsyncd_module: str
     rsyncd_path: str
@@ -56,7 +64,13 @@ class Archive:
     rsyncd_host: str
     rsyncd_user: str
     index: int = 0  # If not explicit, "index" will default to 0
-    mode: Optional[str] = 'remote'
+    mode: str = desert.ib(
+        default='legacy',
+        marshmallow_field=marshmallow.fields.String(
+            validate=marshmallow.validate.OneOf(choices=['legacy', 'local'])
+        ),
+    )
+    local: Optional[ArchiveLocal] = None
 
 @attr.frozen
 class TmpOverrides:
