@@ -52,10 +52,9 @@ def list_kxx_plots(d):
     'List completed k32 plots in a directory (not recursive)'
     plots = []
     for plot in os.listdir(d):
-        # if re.match(r'^plot-k[0-9][0-9]-.*plot$', plot):
-        r = re.findall("plot-k([0-9][0-9])", plot)
-        k = int(r[0]) if r else None
-        if k == 25 or k == 32:
+        if re.match(r'^plot-k[0-9][0-9]-.*plot$', plot):
+            r = re.findall("plot-k([0-9][0-9])", plot)
+            k = int(r[0]) if r else None
             plot = os.path.join(d, plot)
             try:
                 if os.stat(plot).st_size > (0.95 * get_kxx_plotsize(k)):
