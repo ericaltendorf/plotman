@@ -85,8 +85,8 @@ directories:
                 mode: legacy  # legacy (config above) or local
                 #
                 # Local mode:
-                local:
-                        path: 'x'
+                # local:
+                #         path: '/farm'
 
 # Plotting scheduling parameters
 scheduling:
