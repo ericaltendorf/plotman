@@ -1,6 +1,7 @@
 # TODO do we use all these?
 import argparse
 import contextlib
+import functools
 import logging
 import os
 import random
@@ -88,6 +89,7 @@ class ParsedChiaPlotsCreateCommand:
         self.help = help
         self.parameters = parameters
 
+@functools.total_ordering
 @attr.frozen(order=False)
 class Phase:
     major: int = 0
