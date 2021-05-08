@@ -96,8 +96,8 @@ class Phase:
 
     def __lt__(self, other):
         return (
-            (self.unknown, self.major, self.minor)
-            < (other.unknown, other.major, other.minor)
+            (not self.known, self.major, self.minor)
+            < (not other.known, other.major, other.minor)
         )
 
     @classmethod
