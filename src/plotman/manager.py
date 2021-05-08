@@ -163,8 +163,13 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
                     stderr=subprocess.STDOUT,
                     start_new_session=True)
 
-            psutil.Process(p.pid).nice(15)
-            return (True, logmsg)
+            try:
+                # process might dead soon
+                time.sleep(2)
+                psutil.Process(p.pid).nice(15)
+                return (True, logmsg)
+            except:
+                wait_reason = 'plot create command failed'
 
     return (False, wait_reason)
 
