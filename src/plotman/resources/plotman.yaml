@@ -82,15 +82,11 @@ directories:
                 #   index: 0
                 # Optional switch to enable local archiving (defaults to remote if absent).
                 # Note: rsyncd_module, rsyncd_host and rsyncd_user are ignored in local mode.
-                #   mode: remote  # remote or local
-                # Note for local mode:
-                # The rsyncd_path should be the directory *in which* your archive
-                # disks are mounted. For example, if your archive disks are
-                # /mnt/archive1 and /mnt/archive2, the path should be /mnt.
-                # Note that *all* mounted drives within that path will be
-                # considered - so if you have other things mounted as well,
-                # make sure you mount all Chia archive drives to some custom
-                # directory that only contains Chia archive mountpoints.
+                mode: legacy  # legacy (config above) or local
+                #
+                # Local mode:
+                local:
+                        path: 'x'
 
 # Plotting scheduling parameters
 scheduling:
