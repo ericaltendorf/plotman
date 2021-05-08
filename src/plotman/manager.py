@@ -84,17 +84,8 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
         tmp_to_all_phases = [(d, job.job_phases_for_tmpdir(d, jobs)) for d in dir_cfg.tmp]
         eligible = [ (d, phases) for (d, phases) in tmp_to_all_phases
                 if phases_permit_new_job(phases, d, sched_cfg, dir_cfg) ]
-
-        rankable = []
-        for d, phases in eligible:
-            if len(phases) == 0:
-                phase = (999, 999)
-            else:
-                if None in phases[0]:
-                    phase = (888, 888)
-                else:
-                    phase = phases[0]
-            rankable.append((d, phase))
+        rankable = [ (d, phases[0]) if phases else (d, job.Phase(known=False))
+                for (d, phases) in eligible ]
         
         if not eligible:
             wait_reason = 'no eligible tempdirs (%ds/%ds)' % (youngest_job_age, global_stagger)
