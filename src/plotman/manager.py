@@ -47,12 +47,15 @@ def phases_permit_new_job(phases, d, sched_cfg, dir_cfg):
     '''Scheduling logic: return True if it's OK to start a new job on a tmp dir
        with existing jobs in the provided phases.'''
     # Filter unknown-phase jobs
-    phases = [ph for ph in phases if ph[0] is not None and ph[1] is not None]
+    phases = [ph for ph in phases if ph.known]
 
     if len(phases) == 0:
         return True
 
-    milestone = (sched_cfg.tmpdir_stagger_phase_major, sched_cfg.tmpdir_stagger_phase_minor)
+    milestone = job.Phase(
+        major=sched_cfg.tmpdir_stagger_phase_major,
+        minor=sched_cfg.tmpdir_stagger_phase_minor,
+    )
     # tmpdir_stagger_phase_limit default is 1, as declared in configuration.py
     if len([p for p in phases if p < milestone]) >= sched_cfg.tmpdir_stagger_phase_limit:
         return False
