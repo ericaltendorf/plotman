@@ -37,6 +37,8 @@ def dstdirs_to_youngest_phase(all_jobs):
        that is emitting to that dst dir.'''
     result = {}
     for j in all_jobs:
+        if j.dstdir is None:
+            continue
         if not j.dstdir in result.keys() or result[j.dstdir] > j.progress():
             result[j.dstdir] = j.progress()
     return result
@@ -77,7 +79,7 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
     if (youngest_job_age < global_stagger):
         wait_reason = 'stagger (%ds/%ds)' % (youngest_job_age, global_stagger)
     elif len(jobs) >= sched_cfg.global_max_jobs:
-        wait_reason = 'max jobs (%d)' % sched_cfg.global_max_jobs
+        wait_reason = 'max jobs (%d) - (%ds/%ds)' % (sched_cfg.global_max_jobs, youngest_job_age, global_stagger)
     else:
         tmp_to_all_phases = [(d, job.job_phases_for_tmpdir(d, jobs)) for d in dir_cfg.tmp]
         eligible = [ (d, phases) for (d, phases) in tmp_to_all_phases
@@ -86,14 +88,14 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
                 for (d, phases) in eligible ]
         
         if not eligible:
-            wait_reason = 'no eligible tempdirs'
+            wait_reason = 'no eligible tempdirs (%ds/%ds)' % (youngest_job_age, global_stagger)
         else:
             # Plot to oldest tmpdir.
             tmpdir = max(rankable, key=operator.itemgetter(1))[0]
 
             # Select the dst dir least recently selected
             dir2ph = { d:ph for (d, ph) in dstdirs_to_youngest_phase(jobs).items()
-                      if d in dir_cfg.dst }
+                      if d in dir_cfg.dst and ph is not None}
             unused_dirs = [d for d in dir_cfg.dst if d not in dir2ph.keys()]
             dstdir = ''
             if unused_dirs: 
@@ -126,11 +128,39 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
 
             logmsg = ('Starting plot job: %s ; logging to %s' % (' '.join(plot_args), logfile))
 
-            # start_new_sessions to make the job independent of this controlling tty.
-            p = subprocess.Popen(plot_args,
-                stdout=open(logfile, 'w'),
-                stderr=subprocess.STDOUT,
-                start_new_session=True)
+            try:
+                open_log_file = open(logfile, 'x')
+            except FileExistsError:
+                # The desired log file name already exists.  Most likely another
+                # plotman process already launched a new process in response to
+                # the same scenario that triggered us.  Let's at least not
+                # confuse things further by having two plotting processes
+                # logging to the same file.  If we really should launch another
+                # plotting process, we'll get it at the next check cycle anyways.
+                message = (
+                    f'Plot log file already exists, skipping attempt to start a'
+                    f' new plot: {logfile!r}'
+                )
+                return (False, logmsg)
+            except FileNotFoundError as e:
+                message = (
+                    f'Unable to open log file.  Verify that the directory exists'
+                    f' and has proper write permissions: {logfile!r}'
+                )
+                raise Exception(message) from e
+
+            # Preferably, do not add any code between the try block above
+            # and the with block below.  IOW, this space intentionally left
+            # blank...  As is, this provides a good chance that our handle
+            # of the log file will get closed explicitly while still
+            # allowing handling of just the log file opening error.
+
+            with open_log_file:
+                # start_new_sessions to make the job independent of this controlling tty.
+                p = subprocess.Popen(plot_args,
+                    stdout=open_log_file,
+                    stderr=subprocess.STDOUT,
+                    start_new_session=True)
 
             psutil.Process(p.pid).nice(15)
             return (True, logmsg)
