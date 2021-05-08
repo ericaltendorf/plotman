@@ -1,7 +1,7 @@
-from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
 import appdirs
+import attr
 import desert
 import marshmallow
 import yaml
@@ -17,7 +17,7 @@ def get_path():
 
 
 def get_validated_configs():
-    """Return a validated instance of the PlotmanConfig dataclass with data from plotman.yaml
+    """Return a validated instance of PlotmanConfig with data from plotman.yaml
 
     :raises ConfigurationException: Raised when plotman.yaml is either missing or malformed
     """
@@ -38,7 +38,7 @@ def get_validated_configs():
 
 # Data models used to deserializing/formatting plotman.yaml files.
 
-@dataclass
+@attr.frozen
 class Archive:
     rsyncd_module: str
     rsyncd_path: str
@@ -47,11 +47,11 @@ class Archive:
     rsyncd_user: str
     index: int = 0  # If not explicit, "index" will default to 0
 
-@dataclass
+@attr.frozen
 class TmpOverrides:
     tmpdir_max_jobs: Optional[int] = None
 
-@dataclass
+@attr.frozen
 class Directories:
     log: str
     tmp: List[str]
@@ -60,7 +60,7 @@ class Directories:
     tmp_overrides: Optional[Dict[str, TmpOverrides]] = None
     archive: Optional[Archive] = None
 
-@dataclass
+@attr.frozen
 class Scheduling:
     global_max_jobs: int
     global_stagger_m: int
@@ -70,7 +70,7 @@ class Scheduling:
     tmpdir_stagger_phase_minor: int
     tmpdir_stagger_phase_limit: int = 1  # If not explicit, "tmpdir_stagger_phase_limit" will default to 1
 
-@dataclass
+@attr.frozen
 class Plotting:
     k: int
     e: bool
@@ -80,13 +80,13 @@ class Plotting:
     farmer_pk: Optional[str] = None
     pool_pk: Optional[str] = None
 
-@dataclass
+@attr.frozen
 class UserInterface:
     use_stty_size: bool = True
 
-@dataclass
+@attr.frozen
 class PlotmanConfig:
     directories: Directories
     scheduling: Scheduling
     plotting: Plotting
-    user_interface: UserInterface = field(default_factory=UserInterface)
+    user_interface: UserInterface = attr.ib(factory=UserInterface)
