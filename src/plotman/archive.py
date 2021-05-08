@@ -103,7 +103,7 @@ def get_archdir_freebytes(arch_cfg):
             archdir_freebytes[archdir] = freebytes
     return archdir_freebytes
 
-def rsync_dest(arch_cfg, arch_dir):
+def arch_dest(arch_cfg, arch_dir):
     if arch_cfg.mode == 'legacy':
         rsync_path = arch_dir.replace(arch_cfg.rsyncd_path, arch_cfg.rsyncd_module)
         if rsync_path.startswith('/'):
@@ -119,7 +119,7 @@ def get_running_archive_jobs(arch_cfg):
     '''Look for running rsync jobs that seem to match the pattern we use for archiving
        them.  Return a list of PIDs of matching jobs.'''
     jobs = []
-    dest = rsync_dest(arch_cfg, '/')
+    dest = arch_dest(arch_cfg, '/')
     for proc in psutil.process_iter(['pid', 'name']):
         with contextlib.suppress(psutil.NoSuchProcess):
             if arch_cfg.mode == 'legacy':
@@ -183,13 +183,13 @@ def archive(dir_cfg, all_jobs):
         bwlimit = dir_cfg.archive.rsyncd_bwlimit
         throttle_arg = ('--bwlimit=%d' % bwlimit) if bwlimit else ''
         cmd = ('rsync %s --no-compress --remove-source-files -P %s %s' %
-                (throttle_arg, chosen_plot, rsync_dest(dir_cfg.archive, archdir)))
+                (throttle_arg, chosen_plot, arch_dest(dir_cfg.archive, archdir)))
     else:
         arch_cfg_custom = getattr(dir_cfg.archive, dir_cfg.archive.mode)
         cmd = arch_cfg_custom.archive_cmd.format(
             arch_cfg_custom.archive_tool,
             arch_cfg_custom.parameters,
             chosen_plot,
-            rsync_dest(dir_cfg.archive, archdir)
+            arch_dest(dir_cfg.archive, archdir)
         )
     return (True, cmd)

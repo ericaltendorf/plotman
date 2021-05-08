@@ -15,18 +15,18 @@ def _archive_legacy():
         rsyncd_bwlimit=80000
     )
 
-def test_rsync_dest():
+def test_arch_dest():
     arch_dir = '/plotdir/012'
     arch_cfg = _archive_legacy()
 
     # Normal usage
     assert ('rsync://theusername@thehostname:12000/plots_mod/012' ==
-            archive.rsync_dest(arch_cfg, arch_dir))
+            archive.arch_dest(arch_cfg, arch_dir))
 
     # Usage for constructing just the prefix, for scanning process tables
     # for matching jobs.
     assert ('rsync://theusername@thehostname:12000/' ==
-            archive.rsync_dest(arch_cfg, '/'))
+            archive.arch_dest(arch_cfg, '/'))
 
 
 def test_archive_legacy_default():
