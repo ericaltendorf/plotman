@@ -7,7 +7,7 @@ from shutil import copyfile
 import time
 
 # Plotman libraries
-from plotman import analyzer, archive, configuration, interactive, manager, plot_util, reporting
+from plotman import analyzer, archive, configuration, interactive, manager, monitor, plot_util, reporting
 from plotman import resources as plotman_resources
 from plotman.job import Job
 
@@ -31,6 +31,8 @@ class PlotmanArgParser:
         sp.add_parser('dirs', help='show directories info')
 
         sp.add_parser('interactive', help='run interactive control/monitoring mode')
+
+        sp.add_parser('monitor', help='pure passive monitoring')
 
         sp.add_parser('dsched', help='print destination dir schedule')
 
@@ -157,6 +159,9 @@ def main():
 
         analyzer.analyze(args.logfile, args.clipterminals,
                 args.bytmp, args.bybitfield)
+
+    elif args.cmd == 'monitor':
+        monitor.main()
 
     else:
         jobs = Job.get_running_jobs(cfg.directories.log)
