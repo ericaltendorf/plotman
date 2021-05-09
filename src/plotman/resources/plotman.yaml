@@ -51,7 +51,7 @@ directories:
         # These again are presumed to be on independent physical devices,
         # so writes (plot jobs) and reads (archivals) can be scheduled
         # to minimize IO contention.
-        # if no dst directory is listed, the tmp directories will be used as buffer.
+        # if dst is commented out, the tmp directories will be used as buffer.
         dst:
                 - /mnt/dst/00
                 - /mnt/dst/01
