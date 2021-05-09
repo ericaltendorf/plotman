@@ -1,6 +1,7 @@
 # TODO do we use all these?
 import argparse
 import contextlib
+import functools
 import logging
 import os
 import random
@@ -11,6 +12,7 @@ from datetime import datetime
 from enum import Enum, auto
 from subprocess import call
 
+import attr
 import click
 import pendulum
 import psutil
@@ -87,6 +89,36 @@ class ParsedChiaPlotsCreateCommand:
         self.help = help
         self.parameters = parameters
 
+@functools.total_ordering
+@attr.frozen(order=False)
+class Phase:
+    major: int = 0
+    minor: int = 0
+    known: bool = True
+
+    def __lt__(self, other):
+        return (
+            (not self.known, self.major, self.minor)
+            < (not other.known, other.major, other.minor)
+        )
+
+    @classmethod
+    def from_tuple(cls, t):
+        if len(t) != 2:
+            raise Exception(f'phase must be created from 2-tuple: {t!r}')
+
+        if None in t and not t[0] is t[1]:
+            raise Exception(f'phase can not be partially known: {t!r}')
+
+        if t[0] is None:
+            return cls(known=False)
+
+        return cls(major=t[0], minor=t[1])
+
+    @classmethod
+    def list_from_tuples(cls, l):
+        return [cls.from_tuple(t) for t in l]
+
 # TODO: be more principled and explicit about what we cache vs. what we look up
 # dynamically from the logfile
 class Job:
@@ -97,9 +129,6 @@ class Job:
     job_id = 0
     plot_id = '--------'
     proc = None   # will get a psutil.Process
-
-    # These are dynamic, cached, and need to be udpated periodically
-    phase = (None, None)   # Phase/subphase
 
     def get_running_jobs(logroot, cached_jobs=()):
         '''Return a list of running plot jobs.  If a cache of preexisting jobs is provided,
@@ -137,6 +166,8 @@ class Job:
     def __init__(self, proc, parsed_command, logroot):
         '''Initialize from an existing psutil.Process object.  must know logroot in order to understand open files'''
         self.proc = proc
+        # These are dynamic, cached, and need to be udpated periodically
+        self.phase = Phase(known=False)
 
         self.help = parsed_command.help
         self.args = parsed_command.parameters
@@ -285,9 +316,9 @@ class Job:
 
         if phase_subphases:
             phase = max(phase_subphases.keys())
-            self.phase = (phase, phase_subphases[phase])
+            self.phase = Phase(major=phase, minor=phase_subphases[phase])
         else:
-            self.phase = (0, 0)
+            self.phase = Phase(major=0, minor=0)
 
     def progress(self):
         '''Return a 2-tuple with the job phase and subphase (by reading the logfile)'''
@@ -370,7 +401,11 @@ class Job:
         # Prevent duplicate file paths by using set.
         temp_files = set([])
         for f in self.proc.open_files():
-            if self.tmpdir in f.path or self.tmp2dir in f.path or self.dstdir in f.path:
+            if any(
+                dir in f.path
+                for dir in [self.tmpdir, self.tmp2dir, self.dstdir]
+                if dir is not None
+            ):
                 temp_files.add(f.path)
         return temp_files
 
