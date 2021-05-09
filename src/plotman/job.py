@@ -401,7 +401,11 @@ class Job:
         # Prevent duplicate file paths by using set.
         temp_files = set([])
         for f in self.proc.open_files():
-            if self.tmpdir in f.path or self.tmp2dir in f.path or self.dstdir in f.path:
+            if any(
+                dir in f.path
+                for dir in [self.tmpdir, self.tmp2dir, self.dstdir]
+                if dir is not None
+            ):
                 temp_files.add(f.path)
         return temp_files
 
