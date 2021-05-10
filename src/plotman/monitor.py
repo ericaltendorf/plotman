@@ -1,7 +1,11 @@
+import itertools
 import os
 import time
 
 import attr
+import prompt_toolkit
+import prompt_toolkit.input
+import prompt_toolkit.keys
 import rich
 import rich.layout
 import rich.live
@@ -49,25 +53,32 @@ def main():
 
     jobs = []
 
-    with rich.live.Live(overall, auto_refresh=False) as live:
-        for i in range(5):
-            tmp_layout.update(str(i))
+    prompt_toolkit_input = prompt_toolkit.input.create_input()
+    with prompt_toolkit_input.raw_mode():
+        with rich.live.Live(overall, auto_refresh=False) as live:
+            for i in itertools.count():
+                tmp_layout.update(str(i))
 
-            jobs = plotman.job.Job.get_running_jobs(
-                cfg.directories.log,
-                cached_jobs=jobs,
-            )
-            jobs_data = build_jobs_data(
-                jobs=jobs,
-                dst_prefix=dst_prefix,
-                tmp_prefix=tmp_prefix,
-            )
+                jobs = plotman.job.Job.get_running_jobs(
+                    cfg.directories.log,
+                    cached_jobs=jobs,
+                )
+                jobs_data = build_jobs_data(
+                    jobs=jobs,
+                    dst_prefix=dst_prefix,
+                    tmp_prefix=tmp_prefix,
+                )
 
-            jobs_table = build_jobs_table(jobs_data=jobs_data)
-            plots_layout.update(jobs_table)
+                jobs_table = build_jobs_table(jobs_data=jobs_data)
+                plots_layout.update(jobs_table)
 
-            live.refresh()
-            time.sleep(1)
+                live.refresh()
+                for _ in range(10):
+                    keys = prompt_toolkit_input.read_keys()
+                    quit_keys = {'q', prompt_toolkit.keys.Keys.ControlC}
+                    if any(key.key in quit_keys for key in keys):
+                        return
+                    time.sleep(0.1)
 
 
 def job_row_ib(name):
