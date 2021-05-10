@@ -9,6 +9,13 @@ user_interface:
         # you resize the terminal window, you can try setting this to True. 
         use_stty_size: True
 
+# Optional custom settings for the tools (status, interactive etc)
+tools:
+        interactive:
+                # Set it to False if you don't want to auto start plotting when 'interactive' is ran.
+                # You can override this value from the command line, type "plotman interactive -h" for details
+                autostart_plotting: True
+
 # Where to plot and log.
 directories:
         # One directory in which to store all plot job logs (the STDOUT/
