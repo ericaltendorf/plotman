@@ -181,11 +181,12 @@ To display the current location of your `plotman.yaml` file and check if it exis
 
 ## Installation
 
-Installation for Linux:
+### Linux:
 
 1. Plotman assumes that a functioning [Chia](https://github.com/Chia-Network/chia-blockchain)
    installation is present on the system. Activate your `chia` environment by typing
    `source /path/to/your/chia/install/activate`.
+   
 2. Then, install Plotman using the following command:
    ```shell
     > pip install --force-reinstall git+https://github.com/ericaltendorf/plotman@main
@@ -196,7 +197,39 @@ Installation for Linux:
    ```shell
    > plotman config generate
    ```
-   The default configuration file used as a starting point is located [here](./src/plotman/resources/plotman.yaml)
+   The default configuration file used as a starting point is located [here](./src/plotman/resources/plotman.yaml).
+   
+4. That's it! You can now run Plotman by typing `plotman version` to verify its version.
+   Run `plotman --help` to learn about the available commands.
+   
+### macOS: 
+(_development version - not officially supported_)
+
+1. Plotman assumes that a functioning [Chia](https://github.com/Chia-Network/chia-blockchain)
+   installation is present on the system. If you installed Chia via the [official macOS .dmg](https://github.com/Chia-Network/chia-blockchain/wiki/INSTALL#macos),
+   your `chia` executable will be located at: 
+   `/Applications/Chia.app/Contents/Resources/app.asar.unpacked/daemon/chia` by default. 
+   You can add this to your PATH for easy access: 
+   ```shell
+    > export PATH=/Applications/Chia.app/Contents/Resources/app.asar.unpacked/daemon:$PATH`
+   ```
+
+2. Then, install a *development version* of Plotman using the following command:
+   ```shell
+    > pip install --force-reinstall git+https://github.com/ericaltendorf/plotman@development
+   ```
+   Depending on how you manage your Python 3 installation on macOS (e.g. homebrew) you may
+   need to use `pip3` here or elevated privileges (e.g. `sudo`) for installation.
+   
+3. Plotman will look for `plotman.yaml` within your computer at an OS-based
+   default location. To create a default `plotman.yaml` and display its location,
+   run the following command:
+   ```shell
+   > plotman config generate
+   ```
+   On macOS, the default config location is: `/Users/<username>/Library/Application Support/plotman/plotman.yaml`
+   The default configuration file used as a starting point is located [here](./src/plotman/resources/plotman.yaml).
+   
 4. That's it! You can now run Plotman by typing `plotman version` to verify its version.
    Run `plotman --help` to learn about the available commands.
 
