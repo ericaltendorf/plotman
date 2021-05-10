@@ -15,6 +15,11 @@ from subprocess import call
 import pendulum
 import psutil
 
+from plotman import configuration
+
+
+cfg = configuration.get_validated_configs()
+
 
 def job_phases_for_tmpdir(d, all_jobs):
     '''Return phase 2-tuples for jobs running on tmpdir d'''
@@ -25,13 +30,21 @@ def job_phases_for_dstdir(d, all_jobs):
     return sorted([j.progress() for j in all_jobs if j.dstdir == d])
 
 def is_plotting_cmdline(cmdline):
-    return (
-        len(cmdline) >= 4
-        and 'python' in cmdline[0]
-        and cmdline[1].endswith('/chia')
-        and 'plots' == cmdline[2]
-        and 'create' == cmdline[3]
-    )
+    if cfg.gui_install:
+        return (
+            len(cmdline) >= 3
+            and 'chia' == cmdline[0]
+            and 'plots' == cmdline[1]
+            and 'create' == cmdline[2]
+        )
+    else:
+        return (
+            len(cmdline) >= 4
+            and 'python' in cmdline[0]
+            and cmdline[1].endswith('/chia')
+            and 'plots' == cmdline[2]
+            and 'create' == cmdline[3]
+        )
 
 # This is a cmdline argument fix for https://github.com/ericaltendorf/plotman/issues/41
 def cmdline_argfix(cmdline):
@@ -88,6 +101,12 @@ class Job:
             # iteration and data access.
             with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied):
                 if is_plotting_cmdline(proc.cmdline()):
+                   
+                    # Avoid double counting child process
+                    if cfg.gui_install:
+                        if proc.parent().name() == 'chia':
+                            continue
+
                     if proc.pid in cached_jobs_by_pid.keys():
                         jobs.append(cached_jobs_by_pid[proc.pid])  # Copy from cache
                     else:
@@ -105,12 +124,20 @@ class Job:
         with self.proc.oneshot():
             # Parse command line args
             args = self.proc.cmdline()
-            assert len(args) > 4
-            assert 'python' in args[0]
-            assert 'chia' in args[1]
-            assert 'plots' == args[2]
-            assert 'create' == args[3]
-            args_iter = iter(cmdline_argfix(args[4:]))
+            args_iter = None
+            if cfg.gui_install:
+                assert len(args) > 3
+                assert 'chia' in args[0]
+                assert 'plots' == args[1]
+                assert 'create' == args[2]
+                args_iter = iter(cmdline_argfix(args[3:]))
+            else:
+                assert len(args) > 4
+                assert 'python' in args[0]
+                assert 'chia' in args[1]
+                assert 'plots' == args[2]
+                assert 'create' == args[3]
+                args_iter = iter(cmdline_argfix(args[4:]))
             for arg in args_iter:
                 val = None if arg in {'-e', '--nobitfield', '-h', '--help', '--override-k'} else next(args_iter)
                 if arg in {'-k', '--size'}:

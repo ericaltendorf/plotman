@@ -90,3 +90,4 @@ class PlotmanConfig:
     directories: Directories
     scheduling: Scheduling
     plotting: Plotting
+    gui_install: bool
