@@ -45,6 +45,7 @@ class Archive:
     rsyncd_bwlimit: int
     rsyncd_host: str
     rsyncd_user: str
+    rsyncd_type: str = 'drives' # Defaults to original drives method
     index: int = 0  # If not explicit, "index" will default to 0
 
 @dataclass

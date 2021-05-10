@@ -62,6 +62,7 @@ directories:
         # host, and that the module is configured to match the local path.
         # See code for details.
         archive:
+                rsyncd_type: drives
                 rsyncd_module: plots
                 rsyncd_path: /plots
                 rsyncd_bwlimit: 80000  # Bandwidth limit in KB/s

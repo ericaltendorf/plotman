@@ -8,6 +8,7 @@ def test_compute_priority():
 def test_rsync_dest():
     arch_dir = '/plotdir/012'
     arch_cfg = configuration.Archive(
+        rsyncd_type='drives'
         rsyncd_module='plots_mod',
         rsyncd_path='/plotdir',
         rsyncd_host='thehostname',

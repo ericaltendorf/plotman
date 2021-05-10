@@ -49,6 +49,20 @@ def compute_priority(phase, gb_free, n_plots):
 
 def get_archdir_freebytes(arch_cfg):
     archdir_freebytes = {}
+    df_cmd = ("ssh %s@%s df -aBK '%s' 2>/dev/null | awk 'NR==2 {print $4}'" %
+        (arch_cfg.rsyncd_user, arch_cfg.rsyncd_host, arch_cfg.rsyncd_path) )
+    with subprocess.Popen(df_cmd, shell=True, stdout=subprocess.PIPE) as proc:
+        for line in proc.stdout.readlines():
+            fields = line.split()
+            if fields[0] == b'-':
+                # not actually mounted
+                continue
+            freebytes = int(fields[0][:-1]) * 1024  # Strip the final 'K'
+            archdir_freebytes[arch_cfg.rsyncd_path] = freebytes
+    return archdir_freebytes
+
+def get_archdrive_freebytes(arch_cfg):
+    archdir_freebytes = {}
     df_cmd = ('ssh %s@%s df -aBK | grep " %s/"' %
         (arch_cfg.rsyncd_user, arch_cfg.rsyncd_host, arch_cfg.rsyncd_path) )
     with subprocess.Popen(df_cmd, shell=True, stdout=subprocess.PIPE) as proc:
@@ -116,7 +130,11 @@ def archive(dir_cfg, all_jobs):
     #
     # Pick first archive dir with sufficient space
     #
-    archdir_freebytes = get_archdir_freebytes(dir_cfg.archive)
+    archdir_freebytes = None
+    if dir_cfg.archive.rsyncd_type == 'directory':
+        archdir_freebytes = get_archdir_freebytes(dir_cfg.archive)
+    else:
+        archdir_freebytes = get_archdrive_freebytes(dir_cfg.archive)
     if not archdir_freebytes:
         return(False, 'No free archive dirs found.')
     
