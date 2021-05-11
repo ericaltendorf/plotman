@@ -136,7 +136,7 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
     ]
 
     # Number of jobs in each tmp disk
-    tmp_dir_paths = sorted(list(map(lambda job: abbr_path(job.tmpdir, tmp_prefix), jobs)))
+    tmp_dir_paths = sorted([abbr_path(job.tmpdir, tmp_prefix) for job in jobs])
     for key, group in groupby(tmp_dir_paths, lambda dir: dir):
         summary.append(
             'Jobs in {0}: {1}'.format(key, len(list(group)))
