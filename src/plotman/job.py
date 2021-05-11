@@ -149,6 +149,8 @@ class Job:
                             parsed_command = parse_chia_plots_create_command_line(
                                 command_line=proc.cmdline(),
                             )
+                            if proc.parent().name() != 'chia':  # grab thread not parent
+                                continue                            
                             if parsed_command.error is not None:
                                 continue
                             job = Job(
