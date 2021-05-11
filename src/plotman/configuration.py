@@ -96,11 +96,11 @@ class UserInterface:
 
 @attr.frozen
 class Interactive:
-    autostart_plotting: bool
+    autostart_plotting: bool = True
 
 @attr.frozen
 class Tools:
-    interactive: Optional[Interactive] = None
+    interactive: Interactive = attr.ib(factory=Interactive)
 
 @attr.frozen
 class PlotmanConfig:
