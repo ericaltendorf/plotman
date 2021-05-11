@@ -33,7 +33,7 @@ def phases_str(phases, max_num=None):
         return first + elided + last
 
 def n_at_ph(jobs, ph):
-    return sum([1 for j in jobs if j.progress() == ph])
+    return sum([1 for j in jobs if j.progress() == job.Phase.from_tuple(ph)])
 
 def n_to_char(n):
     n_to_char_map = dict(enumerate(" .:;!"))
