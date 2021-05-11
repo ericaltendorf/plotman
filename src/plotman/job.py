@@ -137,7 +137,7 @@ class Job:
         jobs = []
         cached_jobs_by_pid = { j.proc.pid: j for j in cached_jobs }
 
-        for proc in psutil.process_iter(['pid', 'cmdline']):
+        for proc in psutil.process_iter():
             # Ignore processes which most likely have terminated between the time of
             # iteration and data access.
             with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied):
