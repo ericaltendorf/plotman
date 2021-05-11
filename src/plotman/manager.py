@@ -47,12 +47,15 @@ def phases_permit_new_job(phases, d, sched_cfg, dir_cfg):
     '''Scheduling logic: return True if it's OK to start a new job on a tmp dir
        with existing jobs in the provided phases.'''
     # Filter unknown-phase jobs
-    phases = [ph for ph in phases if ph[0] is not None and ph[1] is not None]
+    phases = [ph for ph in phases if ph.known]
 
     if len(phases) == 0:
         return True
 
-    milestone = (sched_cfg.tmpdir_stagger_phase_major, sched_cfg.tmpdir_stagger_phase_minor)
+    milestone = job.Phase(
+        major=sched_cfg.tmpdir_stagger_phase_major,
+        minor=sched_cfg.tmpdir_stagger_phase_minor,
+    )
     # tmpdir_stagger_phase_limit default is 1, as declared in configuration.py
     if len([p for p in phases if p < milestone]) >= sched_cfg.tmpdir_stagger_phase_limit:
         return False
@@ -84,7 +87,7 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
         tmp_to_all_phases = [(d, job.job_phases_for_tmpdir(d, jobs)) for d in dir_cfg.tmp]
         eligible = [ (d, phases) for (d, phases) in tmp_to_all_phases
                 if phases_permit_new_job(phases, d, sched_cfg, dir_cfg) ]
-        rankable = [ (d, phases[0]) if phases else (d, (999, 999))
+        rankable = [ (d, phases[0]) if phases else (d, job.Phase(known=False))
                 for (d, phases) in eligible ]
         
         if not eligible:
