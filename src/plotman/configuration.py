@@ -99,7 +99,7 @@ class Interactive:
     autostart_plotting: bool = True
 
 @attr.frozen
-class Tools:
+class Commands:
     interactive: Interactive = attr.ib(factory=Interactive)
 
 @attr.frozen
@@ -107,5 +107,5 @@ class PlotmanConfig:
     directories: Directories
     scheduling: Scheduling
     plotting: Plotting
-    tools: Optional[Tools] = None
+    commands: Optional[Commands] = None
     user_interface: UserInterface = attr.ib(factory=UserInterface)

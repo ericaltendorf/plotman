@@ -72,8 +72,8 @@ def curses_main(stdscr, cmd_autostart_plotting):
 
     if cmd_autostart_plotting is not None:
         plotting_active = cmd_autostart_plotting
-    elif cfg.tools is not None and cfg.tools.interactive is not None:
-        plotting_active = cfg.tools.interactive.autostart_plotting
+    elif cfg.commands is not None:
+        plotting_active = cfg.commands.interactive.autostart_plotting
     else:
         plotting_active = True
 
@@ -120,7 +120,7 @@ def curses_main(stdscr, cmd_autostart_plotting):
             last_refresh = datetime.datetime.now()
             jobs = Job.get_running_jobs(cfg.directories.log)
 
-            if plotting_active:
+            if False and plotting_active:
                 (started, msg) = manager.maybe_start_new_plot(
                     cfg.directories, cfg.scheduling, cfg.plotting
                 )
