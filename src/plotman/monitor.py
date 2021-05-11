@@ -97,7 +97,7 @@ async def with_prompt_toolkit():
     tmp_prefix = os.path.commonpath(cfg.directories.tmp)
     dst_prefix = os.path.commonpath(cfg.directories.dst)
 
-    plots_buffer = prompt_toolkit.layout.controls.Buffer()
+    plots_buffer = prompt_toolkit.layout.controls.FormattedTextControl()
     disks_buffer = prompt_toolkit.layout.controls.FormattedTextControl()
     rows = [
         header_window,
@@ -107,9 +107,7 @@ async def with_prompt_toolkit():
         logs_window,
     ] = [
         prompt_toolkit.layout.containers.Window(),
-        prompt_toolkit.layout.containers.Window(
-            prompt_toolkit.layout.controls.BufferControl(buffer=plots_buffer),
-        ),
+        prompt_toolkit.layout.containers.Window(content=plots_buffer),
         prompt_toolkit.layout.containers.Window(content=disks_buffer),
         prompt_toolkit.layout.containers.Window(),
         prompt_toolkit.layout.containers.Window(),
@@ -129,43 +127,38 @@ async def with_prompt_toolkit():
         key_bindings=key_bindings,
     )
 
-    rich_console = rich.console.Console(
-        # file=io.StringIO,
-        force_terminal=True,
-        # color_system="truecolor",
-    )
+    rich_console = rich.console.Console()
 
     jobs = []
 
-    async with anyio.move_on_after(10):
-        async with anyio.create_task_group() as task_group:
-            task_group.start_soon(functools.partial(
-                cancel_after_application,
-                application=application,
-                cancel_scope=task_group.cancel_scope,
-            ))
+    async with anyio.create_task_group() as task_group:
+        task_group.start_soon(functools.partial(
+            cancel_after_application,
+            application=application,
+            cancel_scope=task_group.cancel_scope,
+        ))
 
-            for i in itertools.count():
-                disks_buffer.text = str(i)
+        for i in itertools.count():
+            disks_buffer.text = str(i)
 
-                jobs = plotman.job.Job.get_running_jobs(
-                    cfg.directories.log,
-                    cached_jobs=jobs,
-                )
-                jobs_data = build_jobs_data(
-                    jobs=jobs,
-                    dst_prefix=dst_prefix,
-                    tmp_prefix=tmp_prefix,
-                )
+            jobs = plotman.job.Job.get_running_jobs(
+                cfg.directories.log,
+                cached_jobs=jobs,
+            )
+            jobs_data = build_jobs_data(
+                jobs=jobs,
+                dst_prefix=dst_prefix,
+                tmp_prefix=tmp_prefix,
+            )
 
-                jobs_table = build_jobs_table(jobs_data=jobs_data)
-                with rich_console.capture() as capture:
-                    rich_console.print(jobs_table)
+            jobs_table = build_jobs_table(jobs_data=jobs_data)
+            with rich_console.capture() as capture:
+                rich_console.print(jobs_table)
 
-                plots_buffer.text = capture.get()
+            plots_buffer.text = prompt_toolkit.ANSI(capture.get())
 
-                application.invalidate()
-                await anyio.sleep(1)
+            application.invalidate()
+            await anyio.sleep(1)
 
 
 async def cancel_after_application(application, cancel_scope):
