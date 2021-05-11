@@ -1,12 +1,20 @@
+import functools
+import io
 import itertools
 import os
 import time
 
+import anyio
 import attr
 import prompt_toolkit
+import prompt_toolkit.buffer
 import prompt_toolkit.input
+import prompt_toolkit.key_binding
 import prompt_toolkit.keys
+import prompt_toolkit.layout.containers
+import prompt_toolkit.layout.layout
 import rich
+import rich.console
 import rich.layout
 import rich.live
 import rich.table
@@ -17,7 +25,7 @@ import plotman.plot_util
 import plotman.reporting
 
 
-def main():
+def with_rich():
     config_path = plotman.configuration.get_path()
     config_text = plotman.configuration.read_configuration_text(config_path)
     cfg = plotman.configuration.get_validated_configs(config_text, config_path)
@@ -79,6 +87,94 @@ def main():
                     if any(key.key in quit_keys for key in keys):
                         return
                     time.sleep(0.1)
+
+
+async def with_prompt_toolkit():
+    config_path = plotman.configuration.get_path()
+    config_text = plotman.configuration.read_configuration_text(config_path)
+    cfg = plotman.configuration.get_validated_configs(config_text, config_path)
+
+    tmp_prefix = os.path.commonpath(cfg.directories.tmp)
+    dst_prefix = os.path.commonpath(cfg.directories.dst)
+
+    plots_buffer = prompt_toolkit.layout.controls.Buffer()
+    disks_buffer = prompt_toolkit.layout.controls.FormattedTextControl()
+    rows = [
+        header_window,
+        plots_window,
+        disks_window,
+        archive_window,
+        logs_window,
+    ] = [
+        prompt_toolkit.layout.containers.Window(),
+        prompt_toolkit.layout.containers.Window(
+            prompt_toolkit.layout.controls.BufferControl(buffer=plots_buffer),
+        ),
+        prompt_toolkit.layout.containers.Window(content=disks_buffer),
+        prompt_toolkit.layout.containers.Window(),
+        prompt_toolkit.layout.containers.Window(),
+    ]
+
+    root_container = prompt_toolkit.layout.containers.HSplit(rows)
+
+    layout = prompt_toolkit.layout.Layout(root_container)
+
+    key_bindings = prompt_toolkit.key_binding.KeyBindings()
+
+    key_bindings.add('q')(exit_key_binding)
+
+    application = prompt_toolkit.Application(
+        layout=layout,
+        full_screen=True,
+        key_bindings=key_bindings,
+    )
+
+    rich_console = rich.console.Console(
+        # file=io.StringIO,
+        force_terminal=True,
+        # color_system="truecolor",
+    )
+
+    jobs = []
+
+    async with anyio.move_on_after(10):
+        async with anyio.create_task_group() as task_group:
+            task_group.start_soon(functools.partial(
+                cancel_after_application,
+                application=application,
+                cancel_scope=task_group.cancel_scope,
+            ))
+
+            for i in itertools.count():
+                disks_buffer.text = str(i)
+
+                jobs = plotman.job.Job.get_running_jobs(
+                    cfg.directories.log,
+                    cached_jobs=jobs,
+                )
+                jobs_data = build_jobs_data(
+                    jobs=jobs,
+                    dst_prefix=dst_prefix,
+                    tmp_prefix=tmp_prefix,
+                )
+
+                jobs_table = build_jobs_table(jobs_data=jobs_data)
+                with rich_console.capture() as capture:
+                    rich_console.print(jobs_table)
+
+                plots_buffer.text = capture.get()
+
+                application.invalidate()
+                await anyio.sleep(1)
+
+
+async def cancel_after_application(application, cancel_scope):
+    await application.run_async()
+    cancel_scope.cancel()
+
+
+def exit_key_binding(event):
+    event.app.exit()
 
 
 def job_row_ib(name):

@@ -1,3 +1,4 @@
+import anyio
 import argparse
 import importlib
 import importlib.resources
@@ -32,7 +33,9 @@ class PlotmanArgParser:
 
         sp.add_parser('interactive', help='run interactive control/monitoring mode')
 
-        sp.add_parser('monitor', help='pure passive monitoring')
+        sp.add_parser('rich', help='monitoring with rich')
+
+        sp.add_parser('prompt_toolkit', help='monitoring with prompt_toolkit')
 
         sp.add_parser('dsched', help='print destination dir schedule')
 
@@ -160,8 +163,11 @@ def main():
         analyzer.analyze(args.logfile, args.clipterminals,
                 args.bytmp, args.bybitfield)
 
-    elif args.cmd == 'monitor':
-        monitor.main()
+    elif args.cmd == 'rich':
+        monitor.with_rich()
+
+    elif args.cmd == 'prompt_toolkit':
+        anyio.run(monitor.with_prompt_toolkit)
 
     else:
         jobs = Job.get_running_jobs(cfg.directories.log)
