@@ -28,7 +28,7 @@ def test_job_viz_empty():
 @patch('plotman.job.Job')
 def job_w_phase(ph, MockJob):
     j = MockJob()
-    j.progress.return_value = ph
+    j.progress.return_value = job.Phase.from_tuple(ph)
     return j
 
 def test_job_viz_positions():

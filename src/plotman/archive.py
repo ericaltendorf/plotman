@@ -136,7 +136,7 @@ def archive(dir_cfg, all_jobs):
     chosen_plot = None
 
     for d in dir_cfg.dst:
-        ph = dir2ph.get(d, (0, 0))
+        ph = dir2ph.get(d, job.Phase(0, 0))
         dir_plots = plot_util.list_k32_plots(d)
         gb_free = plot_util.df_b(d) / plot_util.GB
         n_plots = len(dir_plots)
