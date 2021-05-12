@@ -77,7 +77,7 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
 
     tab = tt.Texttable()
     headings = ['plot id', 'k', 'tmp', 'dst', 'wall', 'phase', 'tmp',
-            'pid', 'stat', 'mem', 'user', 'sys', 'io']
+            'pid', 'stat', 'pct', 'mem', 'user', 'sys', 'io']
     if height:
         headings.insert(0, '#')
     tab.header(headings)
@@ -91,10 +91,16 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
         # Omitted row
         elif abbreviate_jobs_list and i > n_begin_rows and i < (len(jobs) - n_end_rows):
             continue
-
         # Regular row
         else:
             try:
+                # Get percent complete
+                finished_log_lines = 2626
+                current_log_lines = len(open(j.logfile).readlines())
+                progress = '100%'
+                if current_log_lines < finished_log_lines:
+                    progress = "{:.0%}".format(current_log_lines / finished_log_lines)
+                # Create row
                 row = [j.plot_id[:8],
                     j.k,
                     abbr_path(j.tmpdir, tmp_prefix),
@@ -104,6 +110,7 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
                     plot_util.human_format(j.get_tmp_usage(), 0),
                     j.proc.pid,
                     j.get_run_status(),
+                    progress,
                     plot_util.human_format(j.get_mem_usage(), 1),
                     plot_util.time_format(j.get_time_user()),
                     plot_util.time_format(j.get_time_sys()),
