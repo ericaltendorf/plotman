@@ -21,14 +21,16 @@ Steps to reproduce the behavior, e.g.:
 4. See error
 
 **Expected behavior**
-A clear and concise description of what you expected to happen.
-
-**Screenshots & configs**
-If applicable, add screenshots or snippets from your config to help explain your problem.
+A clear and concise description of what you expected to happen, even if it seems obvious.
 
 **System setup:**
  - OS: [e.g. Ubuntu, iOS, ...]
  - Method of archiving (e.g., none, rsyncd, rsync, ...)
 
-**Additional context**
-Add any other context about the problem here.
+**Config**
+```
+#  Paste the entire contents of your config here:
+```
+
+**Additional context & screenshots**
+Add any other context about the problem here, including screenshots.
