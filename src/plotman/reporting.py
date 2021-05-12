@@ -175,7 +175,7 @@ def dst_dir_report(jobs, dstdirs, width, prefix=''):
     for d in sorted(dstdirs):
         # TODO: This logic is replicated in archive.py's priority computation,
         # maybe by moving more of the logic in to directory.py
-        eldest_ph = dir2oldphase.get(d, (0, 0))
+        eldest_ph = dir2oldphase.get(d, job.Phase(0, 0))
         phases = job.job_phases_for_dstdir(d, jobs)
 
         dir_plots = plot_util.list_k32_plots(d)
