@@ -33,7 +33,7 @@ def phases_str(phases, max_num=None):
         return first + elided + last
 
 def n_at_ph(jobs, ph):
-    return sum([1 for j in jobs if j.progress() == job.Phase.from_tuple(ph)])
+    return sum([1 for j in jobs if j.progress() == ph])
 
 def n_to_char(n):
     n_to_char_map = dict(enumerate(" .:;!"))
@@ -51,15 +51,15 @@ def job_viz(jobs):
     result = ''
     result += '1'
     for i in range(0, 8):
-        result += n_to_char(n_at_ph(jobs, (1, i)))
+        result += n_to_char(n_at_ph(jobs, job.Phase(1, i)))
     result += '2'
     for i in range(0, 8):
-        result += n_to_char(n_at_ph(jobs, (2, i)))
+        result += n_to_char(n_at_ph(jobs, job.Phase(2, i)))
     result += '3'
     for i in range(0, 7):
-        result += n_to_char(n_at_ph(jobs, (3, i)))
+        result += n_to_char(n_at_ph(jobs, job.Phase(3, i)))
     result += '4'
-    result += n_to_char(n_at_ph(jobs, (4, 0)))
+    result += n_to_char(n_at_ph(jobs, job.Phase(4, 0)))
     return result
 
 def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
