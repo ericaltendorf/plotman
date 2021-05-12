@@ -2,6 +2,7 @@ import argparse
 import contextlib
 import math
 import os
+import posixpath
 import random
 import re
 import subprocess
@@ -11,7 +12,7 @@ from datetime import datetime
 import psutil
 import texttable as tt
 
-from plotman import manager, plot_util
+from plotman import job, manager, plot_util
 
 # TODO : write-protect and delete-protect archived plots
 
@@ -62,14 +63,14 @@ def compute_priority(phase, gb_free, n_plots):
     # To avoid concurrent IO, we should not touch drives that
     # are about to receive a new plot.  If we don't know the phase,
     # ignore.
-    if (phase[0] and phase[1]):
-        if (phase == (3, 4)):
+    if (phase.known):
+        if (phase == job.Phase(3, 4)):
             priority -= 4
-        elif (phase == (3, 5)):
+        elif (phase == job.Phase(3, 5)):
             priority -= 8
-        elif (phase == (3, 6)):
+        elif (phase == job.Phase(3, 6)):
             priority -= 16
-        elif (phase >= (3, 7)):
+        elif (phase >= job.Phase(3, 7)):
             priority -= 32
         
     # If a drive is getting full, we should prioritize it
@@ -87,7 +88,7 @@ def compute_priority(phase, gb_free, n_plots):
 def get_archdir_freebytes(arch_cfg):
     archdir_freebytes = {}
     df_cmd = ('ssh %s@%s df -aBK | grep " %s/"' %
-        (arch_cfg.rsyncd_user, arch_cfg.rsyncd_host, arch_cfg.rsyncd_path) )
+        (arch_cfg.rsyncd_user, arch_cfg.rsyncd_host, posixpath.normpath(arch_cfg.rsyncd_path)) )
     with subprocess.Popen(df_cmd, shell=True, stdout=subprocess.PIPE) as proc:
         for line in proc.stdout.readlines():
             fields = line.split()
@@ -95,7 +96,7 @@ def get_archdir_freebytes(arch_cfg):
                 # not actually mounted
                 continue
             freebytes = int(fields[3][:-1]) * 1024  # Strip the final 'K'
-            archdir = (fields[5]).decode('ascii')
+            archdir = (fields[5]).decode('utf-8')
             archdir_freebytes[archdir] = freebytes
     return archdir_freebytes
 
@@ -135,7 +136,7 @@ def archive(dir_cfg, all_jobs):
     chosen_plot = None
 
     for d in dir_cfg.dst:
-        ph = dir2ph.get(d, (0, 0))
+        ph = dir2ph.get(d, job.Phase(0, 0))
         dir_plots = plot_util.list_k32_plots(d)
         gb_free = plot_util.df_b(d) / plot_util.GB
         n_plots = len(dir_plots)
@@ -171,7 +172,7 @@ def archive(dir_cfg, all_jobs):
 
     bwlimit = dir_cfg.archive.rsyncd_bwlimit
     throttle_arg = ('--bwlimit=%d' % bwlimit) if bwlimit else ''
-    cmd = ('rsync %s --remove-source-files -P %s %s' %
+    cmd = ('rsync %s --no-compress --remove-source-files -P %s %s' %
             (throttle_arg, chosen_plot, rsync_dest(dir_cfg.archive, archdir)))
 
     return (True, cmd)

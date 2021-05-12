@@ -1,0 +1,19 @@
+[paths]
+source =
+   src
+   */site-packages
+
+[report]
+precision = 1
+exclude_lines =
+  pragma: no cover
+  abc\.abstractmethod
+  typing\.overload
+  if typing.TYPE_CHECKING:
+  ^\s*pass\s*$
+  ^\s*...\s*$
+
+[run]
+branch = True
+source =
+    plotman

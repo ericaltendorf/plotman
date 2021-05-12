@@ -3,6 +3,7 @@ import os
 
 import psutil
 import texttable as tt  # from somewhere?
+from itertools import groupby
 
 from plotman import archive, job, manager, plot_util
 
@@ -13,10 +14,11 @@ def abbr_path(path, putative_prefix):
     else:
         return path
     
-def phase_str(phase_pair):
-    (ph, subph) = phase_pair
-    return ((str(ph) if ph is not None else '?') + ':'
-            + (str(subph) if subph is not None else '?'))
+def phase_str(phase):
+    if not phase.known:
+        return '?:?'
+
+    return f'{phase.major}:{phase.minor}'
 
 def phases_str(phases, max_num=None):
     '''Take a list of phase-subphase pairs and return them as a compact string'''
@@ -50,17 +52,19 @@ def job_viz(jobs):
     result = ''
     result += '1'
     for i in range(0, 8):
-        result += n_to_char(n_at_ph(jobs, (1, i)))
+        result += n_to_char(n_at_ph(jobs, job.Phase(1, i)))
     result += '2'
     for i in range(0, 8):
-        result += n_to_char(n_at_ph(jobs, (2, i)))
+        result += n_to_char(n_at_ph(jobs, job.Phase(2, i)))
     result += '3'
     for i in range(0, 7):
-        result += n_to_char(n_at_ph(jobs, (3, i)))
+        result += n_to_char(n_at_ph(jobs, job.Phase(3, i)))
     result += '4'
-    result += n_to_char(n_at_ph(jobs, (4, 0)))
+    result += n_to_char(n_at_ph(jobs, job.Phase(4, 0)))
     return result
 
+# Command: plotman status
+# Shows a general overview of all running jobs
 def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
     '''height, if provided, will limit the number of rows in the table,
        showing first and last rows, row numbers and an elipsis in the middle.'''
@@ -84,10 +88,11 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
     tab.set_cols_dtype('t' * len(headings))
     tab.set_cols_align('r' * len(headings))
     tab.set_header_align('r' * len(headings))
+
     for i, j in enumerate(sorted(jobs, key=job.Job.get_time_wall)):
         # Elipsis row
         if abbreviate_jobs_list and i == n_begin_rows:
-            row = ['...'] + ([''] * 13)
+            row = ['...'] + ([''] * len(headings) - 1)
         # Omitted row
         elif abbreviate_jobs_list and i > n_begin_rows and i < (len(jobs) - n_end_rows):
             continue
@@ -96,19 +101,19 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
         else:
             try:
                 with j.proc.oneshot():
-                    row = [j.plot_id[:8],
-                        j.k,
-                        abbr_path(j.tmpdir, tmp_prefix),
-                        abbr_path(j.dstdir, dst_prefix),
-                        plot_util.time_format(j.get_time_wall()),
-                        phase_str(j.progress()),
-                        plot_util.human_format(j.get_tmp_usage(), 0),
-                        j.proc.pid,
-                        j.get_run_status(),
-                        plot_util.human_format(j.get_mem_usage(), 1),
-                        plot_util.time_format(j.get_time_user()),
-                        plot_util.time_format(j.get_time_sys()),
-                        plot_util.time_format(j.get_time_iowait())
+                    row = [j.plot_id[:8], # Plot ID
+                        j.k, # k size
+                        abbr_path(j.tmpdir, tmp_prefix), # Temp directory
+                        abbr_path(j.dstdir, dst_prefix), # Destination directory
+                        plot_util.time_format(j.get_time_wall()), # Time wall
+                        phase_str(j.progress()), # Overall progress (major:minor)
+                        plot_util.human_format(j.get_tmp_usage(), 0), # Current temp file size
+                        j.proc.pid, # System pid
+                        j.get_run_status(), # OS status for the job process
+                        plot_util.human_format(j.get_mem_usage(), 1), # Memory usage
+                        plot_util.time_format(j.get_time_user()), # user system time
+                        plot_util.time_format(j.get_time_sys()), # system time
+                        plot_util.time_format(j.get_time_iowait()) # io wait
                         ]
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 # In case the job has disappeared
@@ -121,8 +126,23 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
 
     tab.set_max_width(width)
     tab.set_deco(0)  # No borders
-    # return ('tmp dir prefix: %s ; dst dir prefix: %s\n' % (tmp_prefix, dst_prefix)
-    return tab.draw()
+
+    result = tab.draw()
+
+    # Add some summarized info
+    summary = [
+        '\n',
+        'Total jobs: {0}'.format(len(jobs))
+    ]
+
+    # Number of jobs in each tmp disk
+    tmp_dir_paths = sorted([abbr_path(job.tmpdir, tmp_prefix) for job in jobs])
+    for key, group in groupby(tmp_dir_paths, lambda dir: dir):
+        summary.append(
+            'Jobs in {0}: {1}'.format(key, len(list(group)))
+        )
+
+    return result + '\n'.join(summary)
 
 def tmp_dir_report(jobs, dir_cfg, sched_cfg, width, start_row=None, end_row=None, prefix=''):
     '''start_row, end_row let you split the table up if you want'''
@@ -136,7 +156,7 @@ def tmp_dir_report(jobs, dir_cfg, sched_cfg, width, start_row=None, end_row=None
             continue
         phases = sorted(job.job_phases_for_tmpdir(d, jobs))
         ready = manager.phases_permit_new_job(phases, d, sched_cfg, dir_cfg)
-        row = [abbr_path(d, prefix), 'OK' if ready else '--', phases_str(phases)]
+        row = [abbr_path(d, prefix), 'OK' if ready else '--', phases_str(phases, 5)]
         tab.add_row(row)
 
     tab.set_max_width(width)
