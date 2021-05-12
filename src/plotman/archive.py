@@ -11,10 +11,47 @@ from datetime import datetime
 import psutil
 import texttable as tt
 
-from plotman import manager, plot_util
+from plotman import job, manager, plot_util
 
 # TODO : write-protect and delete-protect archived plots
 
+def spawn_archive_process(dir_cfg, all_jobs):
+    '''Spawns a new archive process using the command created 
+    in the archive() function. Returns archiving status and a log message to print.'''
+
+    log_message = None
+    archiving_status = None
+    
+    # Look for running archive jobs.  Be robust to finding more than one
+    # even though the scheduler should only run one at a time.
+    arch_jobs = get_running_archive_jobs(dir_cfg.archive)
+    
+    if not arch_jobs:
+        (should_start, status_or_cmd) = archive(dir_cfg, all_jobs)
+        if not should_start:
+            archiving_status = status_or_cmd
+        else:
+            cmd = status_or_cmd
+            # TODO: do something useful with output instead of DEVNULL
+            p = subprocess.Popen(cmd,
+                    shell=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.STDOUT,
+                    start_new_session=True) 
+            log_message = 'Starting archive: ' + cmd
+            # At least for now it seems that even if we get a new running
+            # archive jobs list it doesn't contain the new rsync process.
+            # My guess is that this is because the bash in the middle due to
+            # shell=True is still starting up and really hasn't launched the
+            # new rsync process yet.  So, just put a placeholder here.  It
+            # will get filled on the next cycle.
+            arch_jobs.append('<pending>')
+
+    if archiving_status is None:
+        archiving_status = 'pid: ' + ', '.join(map(str, arch_jobs))
+
+    return archiving_status, log_message
+            
 def compute_priority(phase, gb_free, n_plots):
     # All these values are designed around dst buffer dirs of about
     # ~2TB size and containing k32 plots.  TODO: Generalize, and
@@ -25,14 +62,14 @@ def compute_priority(phase, gb_free, n_plots):
     # To avoid concurrent IO, we should not touch drives that
     # are about to receive a new plot.  If we don't know the phase,
     # ignore.
-    if (phase[0] and phase[1]):
-        if (phase == (3, 4)):
+    if (phase.known):
+        if (phase == job.Phase(3, 4)):
             priority -= 4
-        elif (phase == (3, 5)):
+        elif (phase == job.Phase(3, 5)):
             priority -= 8
-        elif (phase == (3, 6)):
+        elif (phase == job.Phase(3, 6)):
             priority -= 16
-        elif (phase >= (3, 7)):
+        elif (phase >= job.Phase(3, 7)):
             priority -= 32
         
     # If a drive is getting full, we should prioritize it
@@ -58,7 +95,7 @@ def get_archdir_freebytes(arch_cfg):
                 # not actually mounted
                 continue
             freebytes = int(fields[3][:-1]) * 1024  # Strip the final 'K'
-            archdir = (fields[5]).decode('ascii')
+            archdir = (fields[5]).decode('utf-8')
             archdir_freebytes[archdir] = freebytes
     return archdir_freebytes
 
@@ -98,7 +135,7 @@ def archive(dir_cfg, all_jobs):
     chosen_plot = None
 
     for d in dir_cfg.dst:
-        ph = dir2ph.get(d, (0, 0))
+        ph = dir2ph.get(d, job.Phase(0, 0))
         dir_plots = plot_util.list_k32_plots(d)
         gb_free = plot_util.df_b(d) / plot_util.GB
         n_plots = len(dir_plots)
@@ -134,7 +171,7 @@ def archive(dir_cfg, all_jobs):
 
     bwlimit = dir_cfg.archive.rsyncd_bwlimit
     throttle_arg = ('--bwlimit=%d' % bwlimit) if bwlimit else ''
-    cmd = ('rsync %s --remove-source-files -P %s %s' %
+    cmd = ('rsync %s --no-compress --remove-source-files -P %s %s' %
             (throttle_arg, chosen_plot, rsync_dest(dir_cfg.archive, archdir)))
 
     return (True, cmd)
