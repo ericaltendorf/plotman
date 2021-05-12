@@ -1,13 +1,14 @@
 import math
 import os
 import re
+import shutil
 
 GB = 1_000_000_000
 
 def df_b(d):
     'Return free space for directory (in bytes)'
-    stat = os.statvfs(d)
-    return stat.f_frsize * stat.f_bavail
+    total, used, free = shutil.disk_usage(d)
+    return free
 
 def get_k32_plotsize():
     return 108 * GB
