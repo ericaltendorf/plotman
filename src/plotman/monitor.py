@@ -119,8 +119,6 @@ async def with_prompt_toolkit():
 
     key_bindings = prompt_toolkit.key_binding.KeyBindings()
 
-    key_bindings.add('q')(exit_key_binding)
-
     application = prompt_toolkit.Application(
         layout=layout,
         full_screen=True,
@@ -132,6 +130,9 @@ async def with_prompt_toolkit():
     jobs = []
 
     async with anyio.create_task_group() as task_group:
+        key_bindings.add('q')(exit_key_binding)
+        key_bindings.add('c-c')(exit_key_binding)
+
         task_group.start_soon(functools.partial(
             cancel_after_application,
             application=application,
