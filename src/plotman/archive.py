@@ -2,6 +2,7 @@ import argparse
 import contextlib
 import math
 import os
+import posixpath
 import random
 import re
 import subprocess
@@ -87,7 +88,7 @@ def compute_priority(phase, gb_free, n_plots):
 def get_archdir_freebytes(arch_cfg):
     archdir_freebytes = {}
     df_cmd = ('ssh %s@%s df -aBK | grep " %s/"' %
-        (arch_cfg.rsyncd_user, arch_cfg.rsyncd_host, arch_cfg.rsyncd_path) )
+        (arch_cfg.rsyncd_user, arch_cfg.rsyncd_host, posixpath.normpath(arch_cfg.rsyncd_path)) )
     with subprocess.Popen(df_cmd, shell=True, stdout=subprocess.PIPE) as proc:
         for line in proc.stdout.readlines():
             fields = line.split()
