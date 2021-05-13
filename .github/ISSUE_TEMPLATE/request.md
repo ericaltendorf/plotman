@@ -2,7 +2,7 @@
 name: Feature Request
 about: Log a request for a new feature or enhancement
 title: ''
-labels: 'enhancement '
+labels: 'enhancement'
 assignees: ''
 
 ---
