@@ -14,4 +14,4 @@ assignees: ''
 <!-- If applicable (but not required), add diagrams or wireframes to help explain your request if it is UI/UX related. -->
 
 **Additional comments**
-Add any other comments here.
+<!-- Add any other comments here. -->
