@@ -84,6 +84,16 @@ directories:
 
 # Plotting scheduling parameters
 scheduling:
+        # Run a job only if the number of existing jobs
+        # before stagger_phase_major stagger_phase_minor
+        # is less than stagger_phase_limit.
+        # Phase major corresponds to the plot phase, phase minor corresponds to
+        # the table or table pair in sequence, phase limit corresponds to
+        # the number of plots allowed before [phase major, phase minor]
+        stagger_phase_major: 2
+        stagger_phase_minor: 1
+        # Optional: default is 1
+        stagger_phase_limit: 1
         # Run a job on a particular temp dir only if the number of existing jobs
         # before [tmpdir_stagger_phase_major : tmpdir_stagger_phase_minor]
         # is less than tmpdir_stagger_phase_limit.

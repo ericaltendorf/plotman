@@ -43,6 +43,23 @@ def dstdirs_to_youngest_phase(all_jobs):
             result[j.dstdir] = j.progress()
     return result
 
+def phases_permit_new_job_global(phases, sched_cfg):
+    '''Scheduling logic: return True if it's OK to start a new job
+       with existing jobs in the provided phases.'''
+    
+    # Filter unknown-phase jobs
+    phases = [ph for ph in phases if ph[0] is not None and ph[1] is not None]
+
+    if len(phases) == 0:
+        return True
+
+    milestone = (sched_cfg.stagger_phase_major, sched_cfg.stagger_phase_minor)
+    # tmpdir_stagger_phase_limit default is 1, as declared in configuration.py
+    if len([p for p in phases if p < milestone]) >= sched_cfg.stagger_phase_limit:
+        return False
+
+    return True
+
 def phases_permit_new_job(phases, d, sched_cfg, dir_cfg):
     '''Scheduling logic: return True if it's OK to start a new job on a tmp dir
        with existing jobs in the provided phases.'''
@@ -83,6 +100,8 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
         wait_reason = 'stagger (%ds/%ds)' % (youngest_job_age, global_stagger)
     elif len(jobs) >= sched_cfg.global_max_jobs:
         wait_reason = 'max jobs (%d) - (%ds/%ds)' % (sched_cfg.global_max_jobs, youngest_job_age, global_stagger)
+    elif not phases_permit_new_job_global(job.job_phases(jobs),sched_cfg):
+        wait_reason = 'max jobs (%d) before phase %d:%d' % (sched_cfg.stagger_phase_limit,sched_cfg.stagger_phase_major, sched_cfg.stagger_phase_minor)
     else:
         tmp_to_all_phases = [(d, job.job_phases_for_tmpdir(d, jobs)) for d in dir_cfg.tmp]
         eligible = [ (d, phases) for (d, phases) in tmp_to_all_phases

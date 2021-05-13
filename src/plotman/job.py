@@ -19,6 +19,9 @@ import psutil
 
 from plotman import chia
 
+def job_phases(all_jobs):
+    '''Return phase 2-tuples for ALL jobs running'''
+    return sorted([j.progress() for j in all_jobs])
 
 def job_phases_for_tmpdir(d, all_jobs):
     '''Return phase 2-tuples for jobs running on tmpdir d'''
