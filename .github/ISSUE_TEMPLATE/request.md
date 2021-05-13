@@ -1,5 +1,5 @@
 ---
-name: Feature Request
+name: Feature request
 about: Log a request for a new feature or enhancement
 title: ''
 labels: 'enhancement'
