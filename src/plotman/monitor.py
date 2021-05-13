@@ -21,6 +21,7 @@ import rich.table
 
 import plotman.configuration
 import plotman.job
+import plotman.manager
 import plotman.plot_util
 import plotman.reporting
 
@@ -65,7 +66,7 @@ def with_rich():
     with prompt_toolkit_input.raw_mode():
         with rich.live.Live(overall, auto_refresh=False) as live:
             for i in itertools.count():
-                tmp_layout.update(str(i))
+                header_layout.update(str(i))
 
                 jobs = plotman.job.Job.get_running_jobs(
                     cfg.directories.log,
@@ -79,6 +80,16 @@ def with_rich():
 
                 jobs_table = build_jobs_table(jobs_data=jobs_data)
                 plots_layout.update(jobs_table)
+
+                tmp_data = build_tmp_data(
+                    jobs=jobs,
+                    dir_cfg=cfg.directories,
+                    sched_cfg=cfg.scheduling,
+                    prefix=tmp_prefix,
+                )
+
+                tmp_table = build_tmp_table(tmp_data=tmp_data)
+                tmp_layout.update(tmp_table)
 
                 live.refresh()
                 for _ in range(10):
@@ -97,6 +108,7 @@ async def with_prompt_toolkit():
     tmp_prefix = os.path.commonpath(cfg.directories.tmp)
     dst_prefix = os.path.commonpath(cfg.directories.dst)
 
+    header_buffer = prompt_toolkit.layout.controls.FormattedTextControl()
     plots_buffer = prompt_toolkit.layout.controls.FormattedTextControl()
     disks_buffer = prompt_toolkit.layout.controls.FormattedTextControl()
     rows = [
@@ -106,7 +118,7 @@ async def with_prompt_toolkit():
         archive_window,
         logs_window,
     ] = [
-        prompt_toolkit.layout.containers.Window(),
+        prompt_toolkit.layout.containers.Window(content=header_buffer),
         prompt_toolkit.layout.containers.Window(content=plots_buffer),
         prompt_toolkit.layout.containers.Window(content=disks_buffer),
         prompt_toolkit.layout.containers.Window(),
@@ -140,7 +152,7 @@ async def with_prompt_toolkit():
         ))
 
         for i in itertools.count():
-            disks_buffer.text = str(i)
+            header_buffer.text = str(i)
 
             jobs = plotman.job.Job.get_running_jobs(
                 cfg.directories.log,
@@ -153,10 +165,17 @@ async def with_prompt_toolkit():
             )
 
             jobs_table = build_jobs_table(jobs_data=jobs_data)
-            with rich_console.capture() as capture:
-                rich_console.print(jobs_table)
+            plots_buffer.text = capture_rich(jobs_table, console=rich_console)
 
-            plots_buffer.text = prompt_toolkit.ANSI(capture.get())
+            tmp_data = build_tmp_data(
+                jobs=jobs,
+                dir_cfg=cfg.directories,
+                sched_cfg=cfg.scheduling,
+                prefix=tmp_prefix,
+            )
+
+            tmp_table = build_tmp_table(tmp_data=tmp_data)
+            disks_buffer.text = capture_rich(tmp_table, console=rich_console)
 
             application.invalidate()
             await anyio.sleep(1)
@@ -171,25 +190,32 @@ def exit_key_binding(event):
     event.app.exit()
 
 
-def job_row_ib(name):
+def capture_rich(*objects, console):
+    with console.capture() as capture:
+        console.print(*objects)
+
+    return prompt_toolkit.ANSI(capture.get())
+
+
+def row_ib(name):
     return attr.ib(converter=str, metadata={'name': name})
 
 
 @attr.frozen
 class JobRow:
-    plot_id: str = job_row_ib(name='plot_id')
-    k: str = job_row_ib(name='k')
-    tmp_path: str = job_row_ib(name='tmp')
-    dst: str = job_row_ib(name='dst')
-    wall: str = job_row_ib(name='wall')
-    phase: str = job_row_ib(name='phase')
-    tmp_usage: str = job_row_ib(name='tmp')
-    pid: str = job_row_ib(name='pid')
-    stat: str = job_row_ib(name='stat')
-    mem: str = job_row_ib(name='mem')
-    user: str = job_row_ib(name='user')
-    sys: str = job_row_ib(name='sys')
-    io: str = job_row_ib(name='io')
+    plot_id: str = row_ib(name='plot id')
+    k: str = row_ib(name='k')
+    tmp_path: str = row_ib(name='tmp')
+    dst: str = row_ib(name='dst')
+    wall: str = row_ib(name='wall')
+    phase: str = row_ib(name='phase')
+    tmp_usage: str = row_ib(name='tmp')
+    pid: str = row_ib(name='pid')
+    stat: str = row_ib(name='stat')
+    mem: str = row_ib(name='mem')
+    user: str = row_ib(name='user')
+    sys: str = row_ib(name='sys')
+    io: str = row_ib(name='io')
 
     @classmethod
     def from_job(cls, job, dst_prefix, tmp_prefix):
@@ -233,5 +259,56 @@ def build_jobs_table(jobs_data):
 
     for index, row in enumerate(jobs_data):
         table.add_row(str(index), *attr.astuple(row))
+
+    return table
+
+
+@attr.frozen
+class TmpRow:
+    path: str = row_ib(name='tmp')
+    ready: bool = row_ib(name='ready')
+    phases: list[plotman.job.Phase] = row_ib(name='phases')
+
+    @classmethod
+    def from_tmp(cls, dir_cfg, jobs, sched_cfg, tmp, prefix):
+        phases = sorted(plotman.job.job_phases_for_tmpdir(d=tmp, all_jobs=jobs))
+        tmp_suffix = plotman.reporting.abbr_path(path=tmp, putative_prefix=prefix)
+        ready = plotman.manager.phases_permit_new_job(
+            phases=phases,
+            d=tmp_suffix,
+            sched_cfg=sched_cfg,
+            dir_cfg=dir_cfg,
+        )
+        self = cls(
+            path=tmp_suffix,
+            ready='OK' if ready else '--',
+            phases=plotman.reporting.phases_str(phases=phases, max_num=5),
+        )
+        return self
+
+
+def build_tmp_data(jobs, dir_cfg, sched_cfg, prefix):
+    rows = [
+        TmpRow.from_tmp(
+            dir_cfg=dir_cfg,
+            jobs=jobs,
+            sched_cfg=sched_cfg,
+            tmp=tmp,
+            prefix=prefix,
+        )
+        for tmp in sorted(dir_cfg.tmp)
+    ]
+
+    return rows
+
+
+def build_tmp_table(tmp_data):
+    table = rich.table.Table(box=None, header_style='reverse')
+
+    for field in attr.fields(TmpRow):
+        table.add_column(field.metadata['name'])
+
+    for row in tmp_data:
+        table.add_row(*attr.astuple(row))
 
     return table
