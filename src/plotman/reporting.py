@@ -127,11 +127,12 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
     tab.set_max_width(width)
     tab.set_deco(0)  # No borders
 
-    result = tab.draw()
+    return tab.draw()
 
-    # Add some summarized info
+def summary(jobs, tmp_prefix=''):
+    """Creates a small summary of running jobs"""
+
     summary = [
-        '\n',
         'Total jobs: {0}'.format(len(jobs))
     ]
 
@@ -142,7 +143,7 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
             'Jobs in {0}: {1}'.format(key, len(list(group)))
         )
 
-    return result + '\n'.join(summary)
+    return '\n'.join(summary)
 
 def tmp_dir_report(jobs, dir_cfg, sched_cfg, width, start_row=None, end_row=None, prefix=''):
     '''start_row, end_row let you split the table up if you want'''
