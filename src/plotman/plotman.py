@@ -27,7 +27,9 @@ class PlotmanArgParser:
         sp.add_parser('version', help='print the version')
 
         sp.add_parser('status', help='show current plotting status')
- 
+
+        sp.add_parser('prometheus', help='show current plotting status in prometheus readable format')
+
         sp.add_parser('dirs', help='show directories info')
 
         sp.add_parser('interactive', help='run interactive control/monitoring mode')
@@ -164,6 +166,10 @@ def main():
         # Status report
         if args.cmd == 'status':
             print(reporting.status_report(jobs, get_term_width()))
+
+        # Prometheus report
+        if args.cmd == 'prometheus':
+            print(reporting.prometheus_report(jobs))
 
         # Directories report
         elif args.cmd == 'dirs':

@@ -60,3 +60,21 @@ def test_job_viz_counts():
             ]
 
     assert(reporting.job_viz(jobs) == '1        2  .:;!  3 !     4 ')
+
+def test_to_prometheus_format():
+    prom_stati = [
+        ('foo="bar",baz="2"', {'metric1': 1, 'metric2': 2}),
+        ('foo="blubb",baz="3"', {'metric1': 2, 'metric2': 3})
+    ]
+    metrics = {'metric1': 'This is foo', 'metric2': 'In a parallel universe this is foo'}
+    expected = [
+        '# HELP metric1 This is foo.',
+        '# TYPE metric1 gauge',
+        'metric1{foo="bar",baz="2"} 1',
+        'metric1{foo="blubb",baz="3"} 2',
+        '# HELP metric2 In a parallel universe this is foo.',
+        '# TYPE metric2 gauge',
+        'metric2{foo="bar",baz="2"} 2','metric2{foo="blubb",baz="3"} 3'
+    ]
+    result = reporting.to_prometheus_format(metrics, prom_stati)
+    assert(result == expected)
