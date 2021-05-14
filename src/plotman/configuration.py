@@ -60,6 +60,9 @@ class Archive:
 @attr.frozen
 class TmpOverrides:
     tmpdir_max_jobs: Optional[int] = None
+    tmpdir_stagger_phase_major: Optional[int] = None
+    tmpdir_stagger_phase_minor: Optional[int] = None
+    tmpdir_stagger_phase_limit: Optional[int] = None
 
 @attr.frozen
 class Directories:
