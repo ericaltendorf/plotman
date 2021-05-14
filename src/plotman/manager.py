@@ -14,7 +14,7 @@ import psutil
 
 # Plotman libraries
 from plotman import \
-    archive, configuration  # for get_archdir_freebytes(). TODO: move to avoid import loop
+    archive  # for get_archdir_freebytes(). TODO: move to avoid import loop
 from plotman import job, plot_util
 
 # Constants
@@ -97,7 +97,7 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
             tmpdir = max(rankable, key=operator.itemgetter(1))[0]
 
             # Select the dst dir least recently selected
-            (is_dst, dst_dir) = configuration.get_dst_directories(dir_cfg)
+            (is_dst, dst_dir) = dir_cfg.get_dst_directories()
             if is_dst:
                 dir2ph = { d:ph for (d, ph) in dstdirs_to_youngest_phase(jobs).items()
                         if d in dst_dir and ph is not None}

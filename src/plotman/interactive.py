@@ -168,7 +168,7 @@ def curses_main(stdscr):
 
         # Directory prefixes, for abbreviation
         tmp_prefix = os.path.commonpath(cfg.directories.tmp)
-        (is_dst, dst_dir) = configuration.get_dst_directories(cfg.directories)
+        (is_dst, dst_dir) = cfg.directories.get_dst_directories()
         dst_prefix = os.path.commonpath(dst_dir)
         if archiving_configured:
             arch_prefix = cfg.directories.archive.rsyncd_path
