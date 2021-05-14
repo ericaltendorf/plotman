@@ -56,7 +56,7 @@ def list_k32_plots(d):
                     plots.append(plot)
             except FileNotFoundError:
                 continue
-    
+
     return plots
 
 def column_wrap(items, n_cols, filler=None):
