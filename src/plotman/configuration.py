@@ -45,6 +45,7 @@ def get_validated_configs(config_text, config_path):
 
     return loaded
 
+
 # Data models used to deserializing/formatting plotman.yaml files.
 
 @attr.frozen
