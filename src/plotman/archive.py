@@ -134,7 +134,7 @@ def archive(dir_cfg, all_jobs):
     dir2ph = manager.dstdirs_to_furthest_phase(all_jobs)
     best_priority = -100000000
     chosen_plot = None
-    (is_dst, dst_dir) = dir_cfg.get_dst_directories()
+    dst_dir = dir_cfg.get_dst_directories()
     for d in dst_dir:
         ph = dir2ph.get(d, job.Phase(0, 0))
         dir_plots = plot_util.list_k32_plots(d)

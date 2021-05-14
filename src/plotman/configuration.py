@@ -70,13 +70,17 @@ class Directories:
     tmp_overrides: Optional[Dict[str, TmpOverrides]] = None
     archive: Optional[Archive] = None
 
-    def get_dst_directories(self):
-        """Returns either (True, <Directories.dst>) or (False, <Directories.tmp>). If Directories.dst is None,
-        Use Directories.tmp as dst directory."""
-        if self.dst is None:
-            return (False, self.tmp)
+    def dst_is_tmp(self):
+        return self.dst is None
 
-        return (True, self.dst)
+    def get_dst_directories(self):
+        """Returns either <Directories.dst> or <Directories.tmp>. If
+        Directories.dst is None, Use Directories.tmp as dst directory.
+        """
+        if self.dst_is_tmp():
+            return self.tmp
+
+        return self.dst
 
 
 @attr.frozen
