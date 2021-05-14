@@ -1,9 +1,9 @@
-from plotman import archive, configuration, manager
+from plotman import archive, configuration, job, manager
 
 
 def test_compute_priority():
-    assert (archive.compute_priority( (3, 1), 1000, 10) >
-            archive.compute_priority( (3, 6), 1000, 10) )
+    assert (archive.compute_priority( job.Phase(major=3, minor=1), 1000, 10) >
+            archive.compute_priority( job.Phase(major=3, minor=6), 1000, 10) )
 
 def test_rsync_dest():
     arch_dir = '/plotdir/012'
