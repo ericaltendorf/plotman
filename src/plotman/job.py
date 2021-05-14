@@ -148,6 +148,13 @@ class Job:
                     if is_plotting_cmdline(process.cmdline()):
                         processes.append(process)
 
+            # https://github.com/ericaltendorf/plotman/pull/418
+            # The experimental Chia GUI .deb installer launches plots
+            # in a manner that results in a parent and child process
+            # that both share the same command line and, as such, are
+            # both identified as plot processes.  Only the child is
+            # really plotting.  Filter out the parent.
+
             pids = {process.pid for process in processes}
             ppids = {process.ppid() for process in processes}
             wanted_pids = pids - ppids
