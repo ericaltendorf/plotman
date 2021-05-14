@@ -42,6 +42,11 @@ directories:
                 # dirs and it can hold more plots than the default.
                 "/mnt/tmp/00":
                         tmpdir_max_jobs: 5
+                        tmpdir_stagger_phase_major: 2
+                        tmpdir_stagger_phase_minor: 1
+                        # Optional: default is 1
+                        tmpdir_stagger_phase_limit: 2
+
 
         # Optional: tmp2 directory.  If specified, will be passed to
         # chia plots create as -2.  Only one tmp2 directory is supported.
