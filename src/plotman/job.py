@@ -151,7 +151,6 @@ class Job:
             pids = {process.pid for process in processes}
             ppids = {process.ppid() for process in processes}
             wanted_pids = pids - ppids
-            # wanted_pids = pids
 
             wanted_processes = [
                 process
