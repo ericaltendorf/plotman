@@ -72,7 +72,7 @@ def compute_priority(phase, gb_free, n_plots):
             priority -= 16
         elif (phase >= job.Phase(3, 7)):
             priority -= 32
-        
+
     # If a drive is getting full, we should prioritize it
     if (gb_free < 1000):
         priority += 1 + int((1000 - gb_free) / 100)
@@ -125,7 +125,7 @@ def get_running_archive_jobs(arch_cfg):
 
 def archive(dir_cfg, all_jobs):
     '''Configure one archive job.  Needs to know all jobs so it can avoid IO
-    contention on the plotting dstdir drives.  Returns either (False, <reason>) 
+    contention on the plotting dstdir drives.  Returns either (False, <reason>)
     if we should not execute an archive job or (True, <cmd>) with the archive
     command if we should.'''
     if dir_cfg.archive is None:
@@ -140,7 +140,7 @@ def archive(dir_cfg, all_jobs):
         dir_plots = plot_util.list_k32_plots(d)
         gb_free = plot_util.df_b(d) / plot_util.GB
         n_plots = len(dir_plots)
-        priority = compute_priority(ph, gb_free, n_plots) 
+        priority = compute_priority(ph, gb_free, n_plots)
         if priority >= best_priority and dir_plots:
             best_priority = priority
             chosen_plot = dir_plots[0]
@@ -157,9 +157,9 @@ def archive(dir_cfg, all_jobs):
     archdir_freebytes = get_archdir_freebytes(dir_cfg.archive)
     if not archdir_freebytes:
         return(False, 'No free archive dirs found.')
-    
+
     archdir = ''
-    available = [(d, space) for (d, space) in archdir_freebytes.items() if 
+    available = [(d, space) for (d, space) in archdir_freebytes.items() if
                  space > 1.2 * plot_util.get_k32_plotsize()]
     if len(available) > 0:
         index = min(dir_cfg.archive.index, len(available) - 1)
@@ -167,7 +167,7 @@ def archive(dir_cfg, all_jobs):
 
     if not archdir:
         return(False, 'No archive directories found with enough free space')
-    
+
     msg = 'Found %s with ~%d GB free' % (archdir, freespace / plot_util.GB)
 
     bwlimit = dir_cfg.archive.rsyncd_bwlimit
