@@ -52,21 +52,25 @@ def phases_permit_new_job(phases, d, sched_cfg, dir_cfg):
     if len(phases) == 0:
         return True
 
-    milestone = job.Phase(
-        major=sched_cfg.tmpdir_stagger_phase_major,
-        minor=sched_cfg.tmpdir_stagger_phase_minor,
-    )
-    # tmpdir_stagger_phase_limit default is 1, as declared in configuration.py
-    if len([p for p in phases if p < milestone]) >= sched_cfg.tmpdir_stagger_phase_limit:
-        return False
-
-    # Limit the total number of jobs per tmp dir. Default to the overall max
-    # jobs configuration, but restrict to any configured overrides.
-    max_plots = sched_cfg.tmpdir_max_jobs
     if dir_cfg.tmp_overrides is not None and d in dir_cfg.tmp_overrides:
         curr_overrides = dir_cfg.tmp_overrides[d]
-        if curr_overrides.tmpdir_max_jobs is not None:
-            max_plots = curr_overrides.tmpdir_max_jobs
+    else:
+        curr_overrides = None
+    
+    # configured overrides
+    stagger_phase_major = sched_cfg.tmpdir_stagger_phase_major if curr_overrides is None or curr_overrides.tmpdir_stagger_phase_major is None else curr_overrides.tmpdir_stagger_phase_major
+    stagger_phase_minor = sched_cfg.tmpdir_stagger_phase_minor if curr_overrides is None or curr_overrides.tmpdir_stagger_phase_minor is None else curr_overrides.tmpdir_stagger_phase_minor
+    stagger_phase_limit = sched_cfg.tmpdir_stagger_phase_limit if curr_overrides is None or curr_overrides.tmpdir_stagger_phase_limit is None else curr_overrides.tmpdir_stagger_phase_limit
+    max_plots = sched_cfg.tmpdir_max_jobs if curr_overrides is None or curr_overrides.tmpdir_max_jobs is None else curr_overrides.tmpdir_max_jobs
+    
+    milestone = job.Phase(
+        major=stagger_phase_major,
+        minor=stagger_phase_minor,
+    )
+    # tmpdir_stagger_phase_limit default is 1, as declared in configuration.py
+    if len([p for p in phases if p < milestone]) >= stagger_phase_limit:
+        return False
+
     if len(phases) >= max_plots:
         return False
 
