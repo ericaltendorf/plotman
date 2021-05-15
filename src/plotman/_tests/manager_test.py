@@ -85,7 +85,7 @@ def test_dstdirs_to_furthest_phase():
             { '/plots1' : (1, 5),
               '/plots2' : (3, 1),
               '/plots3' : (4, 1) } )
-           
+
 
 def test_dstdirs_to_youngest_phase():
     all_jobs = [ job_w_dstdir_phase('/plots1', (1, 5)),

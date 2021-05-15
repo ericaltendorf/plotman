@@ -28,7 +28,7 @@ class PlotmanArgParser:
         sp.add_parser('version', help='print the version')
 
         sp.add_parser('status', help='show current plotting status')
- 
+
         sp.add_parser('dirs', help='show directories info')
 
         sp.add_parser('interactive', help='run interactive control/monitoring mode')
@@ -164,10 +164,12 @@ def main():
 
         # Status report
         if args.cmd == 'status':
-            print("{0}\n\nUpdated at: {1}".format(
+            result = "{0}\n\n{1}\n\nUpdated at: {2}".format(
                 reporting.status_report(jobs, get_term_width()),
-                datetime.datetime.today().strftime("%x %X")
-            ))
+                reporting.summary(jobs),
+                datetime.datetime.today().strftime("%x %X"),
+            )
+            print(result)
 
         # Directories report
         elif args.cmd == 'dirs':
@@ -196,7 +198,7 @@ def main():
         elif args.cmd == 'dsched':
             for (d, ph) in manager.dstdirs_to_furthest_phase(jobs).items():
                 print('  %s : %s' % (d, str(ph)))
-        
+
         #
         # Job control commands
         #
