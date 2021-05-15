@@ -163,7 +163,11 @@ def main():
 
         # Status report
         if args.cmd == 'status':
-            print(reporting.status_report(jobs, get_term_width()))
+            result = "{0}\n\n{1}".format(
+                reporting.status_report(jobs, get_term_width()),
+                reporting.summary(jobs)
+            )
+            print(result)
 
         # Directories report
         elif args.cmd == 'dirs':
