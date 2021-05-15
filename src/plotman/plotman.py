@@ -238,7 +238,7 @@ def main():
                     else:
                         print('killing...')
                         job.cancel()
-                        print('cleaing up temp files...')
+                        print('cleaning up temp files...')
                         for f in temp_files:
                             os.remove(f)
 
