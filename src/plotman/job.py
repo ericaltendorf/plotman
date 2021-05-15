@@ -245,11 +245,12 @@ class Job:
         if self.logfile:
             # Initialize data that needs to be loaded from the logfile
             self.init_from_logfile()
-        else:
-            print('Found plotting process PID {pid}, but could not find '
-                    'logfile in its open files:'.format(pid = self.proc.pid))
-            for f in self.proc.open_files():
-                print(f.path)
+# TODO: turn this into logging or somesuch
+#         else:
+#             print('Found plotting process PID {pid}, but could not find '
+#                     'logfile in its open files:'.format(pid = self.proc.pid))
+#             for f in self.proc.open_files():
+#                 print(f.path)
 
 
 

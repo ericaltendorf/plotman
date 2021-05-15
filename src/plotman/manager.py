@@ -89,7 +89,7 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
                 if phases_permit_new_job(phases, d, sched_cfg, dir_cfg) ]
         rankable = [ (d, phases[0]) if phases else (d, job.Phase(known=False))
                 for (d, phases) in eligible ]
-        
+
         if not eligible:
             wait_reason = 'no eligible tempdirs (%ds/%ds)' % (youngest_job_age, global_stagger)
         else:
@@ -101,7 +101,7 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
                       if d in dir_cfg.dst and ph is not None}
             unused_dirs = [d for d in dir_cfg.dst if d not in dir2ph.keys()]
             dstdir = ''
-            if unused_dirs: 
+            if unused_dirs:
                 dstdir = random.choice(unused_dirs)
             else:
                 dstdir = max(dir2ph, key=dir2ph.get)
