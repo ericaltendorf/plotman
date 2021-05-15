@@ -13,7 +13,7 @@ def get_k32_plotsize():
     return get_plotsize(32)
 
 def get_plotsize(k):
-    return 0.762 * k * pow(2, k)
+    return (int)(0.762 * k * pow(2, k))
 
 def human_format(num, precision):
     magnitude = 0
