@@ -132,7 +132,9 @@ def main():
             print("No action requested, add 'generate' or 'path'.")
             return
 
-    cfg = configuration.get_validated_configs()
+    config_path = configuration.get_path()
+    config_text = configuration.read_configuration_text(config_path)
+    cfg = configuration.get_validated_configs(config_text, config_path)
 
     #
     # Stay alive, spawning plot jobs
@@ -180,7 +182,11 @@ def main():
                     time.sleep(60)
                     jobs = Job.get_running_jobs(cfg.directories.log)
                 firstit = False
-                archive.archive(cfg.directories, jobs)
+
+                archiving_status, log_message = archive.spawn_archive_process(cfg.directories, jobs)
+                if log_message:
+                    print(log_message)
+
 
         # Debugging: show the destination drive usage schedule
         elif args.cmd == 'dsched':
@@ -202,9 +208,9 @@ def main():
                 # TODO: allow multiple idprefixes, not just take the first
                 selected = manager.select_jobs_by_partial_id(jobs, args.idprefix[0])
                 if (len(selected) == 0):
-                    print('Error: %s matched no jobs.' % id_spec)
+                    print('Error: %s matched no jobs.' % args.idprefix[0])
                 elif len(selected) > 1:
-                    print('Error: "%s" matched multiple jobs:' % id_spec)
+                    print('Error: "%s" matched multiple jobs:' % args.idprefix[0])
                     for j in selected:
                         print('  %s' % j.plot_id)
                     selected = []
