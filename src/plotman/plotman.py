@@ -163,7 +163,11 @@ def main():
 
         # Status report
         if args.cmd == 'status':
-            print(reporting.status_report(jobs, get_term_width()))
+            result = "{0}\n\n{1}".format(
+                reporting.status_report(jobs, get_term_width()),
+                reporting.summary(jobs)
+            )
+            print(result)
 
         # Directories report
         elif args.cmd == 'dirs':
@@ -238,7 +242,7 @@ def main():
                     else:
                         print('killing...')
                         job.cancel()
-                        print('cleaing up temp files...')
+                        print('cleaning up temp files...')
                         for f in temp_files:
                             os.remove(f)
 

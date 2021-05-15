@@ -102,6 +102,7 @@ class Plotting:
     job_buffer: int
     farmer_pk: Optional[str] = None
     pool_pk: Optional[str] = None
+    x: bool = False
 
 @attr.frozen
 class UserInterface:

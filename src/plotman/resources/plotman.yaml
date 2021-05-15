@@ -126,3 +126,7 @@ plotting:
         # If specified, pass through to the -f and -p options.  See CLI reference.
         #   farmer_pk: ...
         #   pool_pk: ...
+        # If true, Skips adding [final dir] / dst to harvester for farming. 
+        # Especially useful if you have harvesters that are running somewhere else
+        # and you are just plotting on the machine where plotman is running.
+        #   x: True
