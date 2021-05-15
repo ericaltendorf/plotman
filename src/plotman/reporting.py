@@ -208,9 +208,10 @@ def arch_dir_report(archdir_freebytes, width, prefix=''):
 
 # TODO: remove this
 def dirs_report(jobs, dir_cfg, sched_cfg, width):
+    dst_dir = dir_cfg.get_dst_directories()
     reports = [
         tmp_dir_report(jobs, dir_cfg, sched_cfg, width),
-        dst_dir_report(jobs, dir_cfg.dst, width),
+        dst_dir_report(jobs, dst_dir, width),
     ]
     if dir_cfg.archive is not None:
         reports.extend([
