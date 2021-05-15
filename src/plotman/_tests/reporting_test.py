@@ -3,23 +3,24 @@ import os
 from unittest.mock import patch
 
 from plotman import reporting
+from plotman import job
 
 
 def test_phases_str_basic():
-    assert(reporting.phases_str([(1,2), (2,3), (3,4), (4,0)]) ==
-            '1:2 2:3 3:4 4:0')
+    phases = job.Phase.list_from_tuples([(1,2), (2,3), (3,4), (4,0)])
+    assert reporting.phases_str(phases) == '1:2 2:3 3:4 4:0'
 
 def test_phases_str_elipsis_1():
-    assert(reporting.phases_str([(1,2), (2,3), (3,4), (4,0)], 3) ==
-            '1:2 [+1] 3:4 4:0')
+    phases = job.Phase.list_from_tuples([(1,2), (2,3), (3,4), (4,0)])
+    assert reporting.phases_str(phases, 3) == '1:2 [+1] 3:4 4:0'
 
 def test_phases_str_elipsis_2():
-    assert(reporting.phases_str([(1,2), (2,3), (3,4), (4,0)], 2) ==
-            '1:2 [+2] 4:0')
+    phases = job.Phase.list_from_tuples([(1,2), (2,3), (3,4), (4,0)])
+    assert reporting.phases_str(phases, 2) == '1:2 [+2] 4:0'
 
 def test_phases_str_none():
-    assert(reporting.phases_str([(None, None), (2, None), (3, 0)]) ==
-            '?:? 2:? 3:0')
+    phases = job.Phase.list_from_tuples([(None, None), (3, 0)])
+    assert reporting.phases_str(phases) == '?:? 3:0'
 
 def test_job_viz_empty():
     assert(reporting.job_viz([]) == '1        2        3       4 ')
@@ -27,7 +28,7 @@ def test_job_viz_empty():
 @patch('plotman.job.Job')
 def job_w_phase(ph, MockJob):
     j = MockJob()
-    j.progress.return_value = ph
+    j.progress.return_value = job.Phase.from_tuple(ph)
     return j
 
 def test_job_viz_positions():
