@@ -12,6 +12,9 @@ def df_b(d):
 def get_k32_plotsize():
     return 108 * GB
 
+def get_plotsize(k):
+    return 0.762 * k * pow(2, k)
+
 def human_format(num, precision):
     magnitude = 0
     while abs(num) >= 1000:
