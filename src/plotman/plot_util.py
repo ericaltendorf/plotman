@@ -4,10 +4,6 @@ from plotman import chiapos
 
 GB = 1_000_000_000
 
-# use k as index to get plotsize_scaler, note that 0 means the value is not calculated yet
-# we can safely assume that k is never going to be greater than 100, due to the exponential nature of plot file size, this avoids using constants from chiapos
-_plotsize_scaler_cache = [0.0 for _ in range(0, 101)]
-
 def df_b(d):
     'Return free space for directory (in bytes)'
     stat = os.statvfs(d)
@@ -77,6 +73,9 @@ def column_wrap(items, n_cols, filler=None):
         rows.append( (row_items + ([filler] * n_cols))[:n_cols] )
     return rows
 
+# use k as index to get plotsize_scaler, note that 0 means the value is not calculated yet
+# we can safely assume that k is never going to be greater than 100, due to the exponential nature of plot file size, this avoids using constants from chiapos
+_plotsize_scaler_cache = [0.0 for _ in range(0, 101)]
 
 def calc_average_size_of_entry(k, table_index):
     '''
