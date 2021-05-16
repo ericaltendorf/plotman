@@ -110,19 +110,20 @@ async def with_prompt_toolkit():
     tmp_prefix = os.path.commonpath(cfg.directories.tmp)
     dst_prefix = os.path.commonpath(cfg.directories.dst)
 
-    header_buffer = prompt_toolkit.layout.controls.FormattedTextControl()
-    plots_buffer = prompt_toolkit.layout.controls.FormattedTextControl()
-    tmp_buffer = prompt_toolkit.layout.controls.FormattedTextControl()
-    dst_buffer = prompt_toolkit.layout.controls.FormattedTextControl()
-    archive_buffer = prompt_toolkit.layout.controls.FormattedTextControl()
-    footer_buffer = prompt_toolkit.layout.controls.FormattedTextControl()
+    header_buffer = prompt_toolkit.layout.controls.FormattedTextControl('header')
+    plots_buffer = prompt_toolkit.layout.controls.FormattedTextControl('plots')
+    tmp_buffer = prompt_toolkit.layout.controls.FormattedTextControl('tmp')
+    dst_buffer = prompt_toolkit.layout.controls.FormattedTextControl('dst')
+    archive_buffer = prompt_toolkit.layout.controls.FormattedTextControl('archive')
+    logs_buffer = prompt_toolkit.layout.controls.FormattedTextControl('logs')
+    footer_buffer = prompt_toolkit.layout.controls.FormattedTextControl('footer')
 
     disk_columns = [
         tmp_window,
         dst_window,
     ] = [
-        prompt_toolkit.layout.containers.Window(content=tmp_buffer, dont_extend_width=True),
-        prompt_toolkit.layout.containers.Window(content=dst_buffer),
+        prompt_toolkit.layout.containers.Window(content=tmp_buffer, dont_extend_height=True, dont_extend_width=True),
+        prompt_toolkit.layout.containers.Window(content=dst_buffer, dont_extend_height=True),
     ]
     rows = [
         header_window,
@@ -132,11 +133,11 @@ async def with_prompt_toolkit():
         logs_window,
         footer_window,
     ] = [
-        prompt_toolkit.layout.containers.Window(content=header_buffer),
-        prompt_toolkit.layout.containers.Window(content=plots_buffer),
+        prompt_toolkit.layout.containers.Window(content=header_buffer, dont_extend_height=True),
+        prompt_toolkit.layout.containers.Window(content=plots_buffer, dont_extend_height=True),
         prompt_toolkit.layout.containers.VSplit(disk_columns, padding=1),
-        prompt_toolkit.layout.containers.Window(content=archive_buffer),
-        prompt_toolkit.layout.containers.Window(),
+        prompt_toolkit.layout.containers.Window(content=archive_buffer, dont_extend_height=True),
+        prompt_toolkit.layout.containers.Window(content=logs_buffer),
         prompt_toolkit.layout.containers.Window(content=footer_buffer, dont_extend_height=True),
     ]
 
@@ -233,7 +234,7 @@ def capture_rich(*objects, console):
     with console.capture() as capture:
         console.print(*objects)
 
-    return prompt_toolkit.ANSI(capture.get())
+    return prompt_toolkit.ANSI(capture.get().strip())
 
 
 def row_ib(name):
