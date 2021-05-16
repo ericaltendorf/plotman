@@ -167,7 +167,7 @@ def main():
             result = "{0}\n\n{1}\n\nUpdated at: {2}".format(
                 reporting.status_report(jobs, get_term_width()),
                 reporting.summary(jobs),
-                datetime.datetime.today().strftime("%x %X"),
+                datetime.datetime.today().strftime("%c"),
             )
             print(result)
 
