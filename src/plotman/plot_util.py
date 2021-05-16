@@ -1,5 +1,6 @@
 import math
 import os
+import re
 from plotman import chiapos
 
 GB = 1_000_000_000
