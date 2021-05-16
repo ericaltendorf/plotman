@@ -1,3 +1,4 @@
+import collections
 import functools
 import io
 import itertools
@@ -113,6 +114,9 @@ async def with_prompt_toolkit():
     plots_buffer = prompt_toolkit.layout.controls.FormattedTextControl()
     tmp_buffer = prompt_toolkit.layout.controls.FormattedTextControl()
     dst_buffer = prompt_toolkit.layout.controls.FormattedTextControl()
+    archive_buffer = prompt_toolkit.layout.controls.FormattedTextControl()
+    footer_buffer = prompt_toolkit.layout.controls.FormattedTextControl()
+
     disk_columns = [
         tmp_window,
         dst_window,
@@ -126,12 +130,14 @@ async def with_prompt_toolkit():
         disk_layout,
         archive_window,
         logs_window,
+        footer_window,
     ] = [
         prompt_toolkit.layout.containers.Window(content=header_buffer),
         prompt_toolkit.layout.containers.Window(content=plots_buffer),
         prompt_toolkit.layout.containers.VSplit(disk_columns, padding=1),
+        prompt_toolkit.layout.containers.Window(content=archive_buffer),
         prompt_toolkit.layout.containers.Window(),
-        prompt_toolkit.layout.containers.Window(),
+        prompt_toolkit.layout.containers.Window(content=footer_buffer, dont_extend_height=True),
     ]
 
     root_container = prompt_toolkit.layout.containers.HSplit(rows)
@@ -153,10 +159,22 @@ async def with_prompt_toolkit():
 
     jobs = []
 
-    async with anyio.create_task_group() as task_group:
-        key_bindings.add('q')(exit_key_binding)
-        key_bindings.add('c-c')(exit_key_binding)
+    key_bindings.add('q', 'c-c')(exit_key_binding)
 
+    binding_handler_names = {
+        exit_key_binding: 'exit',
+    }
+
+    key_bindings_text = ' '.join(
+        f'{binding_handler_names[binding.handler]} \\[{", ".join(binding.keys)}]'
+        for binding in key_bindings.bindings
+    )
+    footer_buffer.text = capture_rich(
+        f'[reverse]key bindings[/reverse]\n{key_bindings_text}',
+        console=rich_console,
+    )
+
+    async with anyio.create_task_group() as task_group:
         task_group.start_soon(functools.partial(
             cancel_after_application,
             application=application,
@@ -207,7 +225,7 @@ async def cancel_after_application(application, cancel_scope):
     cancel_scope.cancel()
 
 
-def exit_key_binding(event):
+async def exit_key_binding(event):
     event.app.exit()
 
 
