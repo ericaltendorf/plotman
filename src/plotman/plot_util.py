@@ -10,7 +10,7 @@ def df_b(d):
     return stat.f_frsize * stat.f_bavail
 
 def get_k32_plotsize():
-    return 108 * GB
+    return 109 * GB
 
 def human_format(num, precision):
     magnitude = 0
