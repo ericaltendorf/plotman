@@ -19,6 +19,7 @@ import rich.layout
 import rich.live
 import rich.table
 
+import plotman.archive
 import plotman.configuration
 import plotman.job
 import plotman.manager
@@ -110,17 +111,25 @@ async def with_prompt_toolkit():
 
     header_buffer = prompt_toolkit.layout.controls.FormattedTextControl()
     plots_buffer = prompt_toolkit.layout.controls.FormattedTextControl()
-    disks_buffer = prompt_toolkit.layout.controls.FormattedTextControl()
+    tmp_buffer = prompt_toolkit.layout.controls.FormattedTextControl()
+    dst_buffer = prompt_toolkit.layout.controls.FormattedTextControl()
+    disk_columns = [
+        tmp_window,
+        dst_window,
+    ] = [
+        prompt_toolkit.layout.containers.Window(content=tmp_buffer, dont_extend_width=True),
+        prompt_toolkit.layout.containers.Window(content=dst_buffer),
+    ]
     rows = [
         header_window,
         plots_window,
-        disks_window,
+        disk_layout,
         archive_window,
         logs_window,
     ] = [
         prompt_toolkit.layout.containers.Window(content=header_buffer),
         prompt_toolkit.layout.containers.Window(content=plots_buffer),
-        prompt_toolkit.layout.containers.Window(content=disks_buffer),
+        prompt_toolkit.layout.containers.VSplit(disk_columns, padding=1),
         prompt_toolkit.layout.containers.Window(),
         prompt_toolkit.layout.containers.Window(),
     ]
@@ -136,6 +145,9 @@ async def with_prompt_toolkit():
         full_screen=True,
         key_bindings=key_bindings,
     )
+
+    # https://github.com/prompt-toolkit/python-prompt-toolkit/issues/827#issuecomment-459099452
+    application.output.show_cursor = lambda: False
 
     rich_console = rich.console.Console()
 
@@ -175,7 +187,16 @@ async def with_prompt_toolkit():
             )
 
             tmp_table = build_tmp_table(tmp_data=tmp_data)
-            disks_buffer.text = capture_rich(tmp_table, console=rich_console)
+            tmp_buffer.text = capture_rich(tmp_table, console=rich_console)
+
+            dst_data = build_dst_data(
+                jobs=jobs,
+                dstdirs=cfg.directories.dst,
+                prefix=tmp_prefix,
+            )
+
+            dst_table = build_dst_table(dst_data=dst_data)
+            dst_buffer.text = capture_rich(dst_table, console=rich_console)
 
             application.invalidate()
             await anyio.sleep(1)
@@ -309,6 +330,69 @@ def build_tmp_table(tmp_data):
         table.add_column(field.metadata['name'])
 
     for row in tmp_data:
+        table.add_row(*attr.astuple(row))
+
+    return table
+
+
+@attr.frozen
+class DstRow:
+    dst: str = row_ib(name='dst')
+    plot_count: int = row_ib(name='plots')
+    free: int = row_ib(name='free')
+    inbound_phases: list[plotman.job.Phase] = row_ib(name='phases')
+    priority: int = row_ib(name='pri')
+
+    @classmethod
+    def from_dst(cls, dst, jobs, prefix, dir2oldphase):
+        # TODO: This logic is replicated in archive.py's priority computation,
+        # maybe by moving more of the logic in to directory.py
+        eldest_ph = dir2oldphase.get(dst, plotman.job.Phase(0, 0))
+        phases = plotman.job.job_phases_for_dstdir(dst, jobs)
+
+        dir_plots = plotman.plot_util.list_k32_plots(dst)
+        free = plotman.plot_util.df_b(dst)
+        n_plots = len(dir_plots)
+        priority = plotman.archive.compute_priority(
+            phase=eldest_ph,
+            gb_free=free / plotman.plot_util.GB,
+            n_plots=n_plots,
+        )
+
+        self = cls(
+            dst=plotman.reporting.abbr_path(dst, prefix),
+            plot_count=n_plots,
+            free=plotman.plot_util.human_format(free, 0),
+            inbound_phases=plotman.reporting.phases_str(phases, 5),
+            priority=priority,
+        )
+
+        return self
+
+
+def build_dst_data(jobs, dstdirs, prefix):
+    dir2oldphase = plotman.manager.dstdirs_to_furthest_phase(jobs)
+
+    rows = [
+        DstRow.from_dst(
+            dst=dst,
+            jobs=jobs,
+            prefix=prefix,
+            dir2oldphase=dir2oldphase,
+        )
+        for dst in sorted(dstdirs)
+    ]
+
+    return rows
+
+
+def build_dst_table(dst_data):
+    table = rich.table.Table(box=None, header_style='reverse')
+
+    for field in attr.fields(DstRow):
+        table.add_column(field.metadata['name'])
+
+    for row in dst_data:
         table.add_row(*attr.astuple(row))
 
     return table
