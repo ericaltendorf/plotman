@@ -3,7 +3,7 @@ import operator
 import os
 import random
 import re
-import readline  # For nice CLI
+#import readline  # For nice CLI
 import subprocess
 import sys
 import time
