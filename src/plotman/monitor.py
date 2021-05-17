@@ -2,6 +2,7 @@ import collections
 import functools
 import io
 import itertools
+import math
 import os
 import time
 
@@ -19,6 +20,7 @@ import rich.console
 import rich.layout
 import rich.live
 import rich.table
+import toolz
 
 import plotman.archive
 import plotman.configuration
@@ -107,14 +109,18 @@ async def with_prompt_toolkit():
     config_text = plotman.configuration.read_configuration_text(config_path)
     cfg = plotman.configuration.get_validated_configs(config_text, config_path)
 
+    archiving_configured = cfg.directories.archive is not None
+
     tmp_prefix = os.path.commonpath(cfg.directories.tmp)
     dst_prefix = os.path.commonpath(cfg.directories.dst)
+    if archiving_configured:
+        arch_prefix = cfg.directories.archive.rsyncd_path
 
     header_buffer = prompt_toolkit.layout.controls.FormattedTextControl('header')
     plots_buffer = prompt_toolkit.layout.controls.FormattedTextControl('plots')
     tmp_buffer = prompt_toolkit.layout.controls.FormattedTextControl('tmp')
     dst_buffer = prompt_toolkit.layout.controls.FormattedTextControl('dst')
-    archive_buffer = prompt_toolkit.layout.controls.FormattedTextControl('archive')
+    archive_buffer = prompt_toolkit.layout.controls.FormattedTextControl('archive ')
     logs_buffer = prompt_toolkit.layout.controls.FormattedTextControl('logs')
     footer_buffer = prompt_toolkit.layout.controls.FormattedTextControl('footer')
 
@@ -136,7 +142,7 @@ async def with_prompt_toolkit():
         prompt_toolkit.layout.containers.Window(content=header_buffer, dont_extend_height=True),
         prompt_toolkit.layout.containers.Window(content=plots_buffer, dont_extend_height=True),
         prompt_toolkit.layout.containers.VSplit(disk_columns, padding=1),
-        prompt_toolkit.layout.containers.Window(content=archive_buffer, dont_extend_height=True),
+        prompt_toolkit.layout.containers.Window(content=archive_buffer, dont_extend_height=True, wrap_lines=True),
         prompt_toolkit.layout.containers.Window(content=logs_buffer),
         prompt_toolkit.layout.containers.Window(content=footer_buffer, dont_extend_height=True),
     ]
@@ -160,7 +166,9 @@ async def with_prompt_toolkit():
 
     jobs = []
 
-    key_bindings.add('q', 'c-c')(exit_key_binding)
+    # i think this should be able to be a single call...
+    key_bindings.add('q')(exit_key_binding)
+    key_bindings.add('c-c')(exit_key_binding)
 
     binding_handler_names = {
         exit_key_binding: 'exit',
@@ -217,6 +225,20 @@ async def with_prompt_toolkit():
             dst_table = build_dst_table(dst_data=dst_data)
             dst_buffer.text = capture_rich(dst_table, console=rich_console)
 
+            size = application.output.get_size()
+
+            if archiving_configured:
+                archdir_freebytes = plotman.archive.get_archdir_freebytes(cfg.directories.archive)
+                archdir_rich = arch_dir_text(
+                    archdir_freebytes=archdir_freebytes,
+                    width=size.columns,
+                    prefix=arch_prefix,
+                )
+                archive_buffer.text = capture_rich(archdir_rich, console=rich_console)
+
+            logs_rich = '[reverse]log:[/reverse]'
+            logs_buffer.text = capture_rich(logs_rich, console=rich_console)
+
             application.invalidate()
             await anyio.sleep(1)
 
@@ -226,7 +248,7 @@ async def cancel_after_application(application, cancel_scope):
     cancel_scope.cancel()
 
 
-async def exit_key_binding(event):
+def exit_key_binding(event):
     event.app.exit()
 
 
@@ -415,3 +437,51 @@ def build_dst_table(dst_data):
         table.add_row(*attr.astuple(row))
 
     return table
+
+
+def build_dst_table(dst_data):
+    table = rich.table.Table(box=None, header_style='reverse')
+
+    for field in attr.fields(DstRow):
+        table.add_column(field.metadata['name'])
+
+    for row in dst_data:
+        table.add_row(*attr.astuple(row))
+
+    return table
+
+
+def arch_dir_text(archdir_freebytes, width, prefix):
+    lines = [
+        '[reverse]archive dirs free space[/reverse]',
+    ]
+
+    if len(archdir_freebytes) == 0:
+        lines.append('<no archive dir info>')
+        return '\n'.join(lines)
+
+    abbreviated_archdir_freebytes = {
+        plotman.reporting.abbr_path(path=path, putative_prefix=prefix): plotman.plot_util.human_format(free, 0)
+        for path, free in archdir_freebytes.items()
+    }
+
+    maximum_path_length = max(len(path) for path in abbreviated_archdir_freebytes.keys())
+    maximum_free_length = max(len(path) for path in abbreviated_archdir_freebytes.values())
+
+    cells = [
+        f'{path: <{maximum_path_length}} - {free: >{maximum_free_length}}'
+        for path, free in sorted(abbreviated_archdir_freebytes.items())
+    ]
+
+    cell_divider = ' | '
+
+    cells_per_line = math.floor(
+        (width + len(cell_divider)) / (len(cells[0]) + len(cell_divider))
+    )
+
+    lines.extend(
+        cell_divider.join(row)
+        for row in toolz.partition_all(cells_per_line, cells)
+    )
+
+    return '\n'.join(lines)
