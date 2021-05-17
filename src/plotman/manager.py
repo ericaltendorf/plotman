@@ -171,7 +171,7 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
                     start_new_session=True,
                     creationflags = 0 if not _WINDOWS else subprocess.CREATE_NO_WINDOW)
 
-            psutil.Process(p.pid).nice(15)
+            psutil.Process(p.pid).nice(15 if not _WINDOWS else psutil.BELOW_NORMAL_PRIORITY_CLASS)
             return (True, logmsg)
 
     return (False, wait_reason)
