@@ -80,10 +80,23 @@ class TmpOverrides:
 class Directories:
     log: str
     tmp: List[str]
-    dst: List[str]
+    dst: Optional[List[str]] = None
     tmp2: Optional[str] = None
     tmp_overrides: Optional[Dict[str, TmpOverrides]] = None
     archive: Optional[Archive] = None
+
+    def dst_is_tmp(self):
+        return self.dst is None
+
+    def get_dst_directories(self):
+        """Returns either <Directories.dst> or <Directories.tmp>. If
+        Directories.dst is None, Use Directories.tmp as dst directory.
+        """
+        if self.dst_is_tmp():
+            return self.tmp
+
+        return self.dst
+
 
 @attr.frozen
 class Scheduling:
@@ -104,6 +117,7 @@ class Plotting:
     job_buffer: int
     farmer_pk: Optional[str] = None
     pool_pk: Optional[str] = None
+    x: bool = False
 
 @attr.frozen
 class UserInterface:
