@@ -163,13 +163,11 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
             # allowing handling of just the log file opening error.
 
             with open_log_file:
-                # start_new_sessions to make the job independent of this controlling tty.
                 # start_new_sessions to make the job independent of this controlling tty (POSIX only).
                 # subprocess.CREATE_NO_WINDOW to make the process independent of this controlling tty and have no console window on Windows.
                 p = subprocess.Popen(plot_args,
                     stdout=open_log_file,
                     stderr=subprocess.STDOUT,
-                    start_new_session=True)
                     start_new_session=True,
                     creationflags = 0 if not _WINDOWS else subprocess.CREATE_NO_WINDOW)
 
