@@ -47,10 +47,13 @@ directories:
         # chia plots create as -2.  Only one tmp2 directory is supported.
         # tmp2: /mnt/tmp/a
 
-        # One or more directories; the scheduler will use all of them.
-        # These again are presumed to be on independent physical devices,
-        # so writes (plot jobs) and reads (archivals) can be scheduled
-        # to minimize IO contention.
+        # Optional: A list of one or more directories; the scheduler will
+        # use all of them.  These again are presumed to be on independent
+        # physical devices so writes (plot jobs) and reads (archivals) can
+        # be scheduled to minimize IO contention.
+        # 
+        # If dst is commented out, the tmp directories will be used as the
+        # buffer.
         dst:
                 - /mnt/dst/00
                 - /mnt/dst/01
