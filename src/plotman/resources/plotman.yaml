@@ -107,6 +107,13 @@ scheduling:
         # Don't run more than this many jobs at a time in total.
         global_max_jobs: 12
 
+        # You can also limit the number of jobs by phase globally. This is useful
+        # to limit memory or CPU core use. These values allow only three jobs in
+        # phase 1 across all temp dirs.
+        global_stagger_phase_major: 2
+        global_stagger_phase_minor: 1
+        global_stagger_phase_limit: 3
+
         # Don't run any jobs (across all temp dirs) more often than this, in minutes.
         global_stagger_m: 30
 

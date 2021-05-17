@@ -87,6 +87,9 @@ class Directories:
 class Scheduling:
     global_max_jobs: int
     global_stagger_m: int
+    global_stagger_phase_major: int
+    global_stagger_phase_minor: int
+    global_stagger_phase_limit: int
     polling_time_s: int
     tmpdir_max_jobs: int
     tmpdir_stagger_phase_major: int
