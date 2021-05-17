@@ -5,6 +5,7 @@ import os
 import random
 from shutil import copyfile
 import time
+import datetime
 
 # Plotman libraries
 from plotman import analyzer, archive, configuration, interactive, manager, plot_util, reporting
@@ -163,9 +164,10 @@ def main():
 
         # Status report
         if args.cmd == 'status':
-            result = "{0}\n\n{1}".format(
+            result = "{0}\n\n{1}\n\nUpdated at: {2}".format(
                 reporting.status_report(jobs, get_term_width()),
-                reporting.summary(jobs)
+                reporting.summary(jobs),
+                datetime.datetime.today().strftime("%c"),
             )
             print(result)
 
