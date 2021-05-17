@@ -23,6 +23,8 @@ HR = 3600   # Seconds
 
 MAX_AGE = 1000_000_000   # Arbitrary large number of seconds
 
+_WINDOWS = os.name == 'nt'
+
 def dstdirs_to_furthest_phase(all_jobs):
     '''Return a map from dst dir to a phase tuple for the most progressed job
        that is emitting to that dst dir.'''
@@ -162,10 +164,14 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
 
             with open_log_file:
                 # start_new_sessions to make the job independent of this controlling tty.
+                # start_new_sessions to make the job independent of this controlling tty (POSIX only).
+                # subprocess.CREATE_NO_WINDOW to make the process independent of this controlling tty and have no console window on Windows.
                 p = subprocess.Popen(plot_args,
                     stdout=open_log_file,
                     stderr=subprocess.STDOUT,
                     start_new_session=True)
+                    start_new_session=True,
+                    creationflags = 0 if not _WINDOWS else subprocess.CREATE_NO_WINDOW)
 
             psutil.Process(p.pid).nice(15)
             return (True, logmsg)
