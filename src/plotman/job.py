@@ -19,6 +19,7 @@ import pendulum
 import psutil
 
 from plotman import chia
+from plotman.reporting import phase_str
 
 
 def job_phases_for_tmpdir(d: str, all_jobs: typing.List["Job"]) -> typing.List["Phase"]:
@@ -407,6 +408,26 @@ class Job:
             dst = self.dstdir,
             logfile = self.logfile
             )
+    
+    def to_dict(self):
+        '''Exports important information as dictionary.'''
+        # TODO: Check if being called in oneshot context to improve performance
+        return dict(
+            plot_id=self.plot_id[:8],
+            k=self.k,
+            tmp_dir=self.tmpdir,
+            dst_dir=self.dstdir,
+            progress=phase_str(self.progress()),
+            tmp_usage=self.get_tmp_usage(),
+            pid=self.proc.pid,
+            run_status=self.get_run_status(),
+            mem_usage=self.get_mem_usage(),
+            time_wall=self.get_time_wall(),
+            time_user=self.get_time_user(),
+            time_sys=self.get_time_sys(),
+            time_iowait=self.get_time_iowait()
+        )
+
 
     def get_mem_usage(self) -> int:
         # Total, inc swapped
