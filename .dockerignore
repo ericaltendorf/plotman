@@ -1,0 +1,4 @@
+.git
+.github
+.coveragerc
+.gitignore
