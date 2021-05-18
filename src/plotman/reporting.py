@@ -1,3 +1,4 @@
+import time
 import json
 import math
 import os
@@ -229,5 +230,7 @@ def json_report(jobs):
     for _, j in enumerate(sorted(jobs, key=job.Job.get_time_wall)):
         with j.proc.oneshot():
             jobs_dict["jobs"].append(j.to_dict())
+    jobs_dict["total_jobs"] = len(jobs)
+    jobs_dict["updated"] = time.time()
     return json.dumps(jobs_dict)
 
