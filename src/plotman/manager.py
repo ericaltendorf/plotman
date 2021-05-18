@@ -128,6 +128,9 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
             if dir_cfg.tmp2 is not None:
                 plot_args.append('-2')
                 plot_args.append(dir_cfg.tmp2)
+            elif plotting_cfg.use_dst_as_tmp2:
+                plot_args.append('-2')
+                plot_args.append(dir_cfg.dst)
 
             logmsg = ('Starting plot job: %s ; logging to %s' % (' '.join(plot_args), logfile))
 

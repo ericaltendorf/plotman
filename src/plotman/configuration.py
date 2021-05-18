@@ -60,6 +60,7 @@ class Archive:
 @attr.frozen
 class TmpOverrides:
     tmpdir_max_jobs: Optional[int] = None
+    use_dst_as_tmp2: bool
 
 @attr.frozen
 class Directories:
