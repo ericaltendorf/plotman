@@ -172,7 +172,7 @@ def archive(dir_cfg, all_jobs):
 
     bwlimit = dir_cfg.archive.rsyncd_bwlimit
     throttle_arg = ('--bwlimit=%d' % bwlimit) if bwlimit else ''
-    cmd = ('rsync %s --compress-level=0 --remove-source-files -P %s %s' %
+    cmd = ('rsync %s --skip-compress plot --remove-source-files -P %s %s' %
             (throttle_arg, chosen_plot, rsync_dest(dir_cfg.archive, archdir)))
 
     return (True, cmd)
