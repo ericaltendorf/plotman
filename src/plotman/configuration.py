@@ -56,7 +56,7 @@ class CustomArchive:
     # disk_space: str = '''ssh chia@chia "df -BK | grep \" ${path}/\" | awk '{ print \$6 \\\":\\\" \$4 }'"'''
     disk_space: str = """df -BK | grep " ${path}/" | awk '{gsub(/K\$/,"",$4); print $6 ":" $4*1024 }'"""
     process_name: str = 'rsync'
-    transfer: str = '${process_name} --no-compress --remove-source-files -P "${source}" "${path}/${destination}"'
+    transfer: str = '${process_name} --skip-compress plot --remove-source-files --inplace "${source}" "${path}/${destination}"'
     transfer_detector: str = '${path}/'
 
 @attr.frozen
