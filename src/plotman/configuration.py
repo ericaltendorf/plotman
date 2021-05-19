@@ -49,28 +49,32 @@ def get_validated_configs(config_text, config_path):
 # Data models used to deserializing/formatting plotman.yaml files.
 
 @attr.frozen
-class ArchiveLocal:
+class CustomArchive:
     path: str
-    df_cmd: str = 'df -BK | grep " {}/"'
-    archive_tool: str = 'rsync'
-    archive_cmd: str = '{} {} {} {}'
-    parameters: str = '--bwlimit=80000 --no-compress --remove-source-files -P'
+    # TODO: fully support or remove
+    shell: str = 'bash'
+    # disk_space: str = '''ssh chia@chia "df -BK | grep \" ${path}/\" | awk '{ print \$6 \\\":\\\" \$4 }'"'''
+    disk_space: str = """df -BK | grep " ${path}/" | awk '{gsub(/K\$/,"",$4); print $6 ":" $4*1024 }'"""
+    process_name: str = 'rsync'
+    transfer: str = '${process_name} --bwlimit=80000 --no-compress --remove-source-files -P "${source}" "${path}/${destination}"'
+    transfer_detector: str = '${path}/'
 
 @attr.frozen
 class Archive:
-    rsyncd_module: str
-    rsyncd_path: str
-    rsyncd_bwlimit: int
-    rsyncd_host: str
-    rsyncd_user: str
+    rsyncd_module: str = None
+    rsyncd_path: str = None
+    rsyncd_bwlimit: int = None
+    rsyncd_host: str = None
+    rsyncd_user: str = None
     index: int = 0  # If not explicit, "index" will default to 0
     mode: str = desert.ib(
         default='legacy',
         marshmallow_field=marshmallow.fields.String(
-            validate=marshmallow.validate.OneOf(choices=['legacy', 'local'])
+            validate=marshmallow.validate.OneOf(choices=['legacy', 'custom'])
         ),
     )
-    local: Optional[ArchiveLocal] = None
+    custom: Optional[CustomArchive] = None
+    # custom: CustomArchive = CustomArchive(path='/farm/sites')
 
 @attr.frozen
 class TmpOverrides:
