@@ -176,8 +176,8 @@ def archive(dir_cfg, all_jobs):
             best_priority = priority
             chosen_plot = dir_plots[0]
 
-    # if not chosen_plot:
-    #     return (False, 'No plots found')
+    if not chosen_plot:
+        return (False, 'No plots found')
 
     # TODO: sanity check that archive machine is available
     # TODO: filter drives mounted RO
@@ -186,8 +186,8 @@ def archive(dir_cfg, all_jobs):
     # Pick first archive dir with sufficient space
     #
     archdir_freebytes = get_archdir_freebytes(dir_cfg.archive)
-    print(dict(sorted(archdir_freebytes.items())))
-    1/0
+    # print(dict(sorted(archdir_freebytes.items())))
+    # 1/0
     if not archdir_freebytes:
         return(False, 'No free archive dirs found.')
 
