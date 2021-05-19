@@ -113,12 +113,12 @@ def get_archdir_freebytes(arch_cfg):
             stderr=subprocess.PIPE,
         )
 
-        print(completed_process.stdout)
-        print(completed_process.stderr)
+        #print(completed_process.stdout)
+        #print(completed_process.stderr)
 
         for line in completed_process.stdout.splitlines():
             archdir, space = line.split(':')
-            freebytes = int(space[:-1]) * 1024
+            freebytes = int(space)
             archdir_freebytes[archdir] = freebytes
     return archdir_freebytes
 
@@ -131,21 +131,23 @@ def arch_dest(arch_cfg, arch_dir):
                 arch_cfg.rsyncd_user, arch_cfg.rsyncd_host, rsync_path)
         return rsync_url
     else:
-        # TODO: auaughhghh, don't do this
-        os.environ['path'] = arch_cfg.custom.path
-        return os.path.expandvars(arch_cfg.custom.transfer_detector)
+        return os.path.relpath(arch_dir, arch_cfg.custom.path)
+        #return os.path.expandvars(arch_cfg.custom.transfer_detector)
 
 # TODO: maybe consolidate with similar code in job.py?
 def get_running_archive_jobs(arch_cfg):
     '''Look for running rsync jobs that seem to match the pattern we use for archiving
        them.  Return a list of PIDs of matching jobs.'''
     jobs = []
-    dest = arch_dest(arch_cfg, '/')
     for proc in psutil.process_iter(['pid', 'name']):
         with contextlib.suppress(psutil.NoSuchProcess):
             if arch_cfg.mode == 'legacy':
+                dest = arch_dest(arch_cfg, '/')
                 proc_name = 'rsync'
             else:
+                # TODO: auaughhghh, don't do this
+                os.environ['path'] = arch_cfg.custom.path
+                dest = os.path.expandvars(arch_cfg.custom.transfer_detector)
                 proc_name = arch_cfg.custom.process_name
             if proc.name() == proc_name:
                 args = proc.cmdline()
