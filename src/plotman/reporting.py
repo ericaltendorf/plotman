@@ -13,7 +13,7 @@ def abbr_path(path, putative_prefix):
         return os.path.relpath(path, putative_prefix)
     else:
         return path
-    
+
 def phase_str(phase):
     if not phase.known:
         return '?:?'
@@ -38,12 +38,12 @@ def n_at_ph(jobs, ph):
 
 def n_to_char(n):
     n_to_char_map = dict(enumerate(" .:;!"))
-    
+
     if n < 0:
         return 'X'  # Should never be negative
     elif n >= len(n_to_char_map):
         n = len(n_to_char_map) - 1
-    
+
     return n_to_char_map[n]
 
 def job_viz(jobs):
@@ -127,11 +127,12 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
     tab.set_max_width(width)
     tab.set_deco(0)  # No borders
 
-    result = tab.draw()
+    return tab.draw()
 
-    # Add some summarized info
+def summary(jobs, tmp_prefix=''):
+    """Creates a small summary of running jobs"""
+
     summary = [
-        '\n',
         'Total jobs: {0}'.format(len(jobs))
     ]
 
@@ -142,7 +143,7 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
             'Jobs in {0}: {1}'.format(key, len(list(group)))
         )
 
-    return result + '\n'.join(summary)
+    return '\n'.join(summary)
 
 def tmp_dir_report(jobs, dir_cfg, sched_cfg, width, start_row=None, end_row=None, prefix=''):
     '''start_row, end_row let you split the table up if you want'''
@@ -163,7 +164,7 @@ def tmp_dir_report(jobs, dir_cfg, sched_cfg, width, start_row=None, end_row=None
     tab.set_deco(tt.Texttable.BORDER | tt.Texttable.HEADER )
     tab.set_deco(0)  # No borders
     return tab.draw()
- 
+
 def dst_dir_report(jobs, dstdirs, width, prefix=''):
     tab = tt.Texttable()
     dir2oldphase = manager.dstdirs_to_furthest_phase(jobs)
@@ -175,13 +176,13 @@ def dst_dir_report(jobs, dstdirs, width, prefix=''):
     for d in sorted(dstdirs):
         # TODO: This logic is replicated in archive.py's priority computation,
         # maybe by moving more of the logic in to directory.py
-        eldest_ph = dir2oldphase.get(d, (0, 0))
+        eldest_ph = dir2oldphase.get(d, job.Phase(0, 0))
         phases = job.job_phases_for_dstdir(d, jobs)
 
         dir_plots = plot_util.list_k32_plots(d)
         gb_free = int(plot_util.df_b(d) / plot_util.GB)
         n_plots = len(dir_plots)
-        priority = archive.compute_priority(eldest_ph, gb_free, n_plots) 
+        priority = archive.compute_priority(eldest_ph, gb_free, n_plots)
         row = [abbr_path(d, prefix), n_plots, gb_free,
                 phases_str(phases, 5), priority]
         tab.add_row(row)
@@ -207,9 +208,10 @@ def arch_dir_report(archdir_freebytes, width, prefix=''):
 
 # TODO: remove this
 def dirs_report(jobs, dir_cfg, sched_cfg, width):
+    dst_dir = dir_cfg.get_dst_directories()
     reports = [
         tmp_dir_report(jobs, dir_cfg, sched_cfg, width),
-        dst_dir_report(jobs, dir_cfg.dst, width),
+        dst_dir_report(jobs, dst_dir, width),
     ]
     if dir_cfg.archive is not None:
         reports.extend([
