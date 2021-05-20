@@ -2,13 +2,14 @@ import argparse
 import importlib
 import importlib.resources
 import os
+import glob
 import random
 from shutil import copyfile
 import time
 import datetime
 
 # Plotman libraries
-from plotman import analyzer, archive, configuration, interactive, manager, plot_util, reporting
+from plotman import analyzer, archive, configuration, interactive, manager, plot_util, reporting, csv_exporter
 from plotman import resources as plotman_resources
 from plotman.job import Job
 
@@ -38,6 +39,9 @@ class PlotmanArgParser:
         sp.add_parser('plot', help='run plotting loop')
 
         sp.add_parser('archive', help='move completed plots to farming location')
+
+        p_export = sp.add_parser('export', help='exports metadata from the plot logs as CSV')
+        p_export.add_argument('-o', dest='save_to', default=None, type=str, help='save to file. Optional, prints to stdout by default')
 
         p_config = sp.add_parser('config', help='display or generate plotman.yaml configuration')
         sp_config = p_config.add_subparsers(dest='config_subcommand')
@@ -158,6 +162,13 @@ def main():
 
         analyzer.analyze(args.logfile, args.clipterminals,
                 args.bytmp, args.bybitfield)
+
+    # 
+    # Exports log metadata to CSV
+    #
+    elif args.cmd == 'export':
+        logfilenames = glob.glob(os.path.join(cfg.directories.log, '*'))
+        csv_exporter.export(logfilenames, args.save_to)
 
     else:
         jobs = Job.get_running_jobs(cfg.directories.log)
