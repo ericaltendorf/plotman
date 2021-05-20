@@ -92,7 +92,7 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
     for i, j in enumerate(sorted(jobs, key=job.Job.get_time_wall)):
         # Elipsis row
         if abbreviate_jobs_list and i == n_begin_rows:
-            row = ['...'] + ([''] * len(headings) - 1)
+            row = ['...'] + ([''] * (len(headings) - 1))
         # Omitted row
         elif abbreviate_jobs_list and i > n_begin_rows and i < (len(jobs) - n_end_rows):
             continue
