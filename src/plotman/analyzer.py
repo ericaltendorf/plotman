@@ -8,7 +8,7 @@ import texttable as tt
 import numpy as np
 
 import matplotlib
-import matplotlib as plt
+import matplotlib.pyplot as plt
 
 from plotman import plot_util
 
