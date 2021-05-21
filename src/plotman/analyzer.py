@@ -114,9 +114,7 @@ def create_ax_plotcumulative(ax, data):
             ax: a matplotlib axis.
             data: numpy arrary with [start times, end times].
     '''
-    cumsum = np.cumsum(range(data.shape[0]))
-
-    ax.plot(data[:,1], cumsum)
+    ax.plot(data[:,1], range(data.shape[0]))
 
     ax.set_ylabel('Total plots (plots)')
     ax.set_xlim(np.min(data[:,0])-2, np.max(data[:,1])+2)
@@ -239,6 +237,7 @@ def analyze(logfilenames, clipterminals, bytmp, bybitfield, figfile):
             num_plots = 4
             f, _ = plt.subplots(2,1, figsize=(8, 12))
             ax = plt.subplot(num_plots,1,1)
+            ax.set_title('Plot performance summary')
 
             create_ax_dumbbell(ax, data_started_ended)
 
