@@ -126,7 +126,7 @@ def analyze(logfilenames, clipterminals, bytmp, bybitfield, figfile):
     data = {}
     
     # Get valid logfiles if we were passed a directory
-    if not isinstance(logfilenames, list) and os.path.isdir(figfile):
+    if not isinstance(logfilenames, list) and os.path.isdir(logfilenames):
         logfilenames = [os.path.join(os.path.dirname(logfilenames), l) for l in os.listdir(logfilenames) if
             os.path.splitext(l)[-1] == '.log']
 
