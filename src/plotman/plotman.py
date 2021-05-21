@@ -72,8 +72,12 @@ class PlotmanArgParser:
         p_analyze.add_argument('--bybitfield',
                 action='store_true',
                 help='slice by bitfield/non-bitfield sorting')
-        p_analyze.add_argument('logfile', type=str, nargs='+',
+        p_analyze.add_argument('--logfile', type=str, nargs='+',
                 help='logfile(s) to analyze')
+        p_analyze.add_argument('--logdir', type=str,
+                help='directory containing multiple logfiles to analyze')
+        p_analyze.add_argument('--figfile', type=str, default='analysis.png',
+                help='figure to be created if logdir is passed.')
 
         args = parser.parse_args()
         return args
@@ -155,9 +159,14 @@ def main():
     # Analysis of completed jobs
     #
     elif args.cmd == 'analyze':
-
-        analyzer.analyze(args.logfile, args.clipterminals,
-                args.bytmp, args.bybitfield)
+        if args.logfile is not None:
+            analyzer.analyze(args.logfile, args.clipterminals,
+                    args.bytmp, args.bybitfield, figfile=None)
+        elif args.logdir is not None:
+            analyzer.analyze(args.logfile, args.clipterminals,
+                    args.bytmp, args.bybitfield, figfile=args.figfile)
+        else:
+            raise RuntimeError('Must pass a log file (--logfile) or a directory containing multiple log files (--logdir).')
 
     else:
         jobs = Job.get_running_jobs(cfg.directories.log)
