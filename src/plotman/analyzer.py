@@ -227,6 +227,7 @@ def analyze(logfilenames, clipterminals, bytmp, bybitfield, figfile):
             data_started_ended = np.array([[ts, te, te-ts] for 
                 ts, te in zip(data[sl]['time started'], data[sl]['time ended'])
             ]) / (60 * 60)
+            assert data_started_ended.shape[0] >= 3, 'Cannot generate figure with less than 3 datapoints ({} datapoints passed)'.format(data_started_ended.shape[0])
 
             # Sift the data so that it starts at zero
             data_started_ended -= np.min(data_started_ended[:, 0])
