@@ -125,8 +125,8 @@ def create_ax_plotcumulative(ax, data):
 def analyze(logfilenames, clipterminals, bytmp, bybitfield, figfile):
     data = {}
     
-    # Figfile now also acts like a switch between passing a directory or a single log file
-    if figfile is not None:
+    # Get valid logfiles if we were passed a directory
+    if not isinstance(logfilenames, list) and os.path.isdir(figfile):
         logfilenames = [os.path.join(os.path.dirname(logfilenames), l) for l in os.listdir(logfilenames) if
             os.path.splitext(l)[-1] == '.log']
 
@@ -253,46 +253,46 @@ def analyze(logfilenames, clipterminals, bytmp, bybitfield, figfile):
             print('Saving analysis figure to {}'.format(figfile))
             ax.set_xlabel('Time (hours)')
             f.savefig(figfile)
-    else:
-        # Prepare report
-        tab = tt.Texttable()
-        all_measures = ['%usort', 'phase 1', 'phase 2', 'phase 3', 'phase 4', 'total time']
-        headings = ['Slice', 'n'] + all_measures
-        tab.header(headings)
 
-        for sl in data.keys():
-            row = [sl]
+    # Prepare report
+    tab = tt.Texttable()
+    all_measures = ['%usort', 'phase 1', 'phase 2', 'phase 3', 'phase 4', 'total time']
+    headings = ['Slice', 'n'] + all_measures
+    tab.header(headings)
 
-            # Sample size
-            sample_sizes = []
-            for measure in all_measures:
-                values = data.get(sl, {}).get(measure, [])
-                sample_sizes.append(len(values))
-            sample_size_lower_bound = min(sample_sizes)
-            sample_size_upper_bound = max(sample_sizes)
-            if sample_size_lower_bound == sample_size_upper_bound:
-                row.append('%d' % sample_size_lower_bound)
+    for sl in data.keys():
+        row = [sl]
+
+        # Sample size
+        sample_sizes = []
+        for measure in all_measures:
+            values = data.get(sl, {}).get(measure, [])
+            sample_sizes.append(len(values))
+        sample_size_lower_bound = min(sample_sizes)
+        sample_size_upper_bound = max(sample_sizes)
+        if sample_size_lower_bound == sample_size_upper_bound:
+            row.append('%d' % sample_size_lower_bound)
+        else:
+            row.append('%d-%d' % (sample_size_lower_bound, sample_size_upper_bound))
+
+        # Phase timings
+        for measure in all_measures:
+            values = data.get(sl, {}).get(measure, [])
+            if(len(values) > 1):
+                row.append('μ=%s σ=%s' % (
+                    plot_util.human_format(statistics.mean(values), 1),
+                    plot_util.human_format(statistics.stdev(values), 0)
+                    ))
+            elif(len(values) == 1):
+                row.append(plot_util.human_format(values[0], 1))
             else:
-                row.append('%d-%d' % (sample_size_lower_bound, sample_size_upper_bound))
+                row.append('N/A')
 
-            # Phase timings
-            for measure in all_measures:
-                values = data.get(sl, {}).get(measure, [])
-                if(len(values) > 1):
-                    row.append('μ=%s σ=%s' % (
-                        plot_util.human_format(statistics.mean(values), 1),
-                        plot_util.human_format(statistics.stdev(values), 0)
-                        ))
-                elif(len(values) == 1):
-                    row.append(plot_util.human_format(values[0], 1))
-                else:
-                    row.append('N/A')
+        tab.add_row(row)
 
-            tab.add_row(row)
-
-        (rows, columns) = os.popen('stty size', 'r').read().split()
-        tab.set_max_width(int(columns))
-        s = tab.draw()
-        print(s)
+    (rows, columns) = os.popen('stty size', 'r').read().split()
+    tab.set_max_width(int(columns))
+    s = tab.draw()
+    print(s)
 
 
