@@ -72,9 +72,9 @@ class PlotmanArgParser:
         p_analyze.add_argument('--bybitfield',
                 action='store_true',
                 help='slice by bitfield/non-bitfield sorting')
-        p_analyze.add_argument('--logfile', type=str, nargs='+',
+        p_analyze.add_argument('--logfile', type=str, nargs='+', default=None,
                 help='logfile(s) to analyze')
-        p_analyze.add_argument('--logdir', type=str,
+        p_analyze.add_argument('--logdir', type=str, default=None,
                 help='directory containing multiple logfiles to analyze')
         p_analyze.add_argument('--figfile', type=str, default='analysis.png',
                 help='figure to be created if logdir is passed')
