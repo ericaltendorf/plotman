@@ -117,7 +117,10 @@ def get_archdir_freebytes(arch_cfg):
         #print(completed_process.stderr)
 
         for line in completed_process.stdout.splitlines():
-            archdir, space = line.split(':')
+            split = line.split(':')
+            if len(split) != 2:
+                continue
+            archdir, space = split
             freebytes = int(space)
             archdir_freebytes[archdir] = freebytes
     return archdir_freebytes
