@@ -77,7 +77,7 @@ class PlotmanArgParser:
         p_analyze.add_argument('--logdir', type=str,
                 help='directory containing multiple logfiles to analyze')
         p_analyze.add_argument('--figfile', type=str, default='analysis.png',
-                help='figure to be created if logdir is passed.')
+                help='figure to be created if logdir is passed')
 
         args = parser.parse_args()
         return args
@@ -163,7 +163,7 @@ def main():
             analyzer.analyze(args.logfile, args.clipterminals,
                     args.bytmp, args.bybitfield, figfile=None)
         elif args.logdir is not None:
-            analyzer.analyze(args.logfile, args.clipterminals,
+            analyzer.analyze(args.logdir, args.clipterminals,
                     args.bytmp, args.bybitfield, figfile=args.figfile)
         else:
             raise RuntimeError('Must pass a log file (--logfile) or a directory containing multiple log files (--logdir).')
