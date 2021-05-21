@@ -124,12 +124,13 @@ def create_ax_plotcumulative(ax, data):
 
 def analyze(logfilenames, clipterminals, bytmp, bybitfield, figfile):
     data = {}
+    
+    # Figfile now also acts like a switch between passing a directory or a single log file
+    if figfile is not None:
+        logfilenames = [os.path.join(os.path.dirname(logfilenames), l) for l in os.listdir(logfilenames) if
+            os.path.splitext(l)[-1] == '.log']
+
     for logfilename in logfilenames:
-
-        # Make sure this is a valid logfile
-        if (os.path.splitext(logfilename)[-1] != '.log'):
-            continue
-
         with open(logfilename, 'r') as f:
             # Record of slicing and data associated with the slice
             sl = 'x'         # Slice key
@@ -249,6 +250,7 @@ def analyze(logfilenames, clipterminals, bytmp, bybitfield, figfile):
             ax = plt.subplot(num_plots,1,4)
             create_ax_plotcumulative(ax, data_started_ended)
 
+            print('Saving analysis figure to {}'.format(figfile))
             ax.set_xlabel('Time (hours)')
             f.savefig(figfile)
     else:
