@@ -166,7 +166,7 @@ def main():
             analyzer.analyze(args.logdir, args.clipterminals,
                     args.bytmp, args.bybitfield, figfile=args.figfile)
         else:
-            raise RuntimeError('Must pass a log file (--logfile) or a directory containing multiple log files (--logdir).')
+            raise RuntimeError('Must pass a log file (--logfile) or a directory containing multiple log files (--logdir)')
 
     else:
         jobs = Job.get_running_jobs(cfg.directories.log)
