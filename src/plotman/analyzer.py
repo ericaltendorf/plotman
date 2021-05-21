@@ -218,7 +218,7 @@ def analyze(logfilenames, clipterminals, bytmp, bybitfield, figfile):
                         data.setdefault(sl, {}).setdefault('time ended', []).append(time_ended)
                         data.setdefault(sl, {}).setdefault('time started', []).append(time_ended - float(m.group(1)))
 
-    if figfile is None:
+    if figfile is not None:
         # Prepare report
         for sl in data.keys():
             
