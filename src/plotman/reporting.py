@@ -92,7 +92,7 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
     for i, j in enumerate(sorted(jobs, key=job.Job.get_time_wall)):
         # Elipsis row
         if abbreviate_jobs_list and i == n_begin_rows:
-            row = ['...'] + ([''] * len(headings) - 1)
+            row = ['...'] + ([''] * (len(headings) - 1))
         # Omitted row
         elif abbreviate_jobs_list and i > n_begin_rows and i < (len(jobs) - n_end_rows):
             continue
@@ -208,9 +208,10 @@ def arch_dir_report(archdir_freebytes, width, prefix=''):
 
 # TODO: remove this
 def dirs_report(jobs, dir_cfg, sched_cfg, width):
+    dst_dir = dir_cfg.get_dst_directories()
     reports = [
         tmp_dir_report(jobs, dir_cfg, sched_cfg, width),
-        dst_dir_report(jobs, dir_cfg.dst, width),
+        dst_dir_report(jobs, dst_dir, width),
     ]
     if dir_cfg.archive is not None:
         reports.extend([
