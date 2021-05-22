@@ -19,8 +19,13 @@ def human_format(num, precision, powerOfTwo=False):
     while abs(num) >= divisor:
         magnitude += 1
         num /= divisor        
-    return (('%.' + str(precision) + 'f%s') %
+    result = (('%.' + str(precision) + 'f%s') %
             (num, ['', 'K', 'M', 'G', 'T', 'P'][magnitude]))
+
+    if powerOfTwo and magnitude > 0:
+	    result += 'i'
+    
+    return result
 
 def time_format(sec):
     if sec is None:
@@ -71,4 +76,3 @@ def column_wrap(items, n_cols, filler=None):
         # Pad and truncate
         rows.append( (row_items + ([filler] * n_cols))[:n_cols] )
     return rows
-
