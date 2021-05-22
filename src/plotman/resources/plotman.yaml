@@ -90,6 +90,18 @@ directories:
                 # Local mode:
                 # local:
                 #         path: '/farm'
+                custom:
+                    path: /farm/sites
+                    # The defaults use rsync for local transfers.  Below are examples
+                    # for a remote rsyncd setup.
+                    # disk_space_script: |
+                    #     #!/bin/bash
+                    #     ssh chia@chia "df -BK | grep \" ${path}/\" | awk '{ gsub(/K\$/,\"\",\$4); print \$6 \":\" \$4*1024 }'"
+                    # transfer_script: |
+                    #     #!/bin/bash
+                    #     rsync --bwlimit=80000 --skip-compress plot --remove-source-files --inplace "${source}" "rsync://chia@chia:12000/sites/${destination}"
+                    # transfer_process_name: rsync
+                    # transfer_process_argument_prefix: rsync://chia@chia:12000/sites/
 
 # Plotting scheduling parameters
 scheduling:
