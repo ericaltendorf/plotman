@@ -57,19 +57,15 @@ class CustomArchive:
     # shell: str = 'bash'
     # disk_space: str = '''ssh chia@chia "df -BK | grep \" ${path}/\" | awk '{ print \$6 \\\":\\\" \$4 }'"'''
     disk_space_path: Optional[str] = None
-    disk_space_script: str = textwrap.dedent(
-        """
+    disk_space_script: str = textwrap.dedent("""\
         #!/bin/bash
         df -BK | grep " ${path}/" | awk '{gsub(/K\$/,"",$4); print $6 ":" $4*1024 }'
-        """
-    )
+    """)
     transfer_path: Optional[str] = None
-    transfer_script: str = textwrap.dedent(
-        """
+    transfer_script: str = textwrap.dedent("""\
         #!/bin/bash
         ${process_name} --skip-compress plot --remove-source-files --inplace "${source}" "${path}/${destination}"
-        """
-    )
+    """)
     transfer_process_name: str = 'rsync'
     transfer_process_argument_prefix: str = '${path}/'
 
