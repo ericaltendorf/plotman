@@ -106,9 +106,6 @@ def get_archdir_freebytes(arch_cfg):
 
     return archdir_freebytes
 
-def arch_dest(arch_cfg, arch_dir):
-    return os.path.relpath(arch_dir, arch_cfg.path)
-
 # TODO: maybe consolidate with similar code in job.py?
 def get_running_archive_jobs(arch_cfg):
     '''Look for running rsync jobs that seem to match the pattern we use for archiving
@@ -179,11 +176,10 @@ def archive(dir_cfg, all_jobs):
         return(False, 'No archive directories found with enough free space')
 
     msg = 'Found %s with ~%d GB free' % (archdir, freespace / plot_util.GB)
-    dest = arch_dest(dir_cfg.archive, archdir)
     archive = dir_cfg.archive
     env = dir_cfg.archive.environment(
         source=chosen_plot,
-        destination=dest,
+        destination=archdir,
     )
     subprocess_arguments = {
         'args': archive.transfer_path,

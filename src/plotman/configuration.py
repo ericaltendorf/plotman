@@ -60,7 +60,7 @@ def get_validated_configs(config_text, config_path):
 # TODO: bah, mutable?  bah.
 @attr.mutable
 class Archive:
-    path: str
+    # path: str
     index: int = 0  # If not explicit, "index" will default to 0
     # TODO: mutable attribute...
     env: Dict[str, str] = attr.ib(factory=dict)
@@ -89,7 +89,7 @@ class Archive:
     ):
         complete = dict(self.env)
 
-        complete['path'] = self.path
+        # complete['path'] = self.path
         complete['process_name'] = self.transfer_process_name
 
         if source is not None:

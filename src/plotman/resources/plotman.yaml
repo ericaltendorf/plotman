@@ -68,7 +68,6 @@ directories:
         # allow public key login from rsyncd_user.
         # Complete example: https://github.com/ericaltendorf/plotman/wiki/Archiving
         archive:
-                path: /farm/sites
                 # The defaults use rsync for local transfers.  Below are examples
                 # for a remote rsyncd setup.
                 # disk_space_script: |
