@@ -1,4 +1,5 @@
 import contextlib
+import textwrap
 from typing import Dict, List, Optional
 
 import appdirs
@@ -48,16 +49,29 @@ def get_validated_configs(config_text, config_path):
 
 # Data models used to deserializing/formatting plotman.yaml files.
 
-@attr.frozen
+# TODO: bah, mutable?  bah.
+@attr.mutable
 class CustomArchive:
     path: str
     # TODO: fully support or remove
-    shell: str = 'bash'
+    # shell: str = 'bash'
     # disk_space: str = '''ssh chia@chia "df -BK | grep \" ${path}/\" | awk '{ print \$6 \\\":\\\" \$4 }'"'''
-    disk_space: str = """df -BK | grep " ${path}/" | awk '{gsub(/K\$/,"",$4); print $6 ":" $4*1024 }'"""
-    process_name: str = 'rsync'
-    transfer: str = '${process_name} --skip-compress plot --remove-source-files --inplace "${source}" "${path}/${destination}"'
-    transfer_detector: str = '${path}/'
+    disk_space_path: Optional[str] = None
+    disk_space_script: str = textwrap.dedent(
+        """
+        #!/bin/bash
+        df -BK | grep " ${path}/" | awk '{gsub(/K\$/,"",$4); print $6 ":" $4*1024 }'
+        """
+    )
+    transfer_path: Optional[str] = None
+    transfer_script: str = textwrap.dedent(
+        """
+        #!/bin/bash
+        ${process_name} --skip-compress plot --remove-source-files --inplace "${source}" "${path}/${destination}"
+        """
+    )
+    transfer_process_name: str = 'rsync'
+    transfer_process_argument_prefix: str = '${path}/'
 
 @attr.frozen
 class Archive:

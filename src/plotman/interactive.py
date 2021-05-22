@@ -3,7 +3,9 @@ import datetime
 import locale
 import math
 import os
+import stat
 import subprocess
+import tempfile
 
 from plotman import archive, configuration, manager, reporting
 from plotman.job import Job
@@ -68,6 +70,40 @@ def curses_main(stdscr):
     config_path = configuration.get_path()
     config_text = configuration.read_configuration_text(config_path)
     cfg = configuration.get_validated_configs(config_text, config_path)
+
+    # TODO: context manager?
+    if cfg.directories.archive.mode == 'custom':
+        custom = cfg.directories.archive.custom
+
+        rwx = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
+
+        if custom.disk_space_path is None:
+            disk_space_script_file = tempfile.NamedTemporaryFile(
+                mode='w',
+                encoding='utf-8',
+                prefix='plotman-disk-space-script',
+                # TODO: but cleanup!
+                delete=False,
+            )
+            disk_space_script_file.write(custom.disk_space_script)
+            disk_space_script_file.flush()
+            disk_space_script_file.close()
+            custom.disk_space_path = disk_space_script_file.name
+            os.chmod(custom.disk_space_path, rwx)
+
+        if custom.transfer_path is None:
+            transfer_script_file = tempfile.NamedTemporaryFile(
+                mode='w',
+                encoding='utf-8',
+                prefix='plotman-transfer-script',
+                # TODO: but cleanup!
+                delete=False,
+            )
+            transfer_script_file.write(custom.transfer_script)
+            transfer_script_file.flush()
+            transfer_script_file.close()
+            custom.transfer_path = transfer_script_file.name
+            os.chmod(custom.transfer_path, rwx)
 
     plotting_active = True
     archiving_configured = cfg.directories.archive is not None

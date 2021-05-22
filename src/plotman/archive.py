@@ -33,14 +33,13 @@ def spawn_archive_process(dir_cfg, all_jobs):
             archiving_status = status_or_cmd
         else:
             args = status_or_cmd
-            cmd = args['args']
             # TODO: do something useful with output instead of DEVNULL
             p = subprocess.Popen(**args,
                     shell=True,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.STDOUT,
                     start_new_session=True)
-            log_message = 'Starting archive: ' + cmd
+            log_message = 'Starting archive: ' + args['args']
             # At least for now it seems that even if we get a new running
             # archive jobs list it doesn't contain the new rsync process.
             # My guess is that this is because the bash in the middle due to
@@ -101,20 +100,13 @@ def get_archdir_freebytes(arch_cfg):
                 archdir = (fields[5]).decode('utf-8')
                 archdir_freebytes[archdir] = freebytes
     else:
-        extra_env = {
-            'path': arch_cfg.custom.path,
-        }
         completed_process = subprocess.run(
-            [arch_cfg.custom.shell],
+            [arch_cfg.custom.disk_space_path],
             encoding='utf-8',
-            env={**os.environ, **extra_env},
-            input=arch_cfg.custom.disk_space,
+            env={**os.environ, 'path': arch_cfg.custom.path},
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-
-        #print(completed_process.stdout)
-        #print(completed_process.stderr)
 
         for line in completed_process.stdout.splitlines():
             split = line.split(':')
@@ -135,28 +127,32 @@ def arch_dest(arch_cfg, arch_dir):
         return rsync_url
     else:
         return os.path.relpath(arch_dir, arch_cfg.custom.path)
-        #return os.path.expandvars(arch_cfg.custom.transfer_detector)
 
 # TODO: maybe consolidate with similar code in job.py?
 def get_running_archive_jobs(arch_cfg):
     '''Look for running rsync jobs that seem to match the pattern we use for archiving
        them.  Return a list of PIDs of matching jobs.'''
     jobs = []
-    for proc in psutil.process_iter(['pid', 'name']):
+    for proc in psutil.process_iter():
         with contextlib.suppress(psutil.NoSuchProcess):
-            if arch_cfg.mode == 'legacy':
-                dest = arch_dest(arch_cfg, '/')
-                proc_name = 'rsync'
-            else:
-                # TODO: auaughhghh, don't do this
-                os.environ['path'] = arch_cfg.custom.path
-                dest = os.path.expandvars(arch_cfg.custom.transfer_detector)
-                proc_name = arch_cfg.custom.process_name
-            if proc.name() == proc_name:
-                args = proc.cmdline()
-                for arg in args:
-                    if arg.startswith(dest):
-                        jobs.append(proc.pid)
+            with proc.oneshot():
+                if arch_cfg.mode == 'legacy':
+                    dest = arch_dest(arch_cfg, '/')
+                    proc_name = 'rsync'
+                else:
+                    # TODO: make a context manager
+                    try:
+                        os.environ['path'] = arch_cfg.custom.path
+                        dest = os.path.expandvars(arch_cfg.custom.transfer_process_argument_prefix)
+                    finally:
+                        # TODO: yup, this'll delete, not restore
+                        del os.environ['path']
+                    proc_name = arch_cfg.custom.transfer_process_name
+                if proc.name() == proc_name:
+                    args = proc.cmdline()
+                    for arg in args:
+                        if arg.startswith(dest):
+                            jobs.append(proc.pid)
     return jobs
 
 def archive(dir_cfg, all_jobs):
@@ -191,8 +187,6 @@ def archive(dir_cfg, all_jobs):
     # Pick first archive dir with sufficient space
     #
     archdir_freebytes = get_archdir_freebytes(dir_cfg.archive)
-    # print(dict(sorted(archdir_freebytes.items())))
-    # 1/0
     if not archdir_freebytes:
         return(False, 'No free archive dirs found.')
 
@@ -217,13 +211,14 @@ def archive(dir_cfg, all_jobs):
     else:
         custom = dir_cfg.archive.custom
         env = {
-            'process_name': custom.process_name,
+            'process_name': custom.transfer_process_name,
             'source': chosen_plot,
             'path': custom.path,
             'destination': dest,
         }
         subprocess_arguments = {
-            'args': custom.transfer,
+            'args': custom.transfer_path,
+            # 'args': custom.shell,
             # 'input': custom.transfer,
             'env': {**os.environ, **env}
         }
