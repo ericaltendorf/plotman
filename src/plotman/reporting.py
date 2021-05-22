@@ -110,7 +110,7 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
                         plot_util.human_format(j.get_tmp_usage(), 0), # Current temp file size
                         j.proc.pid, # System pid
                         j.get_run_status(), # OS status for the job process
-                        plot_util.human_format(j.get_mem_usage(), 1), # Memory usage
+                        plot_util.human_format(j.get_mem_usage(), 1, True), # Memory usage
                         plot_util.time_format(j.get_time_user()), # user system time
                         plot_util.time_format(j.get_time_sys()), # system time
                         plot_util.time_format(j.get_time_iowait()) # io wait
