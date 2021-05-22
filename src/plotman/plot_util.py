@@ -1,24 +1,32 @@
 import math
 import os
 import re
+import shutil
 
 GB = 1_000_000_000
 
 def df_b(d):
     'Return free space for directory (in bytes)'
-    stat = os.statvfs(d)
-    return stat.f_frsize * stat.f_bavail
+    usage = shutil.disk_usage(d)
+    return usage.free
 
 def get_k32_plotsize():
     return 108 * GB
 
-def human_format(num, precision):
+def human_format(num, precision, powerOfTwo=False):
+    divisor = 1024 if powerOfTwo else 1000
+    
     magnitude = 0
-    while abs(num) >= 1000:
+    while abs(num) >= divisor:
         magnitude += 1
-        num /= 1000.0
-    return (('%.' + str(precision) + 'f%s') %
+        num /= divisor        
+    result = (('%.' + str(precision) + 'f%s') %
             (num, ['', 'K', 'M', 'G', 'T', 'P'][magnitude]))
+
+    if powerOfTwo and magnitude > 0:
+	    result += 'i'
+    
+    return result
 
 def time_format(sec):
     if sec is None:
@@ -56,7 +64,7 @@ def list_k32_plots(d):
                     plots.append(plot)
             except FileNotFoundError:
                 continue
-    
+
     return plots
 
 def column_wrap(items, n_cols, filler=None):
@@ -69,4 +77,3 @@ def column_wrap(items, n_cols, filler=None):
         # Pad and truncate
         rows.append( (row_items + ([filler] * n_cols))[:n_cols] )
     return rows
-
