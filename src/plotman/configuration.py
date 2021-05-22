@@ -1,4 +1,7 @@
 import contextlib
+import os
+import stat
+import tempfile
 import textwrap
 from typing import Dict, List, Optional
 
@@ -37,6 +40,11 @@ def get_validated_configs(config_text, config_path):
     schema = desert.schema(PlotmanConfig)
     config_objects = yaml.load(config_text, Loader=yaml.SafeLoader)
 
+    version = config_objects.get('version', (0,))
+
+    if version[0] != 1:
+        raise Exception('configuration format version mismatch')
+
     try:
         loaded = schema.load(config_objects)
     except marshmallow.exceptions.ValidationError as e:
@@ -51,8 +59,11 @@ def get_validated_configs(config_text, config_path):
 
 # TODO: bah, mutable?  bah.
 @attr.mutable
-class CustomArchive:
+class Archive:
     path: str
+    index: int = 0  # If not explicit, "index" will default to 0
+    # TODO: mutable attribute...
+    env: Dict[str, str] = attr.ib(factory=dict)
     # TODO: fully support or remove
     # shell: str = 'bash'
     # disk_space: str = '''ssh chia@chia "df -BK | grep \" ${path}/\" | awk '{ print \$6 \\\":\\\" \$4 }'"'''
@@ -69,22 +80,56 @@ class CustomArchive:
     transfer_process_name: str = 'rsync'
     transfer_process_argument_prefix: str = '${path}/'
 
-@attr.frozen
-class Archive:
-    rsyncd_module: str = None
-    rsyncd_path: str = None
-    rsyncd_bwlimit: int = None
-    rsyncd_host: str = None
-    rsyncd_user: str = None
-    index: int = 0  # If not explicit, "index" will default to 0
-    mode: str = desert.ib(
-        default='legacy',
-        marshmallow_field=marshmallow.fields.String(
-            validate=marshmallow.validate.OneOf(choices=['legacy', 'custom'])
-        ),
-    )
-    custom: Optional[CustomArchive] = None
-    # custom: CustomArchive = CustomArchive(path='/farm/sites')
+    def environment(
+            self,
+            # path=None,
+            source=None,
+            process_name=None,
+            destination=None,
+    ):
+        complete = dict(self.env)
+
+        complete['path'] = self.path
+        complete['process_name'] = self.transfer_process_name
+
+        if source is not None:
+            complete['source'] = source
+
+        if destination is not None:
+            complete['destination'] = destination
+
+        return complete
+
+    def maybe_create_scripts(self):
+        rwx = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
+
+        if self.disk_space_path is None:
+            disk_space_script_file = tempfile.NamedTemporaryFile(
+                mode='w',
+                encoding='utf-8',
+                prefix='plotman-disk-space-script',
+                # TODO: but cleanup!
+                delete=False,
+            )
+            disk_space_script_file.write(self.disk_space_script)
+            disk_space_script_file.flush()
+            disk_space_script_file.close()
+            self.disk_space_path = disk_space_script_file.name
+            os.chmod(self.disk_space_path, rwx)
+
+        if self.transfer_path is None:
+            transfer_script_file = tempfile.NamedTemporaryFile(
+                mode='w',
+                encoding='utf-8',
+                prefix='plotman-transfer-script',
+                # TODO: but cleanup!
+                delete=False,
+            )
+            transfer_script_file.write(self.transfer_script)
+            transfer_script_file.flush()
+            transfer_script_file.close()
+            self.transfer_path = transfer_script_file.name
+            os.chmod(self.transfer_path, rwx)
 
 @attr.frozen
 class TmpOverrides:
@@ -98,6 +143,12 @@ class Directories:
     tmp2: Optional[str] = None
     tmp_overrides: Optional[Dict[str, TmpOverrides]] = None
     archive: Optional[Archive] = None
+    # archive_mode: str = desert.ib(
+    #     default='legacy',
+    #     marshmallow_field=marshmallow.fields.String(
+    #         validate=marshmallow.validate.OneOf(choices=['legacy', 'custom'])
+    #     ),
+    # )
 
     def dst_is_tmp(self):
         return self.dst is None
@@ -143,3 +194,4 @@ class PlotmanConfig:
     scheduling: Scheduling
     plotting: Plotting
     user_interface: UserInterface = attr.ib(factory=UserInterface)
+    version: List[int] = [0]

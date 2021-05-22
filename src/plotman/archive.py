@@ -12,7 +12,7 @@ from datetime import datetime
 import psutil
 import texttable as tt
 
-from plotman import job, manager, plot_util
+from plotman import configuration, job, manager, plot_util
 
 # TODO : write-protect and delete-protect archived plots
 
@@ -87,46 +87,27 @@ def compute_priority(phase, gb_free, n_plots):
 
 def get_archdir_freebytes(arch_cfg):
     archdir_freebytes = {}
-    if arch_cfg.mode == 'legacy':
-        df_cmd = ('ssh %s@%s df -aBK | grep " %s/"' %
-            (arch_cfg.rsyncd_user, arch_cfg.rsyncd_host, posixpath.normpath(arch_cfg.rsyncd_path)) )
-        with subprocess.Popen(df_cmd, shell=True, stdout=subprocess.PIPE) as proc:
-            for line in proc.stdout.readlines():
-                fields = line.split()
-                if fields[3] == b'-':
-                    # not actually mounted
-                    continue
-                freebytes = int(fields[3][:-1]) * 1024  # Strip the final 'K'
-                archdir = (fields[5]).decode('utf-8')
-                archdir_freebytes[archdir] = freebytes
-    else:
-        completed_process = subprocess.run(
-            [arch_cfg.custom.disk_space_path],
-            encoding='utf-8',
-            env={**os.environ, 'path': arch_cfg.custom.path},
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
+    completed_process = subprocess.run(
+        [arch_cfg.disk_space_path],
+        encoding='utf-8',
+        env={**os.environ, **arch_cfg.environment()},
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
 
-        for line in completed_process.stdout.splitlines():
-            split = line.split(':')
-            if len(split) != 2:
-                continue
-            archdir, space = split
-            freebytes = int(space)
-            archdir_freebytes[archdir] = freebytes
+    for line in completed_process.stdout.splitlines():
+        split = line.split(':')
+        if len(split) != 2:
+            # TODO: warning?  or something...
+            continue
+        archdir, space = split
+        freebytes = int(space)
+        archdir_freebytes[archdir] = freebytes
+
     return archdir_freebytes
 
 def arch_dest(arch_cfg, arch_dir):
-    if arch_cfg.mode == 'legacy':
-        rsync_path = arch_dir.replace(arch_cfg.rsyncd_path, arch_cfg.rsyncd_module)
-        if rsync_path.startswith('/'):
-            rsync_path = rsync_path[1:]  # Avoid dup slashes.  TODO use path join?
-        rsync_url = 'rsync://%s@%s:12000/%s' % (
-                arch_cfg.rsyncd_user, arch_cfg.rsyncd_host, rsync_path)
-        return rsync_url
-    else:
-        return os.path.relpath(arch_dir, arch_cfg.custom.path)
+    return os.path.relpath(arch_dir, arch_cfg.path)
 
 # TODO: maybe consolidate with similar code in job.py?
 def get_running_archive_jobs(arch_cfg):
@@ -136,18 +117,15 @@ def get_running_archive_jobs(arch_cfg):
     for proc in psutil.process_iter():
         with contextlib.suppress(psutil.NoSuchProcess):
             with proc.oneshot():
-                if arch_cfg.mode == 'legacy':
-                    dest = arch_dest(arch_cfg, '/')
-                    proc_name = 'rsync'
-                else:
-                    # TODO: make a context manager
-                    try:
-                        os.environ['path'] = arch_cfg.custom.path
-                        dest = os.path.expandvars(arch_cfg.custom.transfer_process_argument_prefix)
-                    finally:
-                        # TODO: yup, this'll delete, not restore
-                        del os.environ['path']
-                    proc_name = arch_cfg.custom.transfer_process_name
+                # TODO: make a context manager
+                try:
+                    os.environ.update(arch_cfg.environment())
+                    dest = os.path.expandvars(arch_cfg.transfer_process_argument_prefix)
+                finally:
+                    # TODO: yup, this'll delete, not restore
+                    for key in arch_cfg.environment():
+                        del os.environ[key]
+                proc_name = arch_cfg.transfer_process_name
                 if proc.name() == proc_name:
                     args = proc.cmdline()
                     for arg in args:
@@ -202,24 +180,14 @@ def archive(dir_cfg, all_jobs):
 
     msg = 'Found %s with ~%d GB free' % (archdir, freespace / plot_util.GB)
     dest = arch_dest(dir_cfg.archive, archdir)
-    if dir_cfg.archive.mode == 'legacy':
-        bwlimit = dir_cfg.archive.rsyncd_bwlimit
-        throttle_arg = ('--bwlimit=%d' % bwlimit) if bwlimit else ''
-        cmd = ('rsync %s --compress-level=0 --remove-source-files -P %s %s' %
-                (throttle_arg, chosen_plot, dest))
-        subprocess_arguments = {'args': cmd}
-    else:
-        custom = dir_cfg.archive.custom
-        env = {
-            'process_name': custom.transfer_process_name,
-            'source': chosen_plot,
-            'path': custom.path,
-            'destination': dest,
-        }
-        subprocess_arguments = {
-            'args': custom.transfer_path,
-            # 'args': custom.shell,
-            # 'input': custom.transfer,
-            'env': {**os.environ, **env}
-        }
+    archive = dir_cfg.archive
+    env = dir_cfg.archive.environment(
+        source=chosen_plot,
+        destination=dest,
+    )
+    subprocess_arguments = {
+        'args': archive.transfer_path,
+        'env': {**os.environ, **env}
+    }
+
     return (True, subprocess_arguments)
