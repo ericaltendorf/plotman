@@ -123,7 +123,10 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
             if dir_cfg.tmp2 is not None:
                 plot_args.append('-2')
                 plot_args.append(dir_cfg.tmp2)
-
+            else:
+                if dir_cfg.tmp2eqdst:
+                    plot_args.append('-2')
+                    plot_args.append(dstdir)
             logmsg = ('Starting plot job: %s ; logging to %s' % (' '.join(plot_args), logfile))
 
             # start_new_sessions to make the job independent of this controlling tty.

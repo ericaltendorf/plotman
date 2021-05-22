@@ -47,6 +47,10 @@ directories:
         # chia plots create as -2.  Only one tmp2 directory is supported.
         # tmp2: /mnt/tmp/a
 
+        # Optional: tmp2eqdst flag.  If set to True and tmp2 is not given
+        # chia plots create set -2 to the same folder of -d
+        # tmp2eqdst: True
+
         # One or more directories; the scheduler will use all of them.
         # These again are presumed to be on independent physical devices,
         # so writes (plot jobs) and reads (archivals) can be scheduled
