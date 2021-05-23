@@ -1,4 +1,6 @@
 # Default/example plotman.yaml configuration file
+
+# https://github.com/ericaltendorf/plotman/wiki/Configuration#versions
 version: [1]
 
 # Options for display and rendering

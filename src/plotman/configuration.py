@@ -42,8 +42,15 @@ def get_validated_configs(config_text, config_path):
 
     version = config_objects.get('version', (0,))
 
-    if version[0] != 1:
-        raise Exception('configuration format version mismatch')
+    expected_major_version = 1
+
+    if version[0] != expected_major_version:
+        message = textwrap.dedent(f"""\
+            Expected major version {expected_major_version}, found version {version}
+                See https://github.com/ericaltendorf/plotman/wiki/Configuration#versions
+        """)
+
+        raise Exception(message)
 
     try:
         loaded = schema.load(config_objects)
