@@ -55,7 +55,6 @@ class Archive:
     rsyncd_bwlimit: int
     rsyncd_host: str
     rsyncd_user: str
-    index: int = 0  # If not explicit, "index" will default to 0
 
 @attr.frozen
 class TmpOverrides:
