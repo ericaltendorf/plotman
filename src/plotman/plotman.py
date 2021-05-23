@@ -137,6 +137,10 @@ def main():
     config_text = configuration.read_configuration_text(config_path)
     cfg = configuration.get_validated_configs(config_text, config_path)
 
+    archiving_configured = cfg.directories.archive is not None
+    if archiving_configured:
+        cfg.directories.archive.maybe_create_scripts()
+
     #
     # Stay alive, spawning plot jobs
     #

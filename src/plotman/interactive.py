@@ -69,10 +69,12 @@ def curses_main(stdscr):
     config_text = configuration.read_configuration_text(config_path)
     cfg = configuration.get_validated_configs(config_text, config_path)
 
-    cfg.directories.archive.maybe_create_scripts()
-
     plotting_active = True
+
     archiving_configured = cfg.directories.archive is not None
+    if archiving_configured:
+        cfg.directories.archive.maybe_create_scripts()
+
     archiving_active = archiving_configured
 
     plotting_status = '<startup>'    # todo rename these msg?
