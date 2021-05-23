@@ -173,8 +173,7 @@ def curses_main(stdscr):
         dst_dir = cfg.directories.get_dst_directories()
         dst_prefix = os.path.commonpath(dst_dir)
         if archiving_configured:
-            arch_prefix = ''
-            # arch_prefix = cfg.directories.archive.path
+            arch_prefix = os.path.commonpath(archdir_freebytes.keys())
 
         n_tmpdirs = len(cfg.directories.tmp)
 
