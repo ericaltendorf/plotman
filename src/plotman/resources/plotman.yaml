@@ -59,25 +59,54 @@ directories:
                 - /mnt/dst/01
 
         # Archival configuration.  Optional; if you do not wish to run the
-        # archiving operation, comment this section out.
+        # archiving operation, comment this section out.  Almost everyone
+        # should be using the archival feature.  It is meant to distribute
+        # plots among multiple disks filling them all.  This can be done both
+        # to local and to remote disks.
         #
-        # Currently archival depends on an rsync daemon running on the remote
-        # host.
-        # The archival also uses ssh to connect to the remote host and check
-        # for available directories. Set up ssh keys on the remote host to
-        # allow public key login from rsyncd_user.
+        # As of v0.4, archiving commands are highly configurable.  The basic
+        # configuration consists of a script for checking available disk space
+        # and another for actually transferring plots.  Each can be specified
+        # as either a path to an existing script or inline script contents.
+        # It is expected that most people will use existing recipes and will
+        # adjust them by specifying environment variables that will set their
+        # system specific values.  These can be provided to the scripts via
+        # the `env` key.  plotman will additionally provide `source` and
+        # `destination` environment variables to the transfer script so it
+        # knows the specifically selected items to process.  plotman also needs
+        # to be able to generally detect if a transfer process is already
+        # running.  To be able to identify externally launched transfers, the
+        # process name and an argument prefix to match must be provided.
+        #
         # Complete example: https://github.com/ericaltendorf/plotman/wiki/Archiving
         archive:
-                # The defaults use rsync for local transfers.  Below are examples
-                # for a remote rsyncd setup.
+                # local rsync example setup
+                #
+                # env:
+                #     site_root: /farm/sites
                 # disk_space_script: |
                 #     #!/bin/bash
-                #     ssh chia@chia "df -BK | grep \" ${path}/\" | awk '{ gsub(/K\$/,\"\",\$4); print \$6 \":\" \$4*1024 }'"
+                #     df -BK | grep " ${site_root}/" | awk '{ gsub(/K$/,"",$4); print $6 ":" $4*1024 }'
                 # transfer_script: |
                 #     #!/bin/bash
-                #     rsync --bwlimit=80000 --skip-compress plot --remove-source-files --inplace "${source}" "rsync://chia@chia:12000/sites/${destination}"
+                #     rsync --skip-compress plot --remove-source-files --inplace "${source}" "${destination}"
                 # transfer_process_name: rsync
-                # transfer_process_argument_prefix: rsync://chia@chia:12000/sites/
+                # transfer_process_argument_prefix: ${site_root}
+
+                # remote rsync example setup
+                #
+                # env:
+                #     site_root: /farm/sites
+                #     url_root: rsync://altendky@server:12000/sites
+                # disk_space_script: |
+                #     #!/bin/bash
+                #     ssh altendky@server "df -BK | grep \" ${site_root}/\" | awk '{ gsub(/K\$/,\"\",\$4); print \$6 \":\" \$4*1024 }'"
+                # transfer_script: |
+                #     #!/bin/bash
+                #     relative_path=$(realpath --relative-to="${site_root}" "${destination}")
+                #     rsync --bwlimit=80000 --skip-compress plot --remove-source-files --inplace "${source}" "${url_root}/${relative_path}"
+                # transfer_process_name: rsync
+                # transfer_process_argument_prefix: ${url_root}
 
 # Plotting scheduling parameters
 scheduling:
