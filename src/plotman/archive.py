@@ -114,15 +114,9 @@ def get_running_archive_jobs(arch_cfg):
     for proc in psutil.process_iter():
         with contextlib.suppress(psutil.NoSuchProcess):
             with proc.oneshot():
-                # TODO: make a context manager
-                try:
-                    os.environ.update(arch_cfg.environment())
-                    dest = os.path.expandvars(arch_cfg.transfer_process_argument_prefix)
-                finally:
-                    # TODO: yup, this'll delete, not restore
-                    for key in arch_cfg.environment():
-                        del os.environ[key]
-                proc_name = arch_cfg.transfer_process_name
+                variables = {**os.environ, **arch_cfg.environment()}
+                dest = arch_cfg.transfer_process_argument_prefix.format(**variables)
+                proc_name = arch_cfg.transfer_process_name.format(**variables)
                 if proc.name() == proc_name:
                     args = proc.cmdline()
                     for arg in args:

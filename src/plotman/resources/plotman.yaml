@@ -1,5 +1,6 @@
 # Default/example plotman.yaml configuration file
-version: []
+version: [1]
+
 # Options for display and rendering
 user_interface:
         # Call out to the `stty` program to determine terminal size, instead of
@@ -76,37 +77,51 @@ directories:
         # knows the specifically selected items to process.  plotman also needs
         # to be able to generally detect if a transfer process is already
         # running.  To be able to identify externally launched transfers, the
-        # process name and an argument prefix to match must be provided.
+        # process name and an argument prefix to match must be provided.  Note
+        # that variable substitution of environment variables including those
+        # specified in the env key can be used in both process name and process
+        # argument prefix elements but that they use the python substitution
+        # format.
         #
         # Complete example: https://github.com/ericaltendorf/plotman/wiki/Archiving
         archive:
-                # local rsync example setup
-                #
-                # env:
-                #     site_root: /farm/sites
-                # disk_space_script: |
-                #     #!/bin/bash
-                #     df -BK | grep " ${site_root}/" | awk '{ gsub(/K$/,"",$4); print $6 ":" $4*1024 }'
-                # transfer_script: |
-                #     #!/bin/bash
-                #     rsync --skip-compress plot --remove-source-files --inplace "${source}" "${destination}"
-                # transfer_process_name: rsync
-                # transfer_process_argument_prefix: ${site_root}
+                # -- local rsync example setup
 
-                # remote rsync example setup
+                 env:
+                         command: rsync
+                         site_root: /farm/sites
+                 disk_space_script: |
+                         #!/bin/bash
+                         df -BK | grep " ${site_root}/" | awk '{ gsub(/K$/,"",$4); print $6 ":" $4*1024 }'
+                 transfer_script: |
+                         #!/bin/bash
+                         "${command}" --skip-compress plot --remove-source-files --inplace "${source}" "${destination}"
+                 transfer_process_name: "{command}"
+                 transfer_process_argument_prefix: "{site_root}"
+
+                # -- remote rsync example setup
                 #
                 # env:
-                #     site_root: /farm/sites
-                #     url_root: rsync://altendky@server:12000/sites
+                #         command: rsync
+                #         site_root: /farm/sites
+                #         url_root: rsync://altendky@server:12000/sites
                 # disk_space_script: |
-                #     #!/bin/bash
-                #     ssh altendky@server "df -BK | grep \" ${site_root}/\" | awk '{ gsub(/K\$/,\"\",\$4); print \$6 \":\" \$4*1024 }'"
+                #         #!/bin/bash
+                #         ssh altendky@server "df -BK | grep \" ${site_root}/\" | awk '{ gsub(/K\$/,\"\",\$4); print \$6 \":\" \$4*1024 }'"
                 # transfer_script: |
-                #     #!/bin/bash
-                #     relative_path=$(realpath --relative-to="${site_root}" "${destination}")
-                #     rsync --bwlimit=80000 --skip-compress plot --remove-source-files --inplace "${source}" "${url_root}/${relative_path}"
+                #         #!/bin/bash
+                #         relative_path=$(realpath --relative-to="${site_root}" "${destination}")
+                #         "${command}" --bwlimit=80000 --skip-compress plot --remove-source-files --inplace "${source}" "${url_root}/${relative_path}"
+                # transfer_process_name: "{command}"
+                # transfer_process_argument_prefix: "{url_root}"
+
+                # -- external script example
+                # env:
+                #         some_common_value: /a/path
+                # disk_space_path: /home/me/my_disk_space_script.sh
+                # transfer_path: /home/me/my_transfer_script.sh
                 # transfer_process_name: rsync
-                # transfer_process_argument_prefix: ${url_root}
+                # transfer_process_argument_prefix: /the/destination/directory/root
 
 # Plotting scheduling parameters
 scheduling:

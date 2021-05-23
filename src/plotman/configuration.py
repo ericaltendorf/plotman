@@ -60,25 +60,15 @@ def get_validated_configs(config_text, config_path):
 # TODO: bah, mutable?  bah.
 @attr.mutable
 class Archive:
-    # path: str
+    transfer_process_name: str
+    transfer_process_argument_prefix: str
     index: int = 0  # If not explicit, "index" will default to 0
     # TODO: mutable attribute...
     env: Dict[str, str] = attr.ib(factory=dict)
-    # TODO: fully support or remove
-    # shell: str = 'bash'
-    # disk_space: str = '''ssh chia@chia "df -BK | grep \" ${path}/\" | awk '{ print \$6 \\\":\\\" \$4 }'"'''
     disk_space_path: Optional[str] = None
-    disk_space_script: str = textwrap.dedent("""\
-        #!/bin/bash
-        df -BK | grep " ${path}/" | awk '{gsub(/K\$/,"",$4); print $6 ":" $4*1024 }'
-    """)
+    disk_space_script: Optional[str] = None
     transfer_path: Optional[str] = None
-    transfer_script: str = textwrap.dedent("""\
-        #!/bin/bash
-        ${process_name} --skip-compress plot --remove-source-files --inplace "${source}" "${path}/${destination}"
-    """)
-    transfer_process_name: str = 'rsync'
-    transfer_process_argument_prefix: str = '${path}/'
+    transfer_script: Optional[str] = None
 
     def environment(
             self,
@@ -89,8 +79,8 @@ class Archive:
     ):
         complete = dict(self.env)
 
-        # complete['path'] = self.path
-        complete['process_name'] = self.transfer_process_name
+        variables = {**os.environ, **complete}
+        complete['process_name'] = self.transfer_process_name.format(**variables)
 
         if source is not None:
             complete['source'] = source
