@@ -70,7 +70,6 @@ def curses_main(stdscr):
     cfg = configuration.get_validated_configs(config_text, config_path)
 
     plotting_active = True
-
     archiving_configured = cfg.directories.archive is not None
     if archiving_configured:
         cfg.directories.archive.maybe_create_scripts()

@@ -79,9 +79,7 @@ class Archive:
 
     def environment(
             self,
-            # path=None,
             source=None,
-            process_name=None,
             destination=None,
     ):
         complete = dict(self.env)
@@ -140,12 +138,6 @@ class Directories:
     tmp2: Optional[str] = None
     tmp_overrides: Optional[Dict[str, TmpOverrides]] = None
     archive: Optional[Archive] = None
-    # archive_mode: str = desert.ib(
-    #     default='legacy',
-    #     marshmallow_field=marshmallow.fields.String(
-    #         validate=marshmallow.validate.OneOf(choices=['legacy', 'custom'])
-    #     ),
-    # )
 
     def dst_is_tmp(self):
         return self.dst is None
