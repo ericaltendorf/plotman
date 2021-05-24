@@ -62,18 +62,11 @@ def archiving_status_msg(configured, active, status):
     else:
         return '(not configured)'
 
-def curses_main(stdscr):
+def curses_main(stdscr, cfg):
     log = Log()
-
-    config_path = configuration.get_path()
-    config_text = configuration.read_configuration_text(config_path)
-    cfg = configuration.get_validated_configs(config_text, config_path)
 
     plotting_active = True
     archiving_configured = cfg.directories.archive is not None
-    if archiving_configured:
-        cfg.directories.archive.maybe_create_scripts()
-
     archiving_active = archiving_configured
 
     plotting_status = '<startup>'    # todo rename these msg?
@@ -329,13 +322,13 @@ def curses_main(stdscr):
             pressed_key = key
 
 
-def run_interactive():
+def run_interactive(cfg):
     locale.setlocale(locale.LC_ALL, '')
     code = locale.getpreferredencoding()
     # Then use code as the encoding for str.encode() calls.
 
     try:
-        curses.wrapper(curses_main)
+        curses.wrapper(curses_main, cfg=cfg)
     except curses.error as e:
         raise TerminalTooSmallError(
             "Your terminal may be too small, try making it bigger.",

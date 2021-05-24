@@ -137,124 +137,121 @@ def main():
     config_text = configuration.read_configuration_text(config_path)
     cfg = configuration.get_validated_configs(config_text, config_path)
 
-    archiving_configured = cfg.directories.archive is not None
-    if archiving_configured:
-        cfg.directories.archive.maybe_create_scripts()
-
-    #
-    # Stay alive, spawning plot jobs
-    #
-    if args.cmd == 'plot':
-        print('...starting plot loop')
-        while True:
-            wait_reason = manager.maybe_start_new_plot(cfg.directories, cfg.scheduling, cfg.plotting)
-
-            # TODO: report this via a channel that can be polled on demand, so we don't spam the console
-            if wait_reason:
-                print('...sleeping %d s: %s' % (cfg.scheduling.polling_time_s, wait_reason))
-
-            time.sleep(cfg.scheduling.polling_time_s)
-
-    #
-    # Analysis of completed jobs
-    #
-    elif args.cmd == 'analyze':
-
-        analyzer.analyze(args.logfile, args.clipterminals,
-                args.bytmp, args.bybitfield)
-
-    else:
-        jobs = Job.get_running_jobs(cfg.directories.log)
-
-        # Status report
-        if args.cmd == 'status':
-            result = "{0}\n\n{1}\n\nUpdated at: {2}".format(
-                reporting.status_report(jobs, get_term_width()),
-                reporting.summary(jobs),
-                datetime.datetime.today().strftime("%c"),
-            )
-            print(result)
-
-        # Directories report
-        elif args.cmd == 'dirs':
-            print(reporting.dirs_report(jobs, cfg.directories, cfg.scheduling, get_term_width()))
-
-        elif args.cmd == 'interactive':
-            interactive.run_interactive()
-
-        # Start running archival
-        elif args.cmd == 'archive':
-            print('...starting archive loop')
-            firstit = True
+    with cfg.setup():
+        #
+        # Stay alive, spawning plot jobs
+        #
+        if args.cmd == 'plot':
+            print('...starting plot loop')
             while True:
-                if not firstit:
-                    print('Sleeping 60s until next iteration...')
-                    time.sleep(60)
-                    jobs = Job.get_running_jobs(cfg.directories.log)
-                firstit = False
+                wait_reason = manager.maybe_start_new_plot(cfg.directories, cfg.scheduling, cfg.plotting)
 
-                archiving_status, log_message = archive.spawn_archive_process(cfg.directories, jobs)
-                if log_message:
-                    print(log_message)
+                # TODO: report this via a channel that can be polled on demand, so we don't spam the console
+                if wait_reason:
+                    print('...sleeping %d s: %s' % (cfg.scheduling.polling_time_s, wait_reason))
 
-
-        # Debugging: show the destination drive usage schedule
-        elif args.cmd == 'dsched':
-            for (d, ph) in manager.dstdirs_to_furthest_phase(jobs).items():
-                print('  %s : %s' % (d, str(ph)))
+                time.sleep(cfg.scheduling.polling_time_s)
 
         #
-        # Job control commands
+        # Analysis of completed jobs
         #
-        elif args.cmd in [ 'details', 'files', 'kill', 'suspend', 'resume' ]:
-            print(args)
+        elif args.cmd == 'analyze':
 
-            selected = []
+            analyzer.analyze(args.logfile, args.clipterminals,
+                    args.bytmp, args.bybitfield)
 
-            # TODO: clean up treatment of wildcard
-            if args.idprefix[0] == 'all':
-                selected = jobs
-            else:
-                # TODO: allow multiple idprefixes, not just take the first
-                selected = manager.select_jobs_by_partial_id(jobs, args.idprefix[0])
-                if (len(selected) == 0):
-                    print('Error: %s matched no jobs.' % args.idprefix[0])
-                elif len(selected) > 1:
-                    print('Error: "%s" matched multiple jobs:' % args.idprefix[0])
-                    for j in selected:
-                        print('  %s' % j.plot_id)
-                    selected = []
+        else:
+            jobs = Job.get_running_jobs(cfg.directories.log)
 
-            for job in selected:
-                if args.cmd == 'details':
-                    print(job.status_str_long())
+            # Status report
+            if args.cmd == 'status':
+                result = "{0}\n\n{1}\n\nUpdated at: {2}".format(
+                    reporting.status_report(jobs, get_term_width()),
+                    reporting.summary(jobs),
+                    datetime.datetime.today().strftime("%c"),
+                )
+                print(result)
 
-                elif args.cmd == 'files':
-                    temp_files = job.get_temp_files()
-                    for f in temp_files:
-                        print('  %s' % f)
+            # Directories report
+            elif args.cmd == 'dirs':
+                print(reporting.dirs_report(jobs, cfg.directories, cfg.scheduling, get_term_width()))
 
-                elif args.cmd == 'kill':
-                    # First suspend so job doesn't create new files
-                    print('Pausing PID %d, plot id %s' % (job.proc.pid, job.plot_id))
-                    job.suspend()
+            elif args.cmd == 'interactive':
+                interactive.run_interactive(cfg=cfg)
 
-                    temp_files = job.get_temp_files()
-                    print('Will kill pid %d, plot id %s' % (job.proc.pid, job.plot_id))
-                    print('Will delete %d temp files' % len(temp_files))
-                    conf = input('Are you sure? ("y" to confirm): ')
-                    if (conf != 'y'):
-                        print('canceled.  If you wish to resume the job, do so manually.')
-                    else:
-                        print('killing...')
-                        job.cancel()
-                        print('cleaning up temp files...')
+            # Start running archival
+            elif args.cmd == 'archive':
+                print('...starting archive loop')
+                firstit = True
+                while True:
+                    if not firstit:
+                        print('Sleeping 60s until next iteration...')
+                        time.sleep(60)
+                        jobs = Job.get_running_jobs(cfg.directories.log)
+                    firstit = False
+
+                    archiving_status, log_message = archive.spawn_archive_process(cfg.directories, jobs)
+                    if log_message:
+                        print(log_message)
+
+
+            # Debugging: show the destination drive usage schedule
+            elif args.cmd == 'dsched':
+                for (d, ph) in manager.dstdirs_to_furthest_phase(jobs).items():
+                    print('  %s : %s' % (d, str(ph)))
+
+            #
+            # Job control commands
+            #
+            elif args.cmd in [ 'details', 'files', 'kill', 'suspend', 'resume' ]:
+                print(args)
+
+                selected = []
+
+                # TODO: clean up treatment of wildcard
+                if args.idprefix[0] == 'all':
+                    selected = jobs
+                else:
+                    # TODO: allow multiple idprefixes, not just take the first
+                    selected = manager.select_jobs_by_partial_id(jobs, args.idprefix[0])
+                    if (len(selected) == 0):
+                        print('Error: %s matched no jobs.' % args.idprefix[0])
+                    elif len(selected) > 1:
+                        print('Error: "%s" matched multiple jobs:' % args.idprefix[0])
+                        for j in selected:
+                            print('  %s' % j.plot_id)
+                        selected = []
+
+                for job in selected:
+                    if args.cmd == 'details':
+                        print(job.status_str_long())
+
+                    elif args.cmd == 'files':
+                        temp_files = job.get_temp_files()
                         for f in temp_files:
-                            os.remove(f)
+                            print('  %s' % f)
 
-                elif args.cmd == 'suspend':
-                    print('Suspending ' + job.plot_id)
-                    job.suspend()
-                elif args.cmd == 'resume':
-                    print('Resuming ' + job.plot_id)
-                    job.resume()
+                    elif args.cmd == 'kill':
+                        # First suspend so job doesn't create new files
+                        print('Pausing PID %d, plot id %s' % (job.proc.pid, job.plot_id))
+                        job.suspend()
+
+                        temp_files = job.get_temp_files()
+                        print('Will kill pid %d, plot id %s' % (job.proc.pid, job.plot_id))
+                        print('Will delete %d temp files' % len(temp_files))
+                        conf = input('Are you sure? ("y" to confirm): ')
+                        if (conf != 'y'):
+                            print('canceled.  If you wish to resume the job, do so manually.')
+                        else:
+                            print('killing...')
+                            job.cancel()
+                            print('cleaning up temp files...')
+                            for f in temp_files:
+                                os.remove(f)
+
+                    elif args.cmd == 'suspend':
+                        print('Suspending ' + job.plot_id)
+                        job.suspend()
+                    elif args.cmd == 'resume':
+                        print('Resuming ' + job.plot_id)
+                        job.resume()

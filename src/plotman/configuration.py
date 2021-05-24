@@ -95,34 +95,32 @@ class Archive:
 
         return complete
 
-    def maybe_create_scripts(self):
+    def maybe_create_scripts(self, temp):
         rwx = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
 
         if self.disk_space_path is None:
-            disk_space_script_file = tempfile.NamedTemporaryFile(
+            with tempfile.NamedTemporaryFile(
                 mode='w',
                 encoding='utf-8',
                 prefix='plotman-disk-space-script',
-                # TODO: but cleanup!
                 delete=False,
-            )
-            disk_space_script_file.write(self.disk_space_script)
-            disk_space_script_file.flush()
-            disk_space_script_file.close()
+                dir=temp,
+            ) as disk_space_script_file:
+                disk_space_script_file.write(self.disk_space_script)
+
             self.disk_space_path = disk_space_script_file.name
             os.chmod(self.disk_space_path, rwx)
 
         if self.transfer_path is None:
-            transfer_script_file = tempfile.NamedTemporaryFile(
+            with tempfile.NamedTemporaryFile(
                 mode='w',
                 encoding='utf-8',
                 prefix='plotman-transfer-script',
-                # TODO: but cleanup!
                 delete=False,
-            )
-            transfer_script_file.write(self.transfer_script)
-            transfer_script_file.flush()
-            transfer_script_file.close()
+                dir=temp,
+            ) as transfer_script_file:
+                transfer_script_file.write(self.transfer_script)
+
             self.transfer_path = transfer_script_file.name
             os.chmod(self.transfer_path, rwx)
 
@@ -184,3 +182,13 @@ class PlotmanConfig:
     plotting: Plotting
     user_interface: UserInterface = attr.ib(factory=UserInterface)
     version: List[int] = [0]
+
+    @contextlib.contextmanager
+    def setup(self):
+        prefix = f'plotman-pid_{os.getpid()}-'
+
+        with tempfile.TemporaryDirectory(prefix=prefix) as temp:
+            if self.directories.archive is not None:
+                self.directories.archive.maybe_create_scripts(temp=temp)
+
+            yield
