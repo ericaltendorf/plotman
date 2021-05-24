@@ -137,11 +137,39 @@ class Job:
         jobs = []
         cached_jobs_by_pid = { j.proc.pid: j for j in cached_jobs }
 
-        for proc in psutil.process_iter(['pid', 'cmdline']):
-            # Ignore processes which most likely have terminated between the time of
-            # iteration and data access.
-            with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied):
-                if is_plotting_cmdline(proc.cmdline()):
+        with contextlib.ExitStack() as exit_stack:
+            processes = []
+
+            pids = set()
+            ppids = set()
+
+            for process in psutil.process_iter():
+                # Ignore processes which most likely have terminated between the time of
+                # iteration and data access.
+                with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied):
+                    exit_stack.enter_context(process.oneshot())
+                    if is_plotting_cmdline(process.cmdline()):
+                        ppids.add(process.ppid())
+                        pids.add(process.pid)
+                        processes.append(process)
+
+            # https://github.com/ericaltendorf/plotman/pull/418
+            # The experimental Chia GUI .deb installer launches plots
+            # in a manner that results in a parent and child process
+            # that both share the same command line and, as such, are
+            # both identified as plot processes.  Only the child is
+            # really plotting.  Filter out the parent.
+
+            wanted_pids = pids - ppids
+
+            wanted_processes = [
+                process
+                for process in processes
+                if process.pid in wanted_pids
+            ]
+
+            for proc in wanted_processes:
+                with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied):
                     if proc.pid in cached_jobs_by_pid.keys():
                         jobs.append(cached_jobs_by_pid[proc.pid])  # Copy from cache
                     else:
@@ -221,11 +249,12 @@ class Job:
         if self.logfile:
             # Initialize data that needs to be loaded from the logfile
             self.init_from_logfile()
-        else:
-            print('Found plotting process PID {pid}, but could not find '
-                    'logfile in its open files:'.format(pid = self.proc.pid))
-            for f in self.proc.open_files():
-                print(f.path)
+# TODO: turn this into logging or somesuch
+#         else:
+#             print('Found plotting process PID {pid}, but could not find '
+#                     'logfile in its open files:'.format(pid = self.proc.pid))
+#             for f in self.proc.open_files():
+#                 print(f.path)
 
 
 
