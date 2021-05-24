@@ -163,22 +163,41 @@ def archive(dir_cfg, all_jobs):
                  space > 1.2 * plot_util.get_k32_plotsize()]
 
     if len(available) > 0:
+        available = sorted(available)
+        candidates = []
+
         for candidate in available:
+            # The last time thru the loop we found a resumable temp file so
+            # break ths loop now
+            if archdir:
+                break
+
+            # Observed pattern is:
+            #   plot-k32-something.plot => .plot-k32-something.plot.XXXX
             # Check if there is an rsync temp file here. TODO maybe use find or a regex
             # pattern or make the pattern configurable, or even find better documentation on rsync temp files.
             # Making it configurable would fit better with upcoming changes to opening up the archive process,
             # Assuming that custom process created a tmp file and cleaned up after itself
-            temp_cmd = ('ssh %s@%s ls -h %s/.plot*.plot.* 2>/dev/null' %
+            temp_cmd = ('ssh %s@%s ls -1 %s/.plot*.plot.* 2>/dev/null' %
                             (dir_cfg.archive.rsyncd_user, dir_cfg.archive.rsyncd_host, candidate[0]) )
 
             with subprocess.Popen(temp_cmd, shell=True, stdout=subprocess.PIPE) as proc:
                 # Assumes the command returns nothing if no temp files are found (hence the supression of stderr)
                 # This needs work because what if it is the ssh command that fails?
-                if len(proc.stdout.readlines()):
-                    continue
+                lines = [os.path.basename(line.decode('utf-8')) for line in proc.stdout.readlines()]
+                if len(lines) > 0:
+                    for line in lines:
+                        found = re.search(r'^\.(\S*)\.\S+', line)
+                        if found and found.group(1) == chosen_plot:
+                            (archdir, freespace) = candidate
+                            break
+                else:
+                    candidates.append(candidate)
 
-            (archdir, freespace) = candidate
-            break
+        # If we didn't find the resumable temp file, then use the first one that
+        # doesn't have any temp files in it
+        if not archdir and len(candidates):
+            (archdir, freespace) = candidates[0]
 
     if not archdir:
         return(False, 'No archive directories found with enough free space')
