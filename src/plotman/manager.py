@@ -119,6 +119,8 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
                     '-d', dstdir ]
             if plotting_cfg.e:
                 plot_args.append('-e')
+            if plotting_cfg.x:
+                plot_args.append('-x')
             if plotting_cfg.farmer_pk is not None:
                 plot_args.append('-f')
                 plot_args.append(plotting_cfg.farmer_pk)

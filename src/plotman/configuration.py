@@ -84,6 +84,7 @@ class Scheduling:
 class Plotting:
     k: int
     e: bool
+    x: bool
     n_threads: int
     n_buckets: int
     job_buffer: int
