@@ -92,6 +92,16 @@ directories:
                 env:
                         command: rsync
                         site_root: /farm/sites
+
+                # The disk space script must return a line for eacho directory
+                # to consider archiving to with the following form.
+                #
+                #   /some/path:1000000000000
+                #
+                # That line tells plotman that it should consider archiving
+                # plots to files at paths such as /some/path/theplotid.plot and
+                # that there is 1TB of space available for use in that
+                # directory.
                 disk_space_script: |
                         #!/bin/bash
                         df -BK | grep " ${site_root}/" | awk '{ gsub(/K$/,"",$4); print $6 ":" $4*1024 }'
