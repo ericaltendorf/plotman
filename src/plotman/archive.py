@@ -139,8 +139,9 @@ def archive(dir_cfg, all_jobs):
     contention on the plotting dstdir drives.  Returns either (False, <reason>)
     if we should not execute an archive job or (True, <cmd>) with the archive
     command if we should.'''
+    log_messages = []
     if dir_cfg.archive is None:
-        return (False, "No 'archive' settings declared in plotman.yaml", [])
+        return (False, "No 'archive' settings declared in plotman.yaml", log_messages)
 
     dir2ph = manager.dstdirs_to_furthest_phase(all_jobs)
     best_priority = -100000000
@@ -157,7 +158,7 @@ def archive(dir_cfg, all_jobs):
             chosen_plot = dir_plots[0]
 
     if not chosen_plot:
-        return (False, 'No plots found', [])
+        return (False, 'No plots found', log_messages)
 
     # TODO: sanity check that archive machine is available
     # TODO: filter drives mounted RO
@@ -165,9 +166,10 @@ def archive(dir_cfg, all_jobs):
     #
     # Pick first archive dir with sufficient space
     #
-    archdir_freebytes, log_messages = get_archdir_freebytes(dir_cfg.archive)
+    archdir_freebytes, freebytes_log_messages = get_archdir_freebytes(dir_cfg.archive)
+    log_messages.extend(freebytes_log_messages)
     if not archdir_freebytes:
-        return(False, 'No free archive dirs found.', [])
+        return(False, 'No free archive dirs found.', log_messages)
 
     archdir = ''
     available = [(d, space) for (d, space) in archdir_freebytes.items() if
@@ -177,7 +179,7 @@ def archive(dir_cfg, all_jobs):
         (archdir, freespace) = sorted(available)[index]
 
     if not archdir:
-        return(False, 'No archive directories found with enough free space', [])
+        return(False, 'No archive directories found with enough free space', log_messages)
 
     archive = dir_cfg.archive
     env = dir_cfg.archive.environment(
