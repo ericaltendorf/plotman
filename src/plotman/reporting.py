@@ -218,6 +218,7 @@ def dirs_report(jobs, dir_cfg, sched_cfg, width):
         reports.extend([
             'archive dirs free space:',
             arch_dir_report(freebytes, width),
+            *archive_log_messages,
         ])
 
-    return '\n'.join(reports) + '\n' + '\n'.join(archive_log_messages)
+    return '\n'.join(reports) + '\n'
