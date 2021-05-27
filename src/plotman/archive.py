@@ -20,7 +20,7 @@ def spawn_archive_process(dir_cfg, all_jobs):
     '''Spawns a new archive process using the command created
     in the archive() function. Returns archiving status and a log message to print.'''
 
-    log_message = None
+    log_messages = []
     archiving_status = None
 
     # Look for running archive jobs.  Be robust to finding more than one
@@ -28,7 +28,8 @@ def spawn_archive_process(dir_cfg, all_jobs):
     arch_jobs = get_running_archive_jobs(dir_cfg.archive)
 
     if not arch_jobs:
-        (should_start, status_or_cmd) = archive(dir_cfg, all_jobs)
+        (should_start, status_or_cmd, archive_log_messages) = archive(dir_cfg, all_jobs)
+        log_messages.extend(archive_log_messages)
         if not should_start:
             archiving_status = status_or_cmd
         else:
@@ -39,7 +40,7 @@ def spawn_archive_process(dir_cfg, all_jobs):
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.STDOUT,
                     start_new_session=True)
-            log_message = 'Starting archive: ' + args['args']
+            log_messages.append('Starting archive: ' + args['args'])
             # At least for now it seems that even if we get a new running
             # archive jobs list it doesn't contain the new rsync process.
             # My guess is that this is because the bash in the middle due to
@@ -51,7 +52,7 @@ def spawn_archive_process(dir_cfg, all_jobs):
     if archiving_status is None:
         archiving_status = 'pid: ' + ', '.join(map(str, arch_jobs))
 
-    return archiving_status, log_message
+    return archiving_status, log_messages
 
 def compute_priority(phase, gb_free, n_plots):
     # All these values are designed around dst buffer dirs of about
@@ -86,6 +87,8 @@ def compute_priority(phase, gb_free, n_plots):
     return priority
 
 def get_archdir_freebytes(arch_cfg):
+    log_messages = []
+
     archdir_freebytes = {}
     completed_process = subprocess.run(
         [arch_cfg.disk_space_path],
@@ -95,16 +98,23 @@ def get_archdir_freebytes(arch_cfg):
         stderr=subprocess.PIPE,
     )
 
-    for line in completed_process.stdout.splitlines():
+    for line in completed_process.stdout.strip().splitlines():
+        line = line.strip()
         split = line.split(':')
         if len(split) != 2:
-            # TODO: warning?  or something...
+            log_messages.append(f'Unable to parse disk script line: {line!r}')
             continue
         archdir, space = split
         freebytes = int(space)
-        archdir_freebytes[archdir] = freebytes
+        archdir_freebytes[archdir.strip()] = freebytes
 
-    return archdir_freebytes
+    stderr = completed_process.stderr.strip()
+    if len(stderr) > 0:
+        log_messages.append('stderr from archive script:')
+        for line in stderr.splitlines():
+            log_messages.append(f'    {line}')
+
+    return archdir_freebytes, log_messages
 
 # TODO: maybe consolidate with similar code in job.py?
 def get_running_archive_jobs(arch_cfg):
@@ -130,7 +140,7 @@ def archive(dir_cfg, all_jobs):
     if we should not execute an archive job or (True, <cmd>) with the archive
     command if we should.'''
     if dir_cfg.archive is None:
-        return (False, "No 'archive' settings declared in plotman.yaml")
+        return (False, "No 'archive' settings declared in plotman.yaml", [])
 
     dir2ph = manager.dstdirs_to_furthest_phase(all_jobs)
     best_priority = -100000000
@@ -147,7 +157,7 @@ def archive(dir_cfg, all_jobs):
             chosen_plot = dir_plots[0]
 
     if not chosen_plot:
-        return (False, 'No plots found')
+        return (False, 'No plots found', [])
 
     # TODO: sanity check that archive machine is available
     # TODO: filter drives mounted RO
@@ -155,9 +165,9 @@ def archive(dir_cfg, all_jobs):
     #
     # Pick first archive dir with sufficient space
     #
-    archdir_freebytes = get_archdir_freebytes(dir_cfg.archive)
+    archdir_freebytes, log_messages = get_archdir_freebytes(dir_cfg.archive)
     if not archdir_freebytes:
-        return(False, 'No free archive dirs found.')
+        return(False, 'No free archive dirs found.', [])
 
     archdir = ''
     available = [(d, space) for (d, space) in archdir_freebytes.items() if
@@ -167,9 +177,8 @@ def archive(dir_cfg, all_jobs):
         (archdir, freespace) = sorted(available)[index]
 
     if not archdir:
-        return(False, 'No archive directories found with enough free space')
+        return(False, 'No archive directories found with enough free space', [])
 
-    msg = 'Found %s with ~%d GB free' % (archdir, freespace / plot_util.GB)
     archive = dir_cfg.archive
     env = dir_cfg.archive.environment(
         source=chosen_plot,
@@ -180,4 +189,4 @@ def archive(dir_cfg, all_jobs):
         'env': {**os.environ, **env}
     }
 
-    return (True, subprocess_arguments)
+    return (True, subprocess_arguments, log_messages)

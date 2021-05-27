@@ -128,11 +128,13 @@ def curses_main(stdscr, cfg):
 
             if archiving_configured:
                 if archiving_active:
-                    archiving_status, log_message = archive.spawn_archive_process(cfg.directories, jobs)
-                    if log_message:
+                    archiving_status, log_messages = archive.spawn_archive_process(cfg.directories, jobs)
+                    for log_message in log_messages:
                         log.log(log_message)
 
-                archdir_freebytes = archive.get_archdir_freebytes(cfg.directories.archive)
+                archdir_freebytes, log_messages = archive.get_archdir_freebytes(cfg.directories.archive)
+                for log_message in log_messages:
+                    log.log(log_message)
 
 
         # Get terminal size.  Recommended method is stdscr.getmaxyx(), but this
@@ -167,7 +169,11 @@ def curses_main(stdscr, cfg):
         dst_dir = cfg.directories.get_dst_directories()
         dst_prefix = os.path.commonpath(dst_dir)
         if archiving_configured:
-            arch_prefix = os.path.commonpath(archdir_freebytes.keys())
+            archive_directories = archdir_freebytes.keys()
+            if len(archive_directories) == 0:
+                arch_prefix = ''
+            else:
+                arch_prefix = os.path.commonpath(archive_directories)
 
         n_tmpdirs = len(cfg.directories.tmp)
 
