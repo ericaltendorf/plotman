@@ -97,7 +97,7 @@ directories:
                          df -BK | grep " ${site_root}/" | awk '{ gsub(/K$/,"",$4); print $6 ":" $4*1024 }'
                  transfer_script: |
                          #!/bin/bash
-                         "${command}" --skip-compress plot --remove-source-files --inplace "${source}" "${destination}"
+                         "${command}" --inplace --preallocate --remove-source-files --skip-compress plot --whole-file "${source}" "${destination}"
                  transfer_process_name: "{command}"
                  transfer_process_argument_prefix: "{site_root}"
 
@@ -113,7 +113,7 @@ directories:
                 # transfer_script: |
                 #         #!/bin/bash
                 #         relative_path=$(realpath --relative-to="${site_root}" "${destination}")
-                #         "${command}" --bwlimit=80000 --skip-compress plot --remove-source-files --inplace "${source}" "${url_root}/${relative_path}"
+                #         "${command}" --bwlimit=80000 --inplace --preallocate --remove-source-files --skip-compress plot --whole-file "${source}" "${url_root}/${relative_path}"
                 # transfer_process_name: "{command}"
                 # transfer_process_argument_prefix: "{url_root}"
 
