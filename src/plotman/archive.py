@@ -121,12 +121,12 @@ def get_running_archive_jobs(arch_cfg):
     '''Look for running rsync jobs that seem to match the pattern we use for archiving
        them.  Return a list of PIDs of matching jobs.'''
     jobs = []
+    variables = {**os.environ, **arch_cfg.environment()}
+    dest = arch_cfg.transfer_process_argument_prefix.format(**variables)
+    proc_name = arch_cfg.transfer_process_name.format(**variables)
     for proc in psutil.process_iter():
         with contextlib.suppress(psutil.NoSuchProcess):
             with proc.oneshot():
-                variables = {**os.environ, **arch_cfg.environment()}
-                dest = arch_cfg.transfer_process_argument_prefix.format(**variables)
-                proc_name = arch_cfg.transfer_process_name.format(**variables)
                 if proc.name() == proc_name:
                     args = proc.cmdline()
                     for arg in args:
