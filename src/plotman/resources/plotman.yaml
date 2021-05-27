@@ -89,17 +89,17 @@ directories:
         archive:
                 # -- local rsync example setup
 
-                 env:
-                         command: rsync
-                         site_root: /farm/sites
-                 disk_space_script: |
-                         #!/bin/bash
-                         df -BK | grep " ${site_root}/" | awk '{ gsub(/K$/,"",$4); print $6 ":" $4*1024 }'
-                 transfer_script: |
-                         #!/bin/bash
-                         "${command}" --inplace --preallocate --remove-source-files --skip-compress plot --whole-file "${source}" "${destination}"
-                 transfer_process_name: "{command}"
-                 transfer_process_argument_prefix: "{site_root}"
+                env:
+                        command: rsync
+                        site_root: /farm/sites
+                disk_space_script: |
+                        #!/bin/bash
+                        df -BK | grep " ${site_root}/" | awk '{ gsub(/K$/,"",$4); print $6 ":" $4*1024 }'
+                transfer_script: |
+                        #!/bin/bash
+                        "${command}" --inplace --preallocate --remove-source-files --skip-compress plot --whole-file "${source}" "${destination}"
+                transfer_process_name: "{command}"
+                transfer_process_argument_prefix: "{site_root}"
 
                 # -- remote rsync example setup
                 #
