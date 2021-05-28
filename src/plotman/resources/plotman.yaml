@@ -61,79 +61,80 @@ directories:
                 - /mnt/dst/00
                 - /mnt/dst/01
 
-        # Archival configuration.  Optional; if you do not wish to run the
-        # archiving operation, comment this section out.  Almost everyone
-        # should be using the archival feature.  It is meant to distribute
-        # plots among multiple disks filling them all.  This can be done both
-        # to local and to remote disks.
-        #
-        # As of v0.4, archiving commands are highly configurable.  The basic
-        # configuration consists of a script for checking available disk space
-        # and another for actually transferring plots.  Each can be specified
-        # as either a path to an existing script or inline script contents.
-        # It is expected that most people will use existing recipes and will
-        # adjust them by specifying environment variables that will set their
-        # system specific values.  These can be provided to the scripts via
-        # the `env` key.  plotman will additionally provide `source` and
-        # `destination` environment variables to the transfer script so it
-        # knows the specifically selected items to process.  plotman also needs
-        # to be able to generally detect if a transfer process is already
-        # running.  To be able to identify externally launched transfers, the
-        # process name and an argument prefix to match must be provided.  Note
-        # that variable substitution of environment variables including those
-        # specified in the env key can be used in both process name and process
-        # argument prefix elements but that they use the python substitution
-        # format.
-        #
-        # Complete example: https://github.com/ericaltendorf/plotman/wiki/Archiving
-        archive:
-                # -- local rsync example setup
+# Archival configuration.  Optional; if you do not wish to run the
+# archiving operation, comment this section out.  Almost everyone
+# should be using the archival feature.  It is meant to distribute
+# plots among multiple disks filling them all.  This can be done both
+# to local and to remote disks.
+#
+# As of v0.4, archiving commands are highly configurable.  The basic
+# configuration consists of a script for checking available disk space
+# and another for actually transferring plots.  Each can be specified
+# as either a path to an existing script or inline script contents.
+# It is expected that most people will use existing recipes and will
+# adjust them by specifying environment variables that will set their
+# system specific values.  These can be provided to the scripts via
+# the `env` key.  plotman will additionally provide `source` and
+# `destination` environment variables to the transfer script so it
+# knows the specifically selected items to process.  plotman also needs
+# to be able to generally detect if a transfer process is already
+# running.  To be able to identify externally launched transfers, the
+# process name and an argument prefix to match must be provided.  Note
+# that variable substitution of environment variables including those
+# specified in the env key can be used in both process name and process
+# argument prefix elements but that they use the python substitution
+# format.
+#
+# Complete example: https://github.com/ericaltendorf/plotman/wiki/Archiving
+archiving:
+  target: local_rsync
+  env:
+    command: rsync
+    site_root: /farm/sites
+  target_definitions:
+    local_rsync:
+      # env:
+      #   command: rsync
+      #   site_root: /farm/sites
 
-                env:
-                        command: rsync
-                        site_root: /farm/sites
-
-                # The disk space script must return a line for eacho directory
-                # to consider archiving to with the following form.
-                #
-                #   /some/path:1000000000000
-                #
-                # That line tells plotman that it should consider archiving
-                # plots to files at paths such as /some/path/theplotid.plot and
-                # that there is 1TB of space available for use in that
-                # directory.
-                disk_space_script: |
-                        #!/bin/bash
-                        df -BK | grep " ${site_root}/" | awk '{ gsub(/K$/,"",$4); print $6 ":" $4*1024 }'
-                transfer_script: |
-                        #!/bin/bash
-                        "${command}" --inplace --preallocate --remove-source-files --skip-compress plot --whole-file "${source}" "${destination}"
-                transfer_process_name: "{command}"
-                transfer_process_argument_prefix: "{site_root}"
-
-                # -- remote rsync example setup
-                #
-                # env:
-                #         command: rsync
-                #         site_root: /farm/sites
-                #         url_root: rsync://altendky@server:12000/sites
-                # disk_space_script: |
-                #         #!/bin/bash
-                #         ssh altendky@server "df -BK | grep \" ${site_root}/\" | awk '{ gsub(/K\$/,\"\",\$4); print \$6 \":\" \$4*1024 }'"
-                # transfer_script: |
-                #         #!/bin/bash
-                #         relative_path=$(realpath --relative-to="${site_root}" "${destination}")
-                #         "${command}" --bwlimit=80000 --inplace --preallocate --remove-source-files --skip-compress plot --whole-file "${source}" "${url_root}/${relative_path}"
-                # transfer_process_name: "{command}"
-                # transfer_process_argument_prefix: "{url_root}"
-
-                # -- external script example
-                # env:
-                #         some_common_value: /a/path
-                # disk_space_path: /home/me/my_disk_space_script.sh
-                # transfer_path: /home/me/my_transfer_script.sh
-                # transfer_process_name: rsync
-                # transfer_process_argument_prefix: /the/destination/directory/root
+      # The disk space script must return a line for each directory
+      # to consider archiving to with the following form.
+      #
+      #   /some/path:1000000000000
+      #
+      # That line tells plotman that it should consider archiving
+      # plots to files at paths such as /some/path/theplotid.plot and
+      # that there is 1TB of space available for use in that
+      # directory.
+      disk_space_script: |
+        #!/bin/bash
+        df -BK | grep " ${site_root}/" | awk '{ gsub(/K$/,"",$4); print $6 ":" $4*1024 }'
+      transfer_script: |
+        #!/bin/bash
+        "${command}" --preallocate --remove-source-files --skip-compress plot --whole-file "${source}" "${destination}"
+      transfer_process_name: "{command}"
+      transfer_process_argument_prefix: "{site_root}"
+    rsyncd:
+      # env:
+      #   command: rsync
+      #   site_root: /farm/sites
+      #   url_root: rsync://altendky@server:12000/sites
+      disk_space_script: |
+        #!/bin/bash
+        ssh altendky@server "df -BK | grep \" ${site_root}/\" | awk '{ gsub(/K\$/,\"\",\$4); print \$6 \":\" \$4*1024 }'"
+      transfer_script: |
+        #!/bin/bash
+        relative_path=$(realpath --relative-to="${site_root}" "${destination}")
+        "${command}" --bwlimit=80000 --preallocate --remove-source-files --skip-compress plot --whole-file "${source}" "${url_root}/${relative_path}"
+      transfer_process_name: "{command}"
+      transfer_process_argument_prefix: "{url_root}"
+    external_script:
+      # env:
+      #   some_common_value: /a/path
+      disk_space_path: /home/me/my_disk_space_script.sh
+      transfer_path: /home/me/my_transfer_script.sh
+      transfer_process_name: rsync
+      transfer_process_argument_prefix: /the/destination/directory/root
 
 # Plotting scheduling parameters
 scheduling:

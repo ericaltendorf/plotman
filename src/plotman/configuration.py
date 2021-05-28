@@ -66,16 +66,25 @@ def get_validated_configs(config_text, config_path):
 
 # TODO: bah, mutable?  bah.
 @attr.mutable
-class Archive:
+class ArchivingTarget:
     transfer_process_name: str
     transfer_process_argument_prefix: str
-    index: int = 0  # If not explicit, "index" will default to 0
-    # TODO: mutable attribute...
-    env: Dict[str, str] = attr.ib(factory=dict)
     disk_space_path: Optional[str] = None
     disk_space_script: Optional[str] = None
     transfer_path: Optional[str] = None
     transfer_script: Optional[str] = None
+
+# TODO: bah, mutable?  bah.
+@attr.mutable
+class Archiving:
+    target: str
+    # TODO: mutable attribute...
+    env: Dict[str, str]
+    index: int = 0  # If not explicit, "index" will default to 0
+    target_definitions: Dict[str, ArchivingTarget] = attr.ib(factory=dict)
+
+    def target_definition(self):
+        return self.target_definitions[self.target]
 
     def environment(
             self,
@@ -83,9 +92,10 @@ class Archive:
             destination=None,
     ):
         complete = dict(self.env)
+        target = self.target_definition()
 
         variables = {**os.environ, **complete}
-        complete['process_name'] = self.transfer_process_name.format(**variables)
+        complete['process_name'] = target.transfer_process_name.format(**variables)
 
         if source is not None:
             complete['source'] = source
@@ -97,8 +107,9 @@ class Archive:
 
     def maybe_create_scripts(self, temp):
         rwx = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
+        target = self.target_definition()
 
-        if self.disk_space_path is None:
+        if target.disk_space_path is None:
             with tempfile.NamedTemporaryFile(
                 mode='w',
                 encoding='utf-8',
@@ -106,12 +117,12 @@ class Archive:
                 delete=False,
                 dir=temp,
             ) as disk_space_script_file:
-                disk_space_script_file.write(self.disk_space_script)
+                disk_space_script_file.write(target.disk_space_script)
 
-            self.disk_space_path = disk_space_script_file.name
-            os.chmod(self.disk_space_path, rwx)
+            target.disk_space_path = disk_space_script_file.name
+            os.chmod(target.disk_space_path, rwx)
 
-        if self.transfer_path is None:
+        if target.transfer_path is None:
             with tempfile.NamedTemporaryFile(
                 mode='w',
                 encoding='utf-8',
@@ -119,10 +130,10 @@ class Archive:
                 delete=False,
                 dir=temp,
             ) as transfer_script_file:
-                transfer_script_file.write(self.transfer_script)
+                transfer_script_file.write(target.transfer_script)
 
-            self.transfer_path = transfer_script_file.name
-            os.chmod(self.transfer_path, rwx)
+            target.transfer_path = transfer_script_file.name
+            os.chmod(target.transfer_path, rwx)
 
 @attr.frozen
 class TmpOverrides:
@@ -135,7 +146,6 @@ class Directories:
     dst: Optional[List[str]] = None
     tmp2: Optional[str] = None
     tmp_overrides: Optional[Dict[str, TmpOverrides]] = None
-    archive: Optional[Archive] = None
 
     def dst_is_tmp(self):
         return self.dst is None
@@ -180,6 +190,7 @@ class PlotmanConfig:
     directories: Directories
     scheduling: Scheduling
     plotting: Plotting
+    archiving: Optional[Archiving] = None
     user_interface: UserInterface = attr.ib(factory=UserInterface)
     version: List[int] = [0]
 
@@ -188,7 +199,7 @@ class PlotmanConfig:
         prefix = f'plotman-pid_{os.getpid()}-'
 
         with tempfile.TemporaryDirectory(prefix=prefix) as temp:
-            if self.directories.archive is not None:
-                self.directories.archive.maybe_create_scripts(temp=temp)
+            if self.archiving is not None:
+                self.archiving.maybe_create_scripts(temp=temp)
 
             yield

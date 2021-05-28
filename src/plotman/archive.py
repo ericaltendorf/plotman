@@ -16,7 +16,7 @@ from plotman import configuration, job, manager, plot_util
 
 # TODO : write-protect and delete-protect archived plots
 
-def spawn_archive_process(dir_cfg, all_jobs):
+def spawn_archive_process(dir_cfg, arch_cfg, all_jobs):
     '''Spawns a new archive process using the command created
     in the archive() function. Returns archiving status and a log message to print.'''
 
@@ -25,10 +25,10 @@ def spawn_archive_process(dir_cfg, all_jobs):
 
     # Look for running archive jobs.  Be robust to finding more than one
     # even though the scheduler should only run one at a time.
-    arch_jobs = get_running_archive_jobs(dir_cfg.archive)
+    arch_jobs = get_running_archive_jobs(arch_cfg)
 
     if not arch_jobs:
-        (should_start, status_or_cmd, archive_log_messages) = archive(dir_cfg, all_jobs)
+        (should_start, status_or_cmd, archive_log_messages) = archive(dir_cfg, arch_cfg, all_jobs)
         log_messages.extend(archive_log_messages)
         if not should_start:
             archiving_status = status_or_cmd
@@ -88,10 +88,11 @@ def compute_priority(phase, gb_free, n_plots):
 
 def get_archdir_freebytes(arch_cfg):
     log_messages = []
+    target = arch_cfg.target_definition()
 
     archdir_freebytes = {}
     completed_process = subprocess.run(
-        [arch_cfg.disk_space_path],
+        [target.disk_space_path],
         encoding='utf-8',
         env={**os.environ, **arch_cfg.environment()},
         stdout=subprocess.PIPE,
@@ -121,9 +122,10 @@ def get_running_archive_jobs(arch_cfg):
     '''Look for running rsync jobs that seem to match the pattern we use for archiving
        them.  Return a list of PIDs of matching jobs.'''
     jobs = []
+    target = arch_cfg.target_definition()
     variables = {**os.environ, **arch_cfg.environment()}
-    dest = arch_cfg.transfer_process_argument_prefix.format(**variables)
-    proc_name = arch_cfg.transfer_process_name.format(**variables)
+    dest = target.transfer_process_argument_prefix.format(**variables)
+    proc_name = target.transfer_process_name.format(**variables)
     for proc in psutil.process_iter():
         with contextlib.suppress(psutil.NoSuchProcess):
             with proc.oneshot():
@@ -134,13 +136,13 @@ def get_running_archive_jobs(arch_cfg):
                             jobs.append(proc.pid)
     return jobs
 
-def archive(dir_cfg, all_jobs):
+def archive(dir_cfg, arch_cfg, all_jobs):
     '''Configure one archive job.  Needs to know all jobs so it can avoid IO
     contention on the plotting dstdir drives.  Returns either (False, <reason>)
     if we should not execute an archive job or (True, <cmd>) with the archive
     command if we should.'''
     log_messages = []
-    if dir_cfg.archive is None:
+    if arch_cfg is None:
         return (False, "No 'archive' settings declared in plotman.yaml", log_messages)
 
     dir2ph = manager.dstdirs_to_furthest_phase(all_jobs)
@@ -166,7 +168,7 @@ def archive(dir_cfg, all_jobs):
     #
     # Pick first archive dir with sufficient space
     #
-    archdir_freebytes, freebytes_log_messages = get_archdir_freebytes(dir_cfg.archive)
+    archdir_freebytes, freebytes_log_messages = get_archdir_freebytes(arch_cfg)
     log_messages.extend(freebytes_log_messages)
     if not archdir_freebytes:
         return(False, 'No free archive dirs found.', log_messages)
@@ -175,19 +177,18 @@ def archive(dir_cfg, all_jobs):
     available = [(d, space) for (d, space) in archdir_freebytes.items() if
                  space > 1.2 * plot_util.get_k32_plotsize()]
     if len(available) > 0:
-        index = min(dir_cfg.archive.index, len(available) - 1)
+        index = min(arch_cfg.index, len(available) - 1)
         (archdir, freespace) = sorted(available)[index]
 
     if not archdir:
         return(False, 'No archive directories found with enough free space', log_messages)
 
-    archive = dir_cfg.archive
-    env = dir_cfg.archive.environment(
+    env = arch_cfg.environment(
         source=chosen_plot,
         destination=archdir,
     )
     subprocess_arguments = {
-        'args': archive.transfer_path,
+        'args': arch_cfg.target_definition().transfer_path,
         'env': {**os.environ, **env}
     }
 

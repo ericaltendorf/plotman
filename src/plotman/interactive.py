@@ -66,7 +66,7 @@ def curses_main(stdscr, cfg):
     log = Log()
 
     plotting_active = True
-    archiving_configured = cfg.directories.archive is not None
+    archiving_configured = cfg.archiving is not None
     archiving_active = archiving_configured
 
     plotting_status = '<startup>'    # todo rename these msg?
@@ -128,11 +128,11 @@ def curses_main(stdscr, cfg):
 
             if archiving_configured:
                 if archiving_active:
-                    archiving_status, log_messages = archive.spawn_archive_process(cfg.directories, jobs)
+                    archiving_status, log_messages = archive.spawn_archive_process(cfg.directories, cfg.archiving, jobs)
                     for log_message in log_messages:
                         log.log(log_message)
 
-                archdir_freebytes, log_messages = archive.get_archdir_freebytes(cfg.directories.archive)
+                archdir_freebytes, log_messages = archive.get_archdir_freebytes(cfg.archiving)
                 for log_message in log_messages:
                     log.log(log_message)
 
