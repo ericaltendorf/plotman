@@ -1,4 +1,5 @@
 import contextlib
+import importlib
 import os
 import stat
 import tempfile
@@ -10,6 +11,8 @@ import attr
 import desert
 import marshmallow
 import yaml
+
+from plotman import resources as plotman_resources
 
 
 class ConfigurationException(Exception):
@@ -59,6 +62,19 @@ def get_validated_configs(config_text, config_path):
             f"Config file at: '{config_path}' is malformed"
         ) from e
 
+    # TODO: get this IO out
+    preset_target_definitions_text = importlib.resources.read_text(
+        plotman_resources, "target_definitions.yaml",
+    )
+    preset_target_objects = yaml.safe_load(preset_target_definitions_text)
+    preset_target_schema = desert.schema(PresetTargetDefinitions)
+    preset_target_definitions = preset_target_schema.load(preset_target_objects)
+
+    loaded.archiving.target_definitions = {
+        **preset_target_definitions.target_definitions,
+        **loaded.archiving.target_definitions,
+    }
+
     return loaded
 
 
@@ -76,8 +92,29 @@ class ArchivingTarget:
     transfer_path: Optional[str] = None
     transfer_script: Optional[str] = None
 
-# TODO: bah, mutable?  bah.
+# local_rsync_archiving_target = ArchivingTarget(
+#     transfer_process_name='{site_root}',
+#     transfer_process_argument_prefix='{command}',
+#     env={
+#         'command': 'rsync',
+#         'options': '--preallocate --remove-source-files --skip-compress plot --whole-file',
+#         'site_root': None,
+#     },
+#     disk_space_script=textwrap.dedent('''\
+#         #!/bin/bash
+#         df -BK | grep " ${site_root}/" | awk '{ gsub(/K$/,"",$4); print $6 ":" $4*1024 }'
+#     '''),
+#     transfer_script=textwrap.dedent('''\
+#
+#     ''')
+# )
+
 @attr.frozen
+class PresetTargetDefinitions:
+    target_definitions: Dict[str, ArchivingTarget] = attr.ib(factory=dict)
+
+# TODO: bah, mutable?  bah.
+@attr.mutable
 class Archiving:
     target: str
     # TODO: mutable attribute...
