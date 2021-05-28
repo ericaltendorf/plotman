@@ -69,13 +69,15 @@ def get_validated_configs(config_text, config_path):
 class ArchivingTarget:
     transfer_process_name: str
     transfer_process_argument_prefix: str
+    # TODO: mutable attribute...
+    env: Dict[str, Optional[str]] = attr.ib(factory=dict)
     disk_space_path: Optional[str] = None
     disk_space_script: Optional[str] = None
     transfer_path: Optional[str] = None
     transfer_script: Optional[str] = None
 
 # TODO: bah, mutable?  bah.
-@attr.mutable
+@attr.frozen
 class Archiving:
     target: str
     # TODO: mutable attribute...
@@ -91,8 +93,20 @@ class Archiving:
             source=None,
             destination=None,
     ):
-        complete = dict(self.env)
         target = self.target_definition()
+        complete = {**target.env, **self.env}
+
+        missing_mandatory_keys = [
+            key
+            for key, value in complete.items()
+            if value is None
+        ]
+
+        if len(missing_mandatory_keys) > 0:
+            target = repr(self.target)
+            missing = ', '.join(repr(key) for key in missing_mandatory_keys)
+            message = f'Missing env options for archival target {target}: {missing}'
+            raise Exception(message)
 
         variables = {**os.environ, **complete}
         complete['process_name'] = target.transfer_process_name.format(**variables)
