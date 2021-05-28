@@ -5,6 +5,8 @@ import math
 import os
 import subprocess
 
+import psutil
+
 from plotman import archive, configuration, manager, reporting
 from plotman.job import Job
 
@@ -92,6 +94,8 @@ def curses_main(stdscr):
 
     archdir_freebytes = None
     aging_reason = None
+    pred_read = psutil.disk_io_counters(nowrap = True)[2]
+    pred_write = psutil.disk_io_counters(nowrap = True)[3]
 
     while True:
 
@@ -197,7 +201,7 @@ def curses_main(stdscr):
         arch_h = len(arch_report.splitlines()) + 1
         arch_w = n_cols
 
-        header_h = 3
+        header_h = 5
         dirs_h = max(tmp_h, dst_h) + arch_h
         remainder = n_rows - (header_h + dirs_h)
         jobs_h = max(5, math.floor(remainder * 0.6))
@@ -256,6 +260,32 @@ def curses_main(stdscr):
             header_win.addnstr(arch_prefix, linecap)
         header_win.addnstr(' (remote)', linecap)
         
+
+        header_win.addnstr(3, 0, 'CPU freq avg: ' + '{0:.2f}'.format(psutil.cpu_freq()[0]) + 'MHz | ', linecap)
+        sensors_temperatures = 'not supp'
+        if hasattr(psutil, "sensors_temperatures"):
+            tt = psutil.sensors_temperatures()
+            if tt:
+                k = list(tt.keys())
+                sensors_temperatures = '{0:.2f}'.format(tt.get(k[1])[1][1])
+        header_win.addnstr('CPU temp: ' + sensors_temperatures + '°C | ', linecap)
+        header_win.addnstr('CPU usage: ' + '{0:.2f}'.format(psutil.cpu_percent()) + '% | ', linecap)
+        header_win.addnstr('RAM usage: ' + '{0:.2f}'.format(psutil.virtual_memory()[2]) + '%', linecap)
+
+
+        curr_read = psutil.disk_io_counters(nowrap = True)[2]
+        curr_write = psutil.disk_io_counters(nowrap = True)[3]
+
+        MBR = (curr_read - pred_read) / cfg.scheduling.polling_time_s / 1000000
+        MBW = (curr_write - pred_write) / cfg.scheduling.polling_time_s / 1000000
+        
+        pred_read = curr_read
+        pred_write = curr_write
+
+        header_win.addnstr(4, 0, 'Disk IO read: ' + '{0:.2f}'.format(MBR) + 'MB/s | ', linecap)  
+        header_win.addnstr('Disk IO write: ' + '{0:.2f}'.format(MBW) + 'MB/s | ', linecap)
+
+#
 
         # Jobs
         jobs_win.addstr(0, 0, reporting.status_report(jobs, n_cols, jobs_h, 
