@@ -267,7 +267,7 @@ def curses_main(stdscr):
             tt = psutil.sensors_temperatures()
             if tt:
                 k = list(tt.keys())
-                sensors_temperatures = '{0:.2f}'.format(tt.get(k[0])[0][1])
+                sensors_temperatures = '{0:.2f}'.format(tt.get(k[1])[0][1])
         header_win.addnstr('CPU temp: ' + sensors_temperatures + '°C | ', linecap)
         header_win.addnstr('CPU usage: ' + '{0:.2f}'.format(psutil.cpu_percent()) + '% | ', linecap)
         header_win.addnstr('RAM usage: ' + '{0:.2f}'.format(psutil.virtual_memory()[2]) + '%', linecap)
