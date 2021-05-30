@@ -142,6 +142,8 @@ def main():
     if args.cmd == 'plot':
         print('...starting plot loop')
         while True:
+            config_text = configuration.read_configuration_text(config_path)
+            cfg = configuration.get_validated_configs(config_text, config_path)
             wait_reason = manager.maybe_start_new_plot(cfg.directories, cfg.scheduling, cfg.plotting)
 
             # TODO: report this via a channel that can be polled on demand, so we don't spam the console
