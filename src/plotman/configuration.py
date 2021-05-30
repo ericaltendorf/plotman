@@ -210,6 +210,9 @@ class Directories:
 
         return self.dst
 
+    def create_log_path(self, group, time=None):
+        timestamp = time.isoformat(timespec='microseconds').replace(':', '_')
+        return os.path.join(self.log, f'{timestamp}.{group}.log')
 
 @attr.frozen
 class Scheduling:

@@ -110,9 +110,7 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
                 else:
                     dstdir = max(dir2ph, key=dir2ph.get)
 
-            logfile = os.path.join(
-                dir_cfg.log, pendulum.now().isoformat(timespec='microseconds').replace(':', '_') + '.log'
-            )
+            log_file_path = dir_cfg.create_log_path(group='plot', time=pendulum.now())
 
             plot_args = ['chia', 'plots', 'create',
                     '-k', str(plotting_cfg.k),
@@ -135,10 +133,11 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
             if plotting_cfg.x:
                 plot_args.append('-x')  
 
-            logmsg = ('Starting plot job: %s ; logging to %s' % (' '.join(plot_args), logfile))
+            logmsg = ('Starting plot job: %s ; logging to %s' % (' '.join(plot_args), log_file_path))
 
+            # TODO: CAMPid 09840103109429840981397487498131
             try:
-                open_log_file = open(logfile, 'x')
+                open_log_file = open(log_file_path, 'x')
             except FileExistsError:
                 # The desired log file name already exists.  Most likely another
                 # plotman process already launched a new process in response to
@@ -148,13 +147,13 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
                 # plotting process, we'll get it at the next check cycle anyways.
                 message = (
                     f'Plot log file already exists, skipping attempt to start a'
-                    f' new plot: {logfile!r}'
+                    f' new plot: {log_file_path!r}'
                 )
                 return (False, logmsg)
             except FileNotFoundError as e:
                 message = (
                     f'Unable to open log file.  Verify that the directory exists'
-                    f' and has proper write permissions: {logfile!r}'
+                    f' and has proper write permissions: {log_file_path!r}'
                 )
                 raise Exception(message) from e
 

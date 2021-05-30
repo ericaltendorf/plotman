@@ -27,21 +27,23 @@ target_definitions:
       # A value of null indicates a mandatory option
       command: rsync
       options: --bwlimit=80000 --preallocate --remove-source-files --skip-compress plot --whole-file
-      port: "873"
+      rsync_port: "873"
+      ssh_port: "22"
       user: null
       host: null
       site_root: null
       site: null
     disk_space_script: |
       #!/bin/bash
-      ssh altendky@server "df -BK | grep \" ${site_root}/\" | awk '{ gsub(/K\$/,\"\",\$4); print \$6 \":\" \$4*1024 }'"
+      ssh -p "${ssh_port}" "${user}@${host}" "df -BK | grep \" ${site_root}/\" | awk '{ gsub(/K\$/,\"\",\$4); print \$6 \":\" \$4*1024 }'"
     transfer_script: |
       #!/bin/bash
+      echo Launching transfer activity
       relative_path=$(realpath --relative-to="${site_root}" "${destination}")
-      url_root="rsync://${user}@${host}:${port}/${site}"
+      url_root="rsync://${user}@${host}:${rsync_port}/${site}"
       "${command}" ${options} "${source}" "${url_root}/${relative_path}"
     transfer_process_name: "{command}"
-    transfer_process_argument_prefix: "rsync://{user}@{host}:{port}/{site}"
+    transfer_process_argument_prefix: "rsync://{user}@{host}:{rsync_port}/{site}"
 #  external_script:
 #    env:
 #      some_common_value_with_a_default: /a/path

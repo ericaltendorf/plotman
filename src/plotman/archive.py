@@ -9,6 +9,7 @@ import subprocess
 import sys
 from datetime import datetime
 
+import pendulum
 import psutil
 import texttable as tt
 
@@ -34,10 +35,36 @@ def spawn_archive_process(dir_cfg, arch_cfg, all_jobs):
             archiving_status = status_or_cmd
         else:
             args = status_or_cmd
-            # TODO: do something useful with output instead of DEVNULL
-            p = subprocess.Popen(**args,
+
+            log_file_path = dir_cfg.create_log_path(group='transfer', time=pendulum.now())
+
+            # TODO: CAMPid 09840103109429840981397487498131
+            try:
+                open_log_file = open(log_file_path, 'x')
+            except FileExistsError:
+                log_messages.append(
+                    f'Archiving log file already exists, skipping attempt to start a'
+                    f' new plot: {log_file_path!r}'
+                )
+                return (False, log_messages)
+            except FileNotFoundError as e:
+                message = (
+                    f'Unable to open log file.  Verify that the directory exists'
+                    f' and has proper write permissions: {log_file_path!r}'
+                )
+                raise Exception(message) from e
+
+            # Preferably, do not add any code between the try block above
+            # and the with block below.  IOW, this space intentionally left
+            # blank...  As is, this provides a good chance that our handle
+            # of the log file will get closed explicitly while still
+            # allowing handling of just the log file opening error.
+
+            with open_log_file:
+                # start_new_sessions to make the job independent of this controlling tty.
+                p = subprocess.Popen(**args,
                     shell=True,
-                    stdout=subprocess.DEVNULL,
+                    stdout=open_log_file,
                     stderr=subprocess.STDOUT,
                     start_new_session=True)
             log_messages.append('Starting archive: ' + args['args'])
@@ -91,13 +118,19 @@ def get_archdir_freebytes(arch_cfg):
     target = arch_cfg.target_definition()
 
     archdir_freebytes = {}
-    completed_process = subprocess.run(
-        [target.disk_space_path],
-        encoding='utf-8',
-        env={**os.environ, **arch_cfg.environment()},
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
+    timeout = 2
+    try:
+        completed_process = subprocess.run(
+            [target.disk_space_path],
+            encoding='utf-8',
+            env={**os.environ, **arch_cfg.environment()},
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired:
+        log_messages.append(f'Disk space check timed out in {timeout} seconds')
+        return archdir_freebytes, log_messages
 
     for line in completed_process.stdout.strip().splitlines():
         line = line.strip()
