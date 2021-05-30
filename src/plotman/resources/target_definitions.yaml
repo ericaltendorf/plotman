@@ -17,7 +17,8 @@ target_definitions:
     disk_space_script: |
       #!/bin/bash
       set -evx
-      df -BK | grep " ${site_root}/" | awk '{ gsub(/K$/,"",$4); print $6 ":" $4*1024 }'
+      site_root_stripped=$(echo "${site_root}" | sed 's;/\+$;;')
+      df -BK | grep " ${site_root_stripped}/" | awk '{ gsub(/K$/,"",$4); print $6 ":" $4*1024 }'
     transfer_script: |
       #!/bin/bash
       set -evx
@@ -38,7 +39,8 @@ target_definitions:
     disk_space_script: |
       #!/bin/bash
       set -evx
-      ssh -p "${ssh_port}" "${user}@${host}" "df -BK | grep \" ${site_root}/\" | awk '{ gsub(/K\$/,\"\",\$4); print \$6 \":\" \$4*1024 }'"
+      site_root_stripped=$(echo "${site_root}" | sed 's;/\+$;;')
+      ssh -p "${ssh_port}" "${user}@${host}" "df -BK | grep \" $(echo "${site_root_stripped}" | sed 's;/\+$;;')/\" | awk '{ gsub(/K\$/,\"\",\$4); print \$6 \":\" \$4*1024 }'"
     transfer_script: |
       #!/bin/bash
       set -evx
