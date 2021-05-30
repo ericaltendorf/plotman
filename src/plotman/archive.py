@@ -44,7 +44,7 @@ def spawn_archive_process(dir_cfg, arch_cfg, all_jobs):
             except FileExistsError:
                 log_messages.append(
                     f'Archiving log file already exists, skipping attempt to start a'
-                    f' new plot: {log_file_path!r}'
+                    f' new archive transfer: {log_file_path!r}'
                 )
                 return (False, log_messages)
             except FileNotFoundError as e:
@@ -67,7 +67,7 @@ def spawn_archive_process(dir_cfg, arch_cfg, all_jobs):
                     stdout=open_log_file,
                     stderr=subprocess.STDOUT,
                     start_new_session=True)
-            log_messages.append('Starting archive: ' + args['args'])
+            log_messages.append(f'Starting archive: {args["args"]} ; logging to {log_file_path}')
             # At least for now it seems that even if we get a new running
             # archive jobs list it doesn't contain the new rsync process.
             # My guess is that this is because the bash in the middle due to
