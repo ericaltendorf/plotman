@@ -144,7 +144,7 @@ def get_archdir_freebytes(arch_cfg):
 
     stderr = completed_process.stderr.strip()
     if len(stderr) > 0:
-        log_messages.append('stderr from archive script:')
+        log_messages.append('stderr from disk space script:')
         for line in stderr.splitlines():
             log_messages.append(f'    {line}')
 
