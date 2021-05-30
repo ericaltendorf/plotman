@@ -1,11 +1,16 @@
 import argparse
 import importlib
 import importlib.resources
+import logging
+import logging.handlers
 import os
 import random
 from shutil import copyfile
 import time
 import datetime
+
+import appdirs
+import pendulum
 
 # Plotman libraries
 from plotman import analyzer, archive, configuration, interactive, manager, plot_util, reporting
@@ -87,8 +92,27 @@ def get_term_width():
         columns = 120  # 80 is typically too narrow.  TODO: make a command line arg.
     return columns
 
+class Iso8601Formatter(logging.Formatter):
+    def formatTime(self, record, datefmt=None):
+        time = pendulum.from_timestamp(timestamp=record.created, tz='local')
+        return time.isoformat(timespec='microseconds', )
+
 def main():
     random.seed()
+
+    log_file_path = appdirs.user_log_dir('plotman')
+    os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
+    root_logger = logging.getLogger()
+    handler = logging.handlers.RotatingFileHandler(
+        backupCount=10,
+        encoding='utf-8',
+        filename=log_file_path,
+        maxBytes=10_000_000,
+    )
+    formatter = Iso8601Formatter(fmt='%(asctime)s: %(message)s')
+    handler.setFormatter(formatter)
+    root_logger.addHandler(handler)
+    root_logger.setLevel(logging.INFO)
 
     pm_parser = PlotmanArgParser()
     args = pm_parser.parse_args()

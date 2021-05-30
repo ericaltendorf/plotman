@@ -1,5 +1,6 @@
 import argparse
 import contextlib
+import logging
 import math
 import os
 import posixpath
@@ -14,6 +15,9 @@ import psutil
 import texttable as tt
 
 from plotman import configuration, job, manager, plot_util
+
+
+logger = logging.getLogger(__name__)
 
 # TODO : write-protect and delete-protect archived plots
 
@@ -118,35 +122,42 @@ def get_archdir_freebytes(arch_cfg):
     target = arch_cfg.target_definition()
 
     archdir_freebytes = {}
-    timeout = 2
+    timeout = 5
     try:
         completed_process = subprocess.run(
             [target.disk_space_path],
-            encoding='utf-8',
             env={**os.environ, **arch_cfg.environment()},
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             timeout=timeout,
         )
-    except subprocess.TimeoutExpired:
+    except subprocess.TimeoutExpired as e:
         log_messages.append(f'Disk space check timed out in {timeout} seconds')
-        return archdir_freebytes, log_messages
+        stdout = e.stdout.decode('utf-8', errors='ignore').strip()
+        stderr = e.stderr.decode('utf-8', errors='ignore').strip()
+    else:
+        stdout = completed_process.stdout.decode('utf-8', errors='ignore').strip()
+        stderr = completed_process.stderr.decode('utf-8', errors='ignore').strip()
+        for line in stdout.splitlines():
+            line = line.strip()
+            split = line.split(':')
+            if len(split) != 2:
+                log_messages.append(f'Unable to parse disk script line: {line!r}')
+                continue
+            archdir, space = split
+            freebytes = int(space)
+            archdir_freebytes[archdir.strip()] = freebytes
 
-    for line in completed_process.stdout.strip().splitlines():
-        line = line.strip()
-        split = line.split(':')
-        if len(split) != 2:
-            log_messages.append(f'Unable to parse disk script line: {line!r}')
-            continue
-        archdir, space = split
-        freebytes = int(space)
-        archdir_freebytes[archdir.strip()] = freebytes
+    for line in log_messages:
+        logger.info(line)
 
-    stderr = completed_process.stderr.strip()
-    if len(stderr) > 0:
-        log_messages.append('stderr from disk space script:')
-        for line in stderr.splitlines():
-            log_messages.append(f'    {line}')
+    logger.info('stdout from disk space script:')
+    for line in stdout.splitlines():
+        logger.info(f'    {line}')
+
+    logger.info('stderr from disk space script:')
+    for line in stderr.splitlines():
+        logger.info(f'    {line}')
 
     return archdir_freebytes, log_messages
 
