@@ -377,14 +377,14 @@ class Job:
 
     def get_tmp_usage(self):
         total_bytes = 0
-        with os.scandir(self.tmpdir) as it:
-            for entry in it:
-                if self.plot_id in entry.name:
-                    try:
-                        total_bytes += entry.stat().st_size
-                    except FileNotFoundError:
-                        # The file might disappear; this being an estimate we don't care
-                        pass
+        with contextlib.suppress(FileNotFoundError):
+            # The directory might not exist at this name, or at all, anymore
+            with os.scandir(self.tmpdir) as it:
+                for entry in it:
+                    if self.plot_id in entry.name:
+                        with contextlib.suppress(FileNotFoundError):
+                            # The file might disappear; this being an estimate we don't care
+                            total_bytes += entry.stat().st_size
         return total_bytes
 
     def get_run_status(self):
