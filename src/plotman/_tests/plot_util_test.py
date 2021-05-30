@@ -57,3 +57,10 @@ def test_list_k32_plots(fs: pyfakefs.fake_filesystem.FakeFilesystem):
             [ '/t/plot-k32-0.plot',
               '/t/plot-k32-1.plot',
               '/t/plot-k32-5.plot' ] )
+
+
+def test_get_plotsize():
+    assert (
+        [659272492, 107287518791, 221143636517, 455373353413, 936816632588]
+        == [plot_util.get_plotsize(n) for n in [25, 32, 33, 34, 35]]
+    )
