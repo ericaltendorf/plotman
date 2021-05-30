@@ -18,6 +18,7 @@ def analyze(logfilenames, clipterminals, bytmp, bybitfield):
             n_uniform = 0
             is_first_last = False
             total_time = 0
+            copy_time = 0
 
             # Read the logfile, triggering various behaviors on various
             # regex matches.
@@ -96,6 +97,11 @@ def analyze(logfilenames, clipterminals, bytmp, bybitfield):
                 m = re.search(r'^Copy time = (\d+.\d+) seconds.*', line)
                 if m:
                     copy_time = float(m.group(1))
+
+                # Rename plot.  Sample log line:
+                # Renamed final file from "/mnt/d1/a4.plot.2.tmp" to "/mnt/d2/a4.plot"
+                m = re.search(r'^Renamed final file.*', line)
+                if m:
                     data.setdefault(sl, {}).setdefault('copy time', []).append(copy_time)
                     data.setdefault(sl, {}).setdefault('total time', []).append(total_time + copy_time)
                     for phase in ['1', '2', '3', '4']:
