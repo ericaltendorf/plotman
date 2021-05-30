@@ -16,9 +16,11 @@ target_definitions:
     # directory.
     disk_space_script: |
       #!/bin/bash
+      set -evx
       df -BK | grep " ${site_root}/" | awk '{ gsub(/K$/,"",$4); print $6 ":" $4*1024 }'
     transfer_script: |
       #!/bin/bash
+      set -evx
       "${command}" ${options} "${source}" "${destination}"
     transfer_process_name: "{command}"
     transfer_process_argument_prefix: "{site_root}"
@@ -35,9 +37,11 @@ target_definitions:
       site: null
     disk_space_script: |
       #!/bin/bash
+      set -evx
       ssh -p "${ssh_port}" "${user}@${host}" "df -BK | grep \" ${site_root}/\" | awk '{ gsub(/K\$/,\"\",\$4); print \$6 \":\" \$4*1024 }'"
     transfer_script: |
       #!/bin/bash
+      set -evx
       echo Launching transfer activity
       relative_path=$(realpath --relative-to="${site_root}" "${destination}")
       url_root="rsync://${user}@${host}:${rsync_port}/${site}"
