@@ -13,13 +13,20 @@ def df_b(d):
 def get_k32_plotsize():
     return 108 * GB
 
-def human_format(num, precision):
+def human_format(num, precision, powerOfTwo=False):
+    divisor = 1024 if powerOfTwo else 1000
+    
     magnitude = 0
-    while abs(num) >= 1000:
+    while abs(num) >= divisor:
         magnitude += 1
-        num /= 1000.0
-    return (('%.' + str(precision) + 'f%s') %
+        num /= divisor        
+    result = (('%.' + str(precision) + 'f%s') %
             (num, ['', 'K', 'M', 'G', 'T', 'P'][magnitude]))
+
+    if powerOfTwo and magnitude > 0:
+	    result += 'i'
+    
+    return result
 
 def time_format(sec):
     if sec is None:
