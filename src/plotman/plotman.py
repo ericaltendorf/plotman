@@ -212,7 +212,7 @@ def main():
                     if not firstit:
                         print('Sleeping 60s until next iteration...')
                         time.sleep(60)
-                        jobs = Job.get_running_jobs(cfg.directories.log)
+                        jobs = Job.get_running_jobs(cfg.logging.plots)
                     firstit = False
 
                     archiving_status, log_messages = archive.spawn_archive_process(cfg.directories, cfg.archiving, cfg.logging, jobs)

@@ -119,7 +119,7 @@ def curses_main(stdscr, cfg):
                         aging_reason = None
                     log.log(msg)
                     plotting_status = '<just started job>'
-                    jobs = Job.get_running_jobs(cfg.directories.log, cached_jobs=jobs)
+                    jobs = Job.get_running_jobs(cfg.logging.plots, cached_jobs=jobs)
                 else:
                     # If a plot is delayed for any reason other than stagger, log it
                     if msg.find("stagger") < 0:
