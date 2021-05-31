@@ -104,23 +104,6 @@ class ArchivingTarget:
     transfer_path: Optional[str] = None
     transfer_script: Optional[str] = None
 
-# local_rsync_archiving_target = ArchivingTarget(
-#     transfer_process_name='{site_root}',
-#     transfer_process_argument_prefix='{command}',
-#     env={
-#         'command': 'rsync',
-#         'options': '--preallocate --remove-source-files --skip-compress plot --whole-file',
-#         'site_root': None,
-#     },
-#     disk_space_script=textwrap.dedent('''\
-#         #!/bin/bash
-#         df -BK | grep " ${site_root}/" | awk '{ gsub(/K$/,"",$4); print $6 ":" $4*1024 }'
-#     '''),
-#     transfer_script=textwrap.dedent('''\
-#
-#     ''')
-# )
-
 @attr.frozen
 class PresetTargetDefinitions:
     target_definitions: Dict[str, ArchivingTarget] = attr.ib(factory=dict)
