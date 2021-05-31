@@ -3,6 +3,15 @@
 # https://github.com/ericaltendorf/plotman/wiki/Configuration#versions
 version: [1]
 
+logging:
+        # One directory in which to store all plot job logs (the STDOUT/
+        # STDERR of all plot jobs).  In order to monitor progress, plotman
+        # reads these logs on a regular basis, so using a fast drive is
+        # recommended.
+        plots: /home/chia/chia/logs
+        # transfers:
+        # application:
+
 # Options for display and rendering
 user_interface:
         # Call out to the `stty` program to determine terminal size, instead of
@@ -14,12 +23,6 @@ user_interface:
 
 # Where to plot and log.
 directories:
-        # One directory in which to store all plot job logs (the STDOUT/
-        # STDERR of all plot jobs).  In order to monitor progress, plotman
-        # reads these logs on a regular basis, so using a fast drive is
-        # recommended.
-        log: /home/chia/chia/logs
-
         # One or more directories to use as tmp dirs for plotting.  The
         # scheduler will use all of them and distribute jobs among them.
         # It assumes that IO is independent for each one (i.e., that each

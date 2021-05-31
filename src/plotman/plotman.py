@@ -9,7 +9,6 @@ from shutil import copyfile
 import time
 import datetime
 
-import appdirs
 import pendulum
 
 # Plotman libraries
@@ -100,20 +99,6 @@ class Iso8601Formatter(logging.Formatter):
 def main():
     random.seed()
 
-    log_file_path = appdirs.user_log_dir('plotman')
-    os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
-    root_logger = logging.getLogger()
-    handler = logging.handlers.RotatingFileHandler(
-        backupCount=10,
-        encoding='utf-8',
-        filename=log_file_path,
-        maxBytes=10_000_000,
-    )
-    formatter = Iso8601Formatter(fmt='%(asctime)s: %(message)s')
-    handler.setFormatter(formatter)
-    root_logger.addHandler(handler)
-    root_logger.setLevel(logging.INFO)
-
     pm_parser = PlotmanArgParser()
     args = pm_parser.parse_args()
 
@@ -162,13 +147,25 @@ def main():
     cfg = configuration.get_validated_configs(config_text, config_path)
 
     with cfg.setup():
+        root_logger = logging.getLogger()
+        handler = logging.handlers.RotatingFileHandler(
+            backupCount=10,
+            encoding='utf-8',
+            filename=cfg.logging.application,
+            maxBytes=10_000_000,
+        )
+        formatter = Iso8601Formatter(fmt='%(asctime)s: %(message)s')
+        handler.setFormatter(formatter)
+        root_logger.addHandler(handler)
+        root_logger.setLevel(logging.INFO)
+
         #
         # Stay alive, spawning plot jobs
         #
         if args.cmd == 'plot':
             print('...starting plot loop')
             while True:
-                wait_reason = manager.maybe_start_new_plot(cfg.directories, cfg.scheduling, cfg.plotting)
+                wait_reason = manager.maybe_start_new_plot(cfg.directories, cfg.scheduling, cfg.plotting, cfg.logging)
 
                 # TODO: report this via a channel that can be polled on demand, so we don't spam the console
                 if wait_reason:
@@ -185,7 +182,7 @@ def main():
                     args.bytmp, args.bybitfield)
 
         else:
-            jobs = Job.get_running_jobs(cfg.directories.log)
+            jobs = Job.get_running_jobs(cfg.logging.plots)
 
             # Status report
             if args.cmd == 'status':
@@ -214,7 +211,7 @@ def main():
                         jobs = Job.get_running_jobs(cfg.directories.log)
                     firstit = False
 
-                    archiving_status, log_messages = archive.spawn_archive_process(cfg.directories, cfg.archiving, jobs)
+                    archiving_status, log_messages = archive.spawn_archive_process(cfg.directories, cfg.archiving, cfg.logging, jobs)
                     for log_message in log_messages:
                         print(log_message)
 

@@ -71,8 +71,8 @@ def phases_permit_new_job(phases, d, sched_cfg, dir_cfg):
 
     return True
 
-def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
-    jobs = job.Job.get_running_jobs(dir_cfg.log)
+def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg, log_cfg):
+    jobs = job.Job.get_running_jobs(log_cfg.plots)
 
     wait_reason = None  # If we don't start a job this iteration, this says why.
 
@@ -111,7 +111,7 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
                 else:
                     dstdir = max(dir2ph, key=dir2ph.get)
 
-            log_file_path = dir_cfg.create_log_path(group='plot', time=pendulum.now())
+            log_file_path = log_cfg.create_plot_log_path(time=pendulum.now())
 
             plot_args = ['chia', 'plots', 'create',
                     '-k', str(plotting_cfg.k),

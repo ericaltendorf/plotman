@@ -20,7 +20,6 @@ def sched_cfg():
 @pytest.fixture
 def dir_cfg():
     return configuration.Directories(
-        log="/plots/log",
         tmp=["/var/tmp", "/tmp"],
         dst=["/mnt/dst/00", "/mnt/dst/01", "/mnt/dst/03"],
         tmp_overrides={"/mnt/tmp/04": configuration.TmpOverrides(tmpdir_max_jobs=4)}

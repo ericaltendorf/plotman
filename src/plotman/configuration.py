@@ -209,8 +209,36 @@ class TmpOverrides:
     tmpdir_max_jobs: Optional[int] = None
 
 @attr.frozen
+class Logging:
+    plots: str = os.path.join(appdirs.user_data_dir("plotman"), 'plots')
+    transfers: str = os.path.join(appdirs.user_data_dir("plotman"), 'transfers')
+    application: str = os.path.join(appdirs.user_log_dir("plotman"), 'plotman.log')
+
+    def setup(self):
+        os.makedirs(self.plots, exist_ok=True)
+        os.makedirs(self.transfers, exist_ok=True)
+        os.makedirs(os.path.dirname(self.application), exist_ok=True)
+
+    def create_plot_log_path(self, time):
+        return self._create_log_path(
+            time=time,
+            directory=self.plots,
+            group='plot',
+        )
+
+    def create_transfer_log_path(self, time):
+        return self._create_log_path(
+            time=time,
+            directory=self.transfers,
+            group='transfer',
+        )
+
+    def _create_log_path(self, time, directory, group):
+        timestamp = time.isoformat(timespec='microseconds').replace(':', '_')
+        return os.path.join(directory, f'{timestamp}.{group}.log')
+
+@attr.frozen
 class Directories:
-    log: str
     tmp: List[str]
     dst: Optional[List[str]] = None
     tmp2: Optional[str] = None
@@ -232,10 +260,6 @@ class Directories:
             return self.tmp
 
         return self.dst
-
-    def create_log_path(self, group, time):
-        timestamp = time.isoformat(timespec='microseconds').replace(':', '_')
-        return os.path.join(self.log, f'{timestamp}.{group}.log')
 
 @attr.frozen
 class Scheduling:
@@ -267,6 +291,7 @@ class PlotmanConfig:
     directories: Directories
     scheduling: Scheduling
     plotting: Plotting
+    logging: Logging = Logging()
     archiving: Optional[Archiving] = None
     user_interface: UserInterface = attr.ib(factory=UserInterface)
     version: List[int] = [0]
@@ -274,6 +299,8 @@ class PlotmanConfig:
     @contextlib.contextmanager
     def setup(self):
         prefix = f'plotman-pid_{os.getpid()}-'
+
+        self.logging.setup()
 
         with tempfile.TemporaryDirectory(prefix=prefix) as temp:
             if self.archiving is not None:

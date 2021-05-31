@@ -81,7 +81,7 @@ def curses_main(stdscr, cfg):
     jobs_win = curses.newwin(1, 1, 1, 0)
     dirs_win = curses.newwin(1, 1, 1, 0)
 
-    jobs = Job.get_running_jobs(cfg.directories.log)
+    jobs = Job.get_running_jobs(cfg.logging.plots)
     last_refresh = None
 
     pressed_key = ''   # For debugging
@@ -103,15 +103,15 @@ def curses_main(stdscr, cfg):
             do_full_refresh = elapsed >= cfg.scheduling.polling_time_s
 
         if not do_full_refresh:
-            jobs = Job.get_running_jobs(cfg.directories.log, cached_jobs=jobs)
+            jobs = Job.get_running_jobs(cfg.logging.plots, cached_jobs=jobs)
 
         else:
             last_refresh = datetime.datetime.now()
-            jobs = Job.get_running_jobs(cfg.directories.log)
+            jobs = Job.get_running_jobs(cfg.logging.plots)
 
             if plotting_active:
                 (started, msg) = manager.maybe_start_new_plot(
-                    cfg.directories, cfg.scheduling, cfg.plotting
+                    cfg.directories, cfg.scheduling, cfg.plotting, cfg.logging
                 )
                 if (started):
                     if aging_reason is not None:
@@ -128,7 +128,7 @@ def curses_main(stdscr, cfg):
 
             if archiving_configured:
                 if archiving_active:
-                    archiving_status, log_messages = archive.spawn_archive_process(cfg.directories, cfg.archiving, jobs)
+                    archiving_status, log_messages = archive.spawn_archive_process(cfg.directories, cfg.archiving, cfg.logging, jobs)
                     for log_message in log_messages:
                         log.log(log_message)
 

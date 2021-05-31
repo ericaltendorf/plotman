@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 # TODO : write-protect and delete-protect archived plots
 
-def spawn_archive_process(dir_cfg, arch_cfg, all_jobs):
+def spawn_archive_process(dir_cfg, arch_cfg, log_cfg, all_jobs):
     '''Spawns a new archive process using the command created
     in the archive() function. Returns archiving status and a log message to print.'''
 
@@ -40,8 +40,9 @@ def spawn_archive_process(dir_cfg, arch_cfg, all_jobs):
         else:
             args = status_or_cmd
 
-            log_file_path = dir_cfg.create_log_path(group='transfer', time=pendulum.now())
+            log_file_path = log_cfg.create_transfer_log_path(time=pendulum.now())
 
+            log_messages.append(f'Starting archive: {args["args"]} ; logging to {log_file_path}')
             # TODO: CAMPid 09840103109429840981397487498131
             try:
                 open_log_file = open(log_file_path, 'x')
@@ -71,7 +72,6 @@ def spawn_archive_process(dir_cfg, arch_cfg, all_jobs):
                     stdout=open_log_file,
                     stderr=subprocess.STDOUT,
                     start_new_session=True)
-            log_messages.append(f'Starting archive: {args["args"]} ; logging to {log_file_path}')
             # At least for now it seems that even if we get a new running
             # archive jobs list it doesn't contain the new rsync process.
             # My guess is that this is because the bash in the middle due to
