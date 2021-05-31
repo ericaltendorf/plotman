@@ -71,13 +71,18 @@ class Directories:
     archive: Optional[Archive] = None
 
     def dst_is_tmp(self):
-        return self.dst is None
+        return self.dst is None and self.tmp2 is None
+
+    def dst_is_tmp2(self):
+        return self.dst is None and self.tmp2 is not None
 
     def get_dst_directories(self):
         """Returns either <Directories.dst> or <Directories.tmp>. If
         Directories.dst is None, Use Directories.tmp as dst directory.
         """
-        if self.dst_is_tmp():
+        if self.dst_is_tmp2():
+            return [self.tmp2]
+        elif self.dst_is_tmp():
             return self.tmp
 
         return self.dst
