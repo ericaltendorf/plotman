@@ -13,13 +13,20 @@ def config_text_fixture():
     return importlib.resources.read_text(plotman_resources, "plotman.yaml")
 
 
-def test_get_validated_configs__default(config_text):
+@pytest.fixture(name='target_definitions_text')
+def target_definitions_text_fixture():
+    return importlib.resources.read_text(
+        plotman_resources, "target_definitions.yaml",
+    )
+
+
+def test_get_validated_configs__default(config_text, target_definitions_text):
     """Check that get_validated_configs() works with default/example plotman.yaml file."""
-    res = configuration.get_validated_configs(config_text, '')
+    res = configuration.get_validated_configs(config_text, '', target_definitions_text)
     assert isinstance(res, configuration.PlotmanConfig)
 
 
-def test_get_validated_configs__malformed(config_text):
+def test_get_validated_configs__malformed(config_text, target_definitions_text):
     """Check that get_validated_configs() raises exception with invalid plotman.yaml contents."""
     loaded_yaml = yaml.load(config_text, Loader=yaml.SafeLoader)
 
@@ -28,7 +35,7 @@ def test_get_validated_configs__malformed(config_text):
     malformed_config_text = yaml.dump(loaded_yaml, Dumper=yaml.SafeDumper)
 
     with pytest.raises(configuration.ConfigurationException) as exc_info:
-        configuration.get_validated_configs(malformed_config_text, '/the_path')
+        configuration.get_validated_configs(malformed_config_text, '/the_path', target_definitions_text)
 
     assert exc_info.value.args[0] == f"Config file at: '/the_path' is malformed"
 
@@ -44,14 +51,14 @@ def test_get_validated_configs__missing():
     )
 
 
-def test_loads_without_user_interface(config_text):
+def test_loads_without_user_interface(config_text, target_definitions_text):
     loaded_yaml = yaml.load(config_text, Loader=yaml.SafeLoader)
 
     del loaded_yaml["user_interface"]
 
     stripped_config_text = yaml.dump(loaded_yaml, Dumper=yaml.SafeDumper)
 
-    reloaded_yaml = configuration.get_validated_configs(stripped_config_text, '')
+    reloaded_yaml = configuration.get_validated_configs(stripped_config_text, '', target_definitions_text)
 
     assert reloaded_yaml.user_interface == configuration.UserInterface()
 

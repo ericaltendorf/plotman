@@ -35,7 +35,7 @@ def read_configuration_text(config_path):
         ) from e
 
 
-def get_validated_configs(config_text, config_path):
+def get_validated_configs(config_text, config_path, preset_target_definitions_text):
     """Return a validated instance of PlotmanConfig with data from plotman.yaml
 
     :raises ConfigurationException: Raised when plotman.yaml is either missing or malformed
@@ -62,10 +62,6 @@ def get_validated_configs(config_text, config_path):
             f"Config file at: '{config_path}' is malformed"
         ) from e
 
-    # TODO: get this IO out
-    preset_target_definitions_text = importlib.resources.read_text(
-        plotman_resources, "target_definitions.yaml",
-    )
     preset_target_objects = yaml.safe_load(preset_target_definitions_text)
     preset_target_schema = desert.schema(PresetTargetDefinitions)
     preset_target_definitions = preset_target_schema.load(preset_target_objects)
