@@ -30,8 +30,8 @@ target_definitions:
       # A value of null indicates a mandatory option
       command: rsync
       options: --bwlimit=80000 --preallocate --remove-source-files --skip-compress plot --whole-file
-      rsync_port: "873"
-      ssh_port: "22"
+      rsync_port: 873
+      ssh_port: 22
       user: null
       host: null
       site_root: null

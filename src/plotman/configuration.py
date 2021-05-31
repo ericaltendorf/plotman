@@ -77,6 +77,12 @@ def get_validated_configs(config_text, config_path):
 
     return loaded
 
+class CustomStringField(marshmallow.fields.String):
+    def _deserialize(self, value, attr, data, **kwargs):
+        if isinstance(value, int):
+            value = str(value)
+
+        return super()._deserialize(value, attr, data, **kwargs)
 
 # Data models used to deserializing/formatting plotman.yaml files.
 
@@ -86,7 +92,13 @@ class ArchivingTarget:
     transfer_process_name: str
     transfer_process_argument_prefix: str
     # TODO: mutable attribute...
-    env: Dict[str, Optional[str]] = attr.ib(factory=dict)
+    env: Dict[str, Optional[str]] = desert.ib(
+        factory=dict,
+        marshmallow_field=marshmallow.fields.Dict(
+            keys=marshmallow.fields.String(),
+            values=CustomStringField(allow_none=True),
+        ),
+    )
     disk_space_path: Optional[str] = None
     disk_space_script: Optional[str] = None
     transfer_path: Optional[str] = None
@@ -118,7 +130,13 @@ class PresetTargetDefinitions:
 class Archiving:
     target: str
     # TODO: mutable attribute...
-    env: Dict[str, str]
+    env: Dict[str, str] = desert.ib(
+        factory=dict,
+        marshmallow_field=marshmallow.fields.Dict(
+            keys=marshmallow.fields.String(),
+            values=CustomStringField(),
+        ),
+    )
     index: int = 0  # If not explicit, "index" will default to 0
     target_definitions: Dict[str, ArchivingTarget] = attr.ib(factory=dict)
 
