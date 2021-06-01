@@ -4,7 +4,7 @@ import locale
 import math
 import os
 import subprocess
-
+import sys
 from plotman import archive, configuration, manager, reporting
 from plotman.job import Job
 
@@ -62,14 +62,19 @@ def archiving_status_msg(configured, active, status):
     else:
         return '(not configured)'
 
-def curses_main(stdscr):
+# cmd_autostart_plotting is the (optional) argument passed from the command line. May be None
+def curses_main(stdscr, cmd_autostart_plotting):
     log = Log()
 
     config_path = configuration.get_path()
     config_text = configuration.read_configuration_text(config_path)
     cfg = configuration.get_validated_configs(config_text, config_path)
 
-    plotting_active = True
+    if cmd_autostart_plotting is not None:
+        plotting_active = cmd_autostart_plotting
+    else:
+        plotting_active = cfg.commands.interactive.autostart_plotting
+
     archiving_configured = cfg.directories.archive is not None
     archiving_active = archiving_configured
 
@@ -325,14 +330,13 @@ def curses_main(stdscr):
         else:
             pressed_key = key
 
-
-def run_interactive():
+def run_interactive(autostart_plotting = None):
     locale.setlocale(locale.LC_ALL, '')
     code = locale.getpreferredencoding()
     # Then use code as the encoding for str.encode() calls.
 
     try:
-        curses.wrapper(curses_main)
+        curses.wrapper(curses_main, autostart_plotting)
     except curses.error as e:
         raise TerminalTooSmallError(
             "Your terminal may be too small, try making it bigger.",
