@@ -14,6 +14,8 @@ import texttable as tt
 
 from plotman import job, manager, plot_util
 
+_WINDOWS = sys.platform == 'win32'
+
 # TODO : write-protect and delete-protect archived plots
 
 def spawn_archive_process(dir_cfg, all_jobs):
@@ -38,7 +40,8 @@ def spawn_archive_process(dir_cfg, all_jobs):
                     shell=True,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.STDOUT,
-                    start_new_session=True)
+                    start_new_session=True,
+                    creationflags=0 if not _WINDOWS else subprocess.CREATE_NO_WINDOW)
             log_message = 'Starting archive: ' + cmd
             # At least for now it seems that even if we get a new running
             # archive jobs list it doesn't contain the new rsync process.

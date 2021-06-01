@@ -22,7 +22,7 @@ HR = 3600   # Seconds
 
 MAX_AGE = 1000_000_000   # Arbitrary large number of seconds
 
-_WINDOWS = os.name == 'nt'
+_WINDOWS = sys.platform == 'win32'
 
 def dstdirs_to_furthest_phase(all_jobs):
     '''Return a map from dst dir to a phase tuple for the most progressed job
@@ -174,7 +174,7 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
                     stdout=open_log_file,
                     stderr=subprocess.STDOUT,
                     start_new_session=True,
-                    creationflags = 0 if not _WINDOWS else subprocess.CREATE_NO_WINDOW)
+                    creationflags=0 if not _WINDOWS else subprocess.CREATE_NO_WINDOW)
 
             psutil.Process(p.pid).nice(15 if not _WINDOWS else psutil.BELOW_NORMAL_PRIORITY_CLASS)
             return (True, logmsg)
