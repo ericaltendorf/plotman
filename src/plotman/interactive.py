@@ -108,7 +108,7 @@ def curses_main(stdscr, cmd_autostart_plotting):
         if last_refresh is None:
             do_full_refresh = True
         else:
-            elapsed = (datetime.datetime.now() - last_refresh).total_seconds() 
+            elapsed = (datetime.datetime.now() - last_refresh).total_seconds()
             do_full_refresh = elapsed >= cfg.scheduling.polling_time_s
 
         if not do_full_refresh:
@@ -173,7 +173,8 @@ def curses_main(stdscr, cmd_autostart_plotting):
 
         # Directory prefixes, for abbreviation
         tmp_prefix = os.path.commonpath(cfg.directories.tmp)
-        dst_prefix = os.path.commonpath(cfg.directories.dst)
+        dst_dir = cfg.directories.get_dst_directories()
+        dst_prefix = os.path.commonpath(dst_dir)
         if archiving_configured:
             arch_prefix = cfg.directories.archive.rsyncd_path
 
@@ -183,7 +184,7 @@ def curses_main(stdscr, cmd_autostart_plotting):
         tmp_report = reporting.tmp_dir_report(
             jobs, cfg.directories, cfg.scheduling, n_cols, 0, n_tmpdirs, tmp_prefix)
         dst_report = reporting.dst_dir_report(
-            jobs, cfg.directories.dst, n_cols, dst_prefix)
+            jobs, dst_dir, n_cols, dst_prefix)
         if archiving_configured:
             arch_report = reporting.arch_dir_report(archdir_freebytes, n_cols, arch_prefix)
             if not arch_report:
@@ -194,7 +195,7 @@ def curses_main(stdscr, cmd_autostart_plotting):
         #
         # Layout
         #
-            
+
         tmp_h = len(tmp_report.splitlines())
         tmp_w = len(max(tmp_report.splitlines(), key=len)) + 1
         dst_h = len(dst_report.splitlines())
@@ -241,7 +242,7 @@ def curses_main(stdscr, cmd_autostart_plotting):
         header_win.addnstr(' <A>rchival: ', linecap, curses.A_BOLD)
         header_win.addnstr(
                 archiving_status_msg(archiving_configured,
-                    archiving_active, archiving_status), linecap) 
+                    archiving_active, archiving_status), linecap)
 
         # Oneliner progress display
         header_win.addnstr(1, 0, 'Jobs (%d): ' % len(jobs), linecap)
@@ -260,10 +261,10 @@ def curses_main(stdscr, cmd_autostart_plotting):
             header_win.addnstr('  archive=', linecap, curses.A_BOLD)
             header_win.addnstr(arch_prefix, linecap)
         header_win.addnstr(' (remote)', linecap)
-        
+
 
         # Jobs
-        jobs_win.addstr(0, 0, reporting.status_report(jobs, n_cols, jobs_h, 
+        jobs_win.addstr(0, 0, reporting.status_report(jobs, n_cols, jobs_h,
             tmp_prefix, dst_prefix))
         jobs_win.chgat(0, 0, curses.A_REVERSE)
 

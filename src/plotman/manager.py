@@ -3,7 +3,6 @@ import operator
 import os
 import random
 import re
-import readline  # For nice CLI
 import subprocess
 import sys
 import time
@@ -89,22 +88,28 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
                 if phases_permit_new_job(phases, d, sched_cfg, dir_cfg) ]
         rankable = [ (d, phases[0]) if phases else (d, job.Phase(known=False))
                 for (d, phases) in eligible ]
-        
+
         if not eligible:
             wait_reason = 'no eligible tempdirs (%ds/%ds)' % (youngest_job_age, global_stagger)
         else:
             # Plot to oldest tmpdir.
             tmpdir = max(rankable, key=operator.itemgetter(1))[0]
 
-            # Select the dst dir least recently selected
-            dir2ph = { d:ph for (d, ph) in dstdirs_to_youngest_phase(jobs).items()
-                      if d in dir_cfg.dst and ph is not None}
-            unused_dirs = [d for d in dir_cfg.dst if d not in dir2ph.keys()]
-            dstdir = ''
-            if unused_dirs: 
-                dstdir = random.choice(unused_dirs)
+            if dir_cfg.dst_is_tmp2():
+                dstdir = dir_cfg.tmp2
+            elif dir_cfg.dst_is_tmp():
+                dstdir = tmpdir
             else:
-                dstdir = max(dir2ph, key=dir2ph.get)
+                # Select the dst dir least recently selected
+                dst_dirs = dir_cfg.get_dst_directories()
+                dir2ph = { d:ph for (d, ph) in dstdirs_to_youngest_phase(jobs).items()
+                        if d in dst_dirs and ph is not None}
+                unused_dirs = [d for d in dst_dirs if d not in dir2ph.keys()]
+                dstdir = ''
+                if unused_dirs:
+                    dstdir = random.choice(unused_dirs)
+                else:
+                    dstdir = max(dir2ph, key=dir2ph.get)
 
             logfile = os.path.join(
                 dir_cfg.log, pendulum.now().isoformat(timespec='microseconds').replace(':', '_') + '.log'
@@ -128,6 +133,8 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
             if dir_cfg.tmp2 is not None:
                 plot_args.append('-2')
                 plot_args.append(dir_cfg.tmp2)
+            if plotting_cfg.x:
+                plot_args.append('-x')  
 
             logmsg = ('Starting plot job: %s ; logging to %s' % (' '.join(plot_args), logfile))
 
