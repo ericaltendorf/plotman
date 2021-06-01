@@ -25,6 +25,21 @@ def test_get_validated_configs__default(config_text, target_definitions_text):
     res = configuration.get_validated_configs(config_text, '', target_definitions_text)
     assert isinstance(res, configuration.PlotmanConfig)
 
+def test_tool_interactive_should_be_none(config_text):
+    """When tools/interacting doesn't exist, its configuration property should be None"""
+    loaded_yaml = yaml.load(config_text, Loader=yaml.SafeLoader)
+    
+    del loaded_yaml["tools"]["interactive"]
+    reloaded_yaml = configuration.get_validated_configs(yaml.dump(loaded_yaml, Dumper=yaml.SafeDumper), '')
+    assert reloaded_yaml.tools.interactive is None
+
+def test_tool_section_does_not_exist(config_text):
+    """When tools doesn't exist, its configuration property should be None"""
+    loaded_yaml = yaml.load(config_text, Loader=yaml.SafeLoader)
+    
+    del loaded_yaml["tools"]
+    reloaded_yaml = configuration.get_validated_configs(yaml.dump(loaded_yaml, Dumper=yaml.SafeDumper), '')
+    assert reloaded_yaml.tools is None
 
 def test_get_validated_configs__malformed(config_text, target_definitions_text):
     """Check that get_validated_configs() raises exception with invalid plotman.yaml contents."""
