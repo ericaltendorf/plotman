@@ -140,12 +140,17 @@ class Job:
         with contextlib.ExitStack() as exit_stack:
             processes = []
 
+            pids = set()
+            ppids = set()
+
             for process in psutil.process_iter():
                 # Ignore processes which most likely have terminated between the time of
                 # iteration and data access.
                 with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied):
                     exit_stack.enter_context(process.oneshot())
                     if is_plotting_cmdline(process.cmdline()):
+                        ppids.add(process.ppid())
+                        pids.add(process.pid)
                         processes.append(process)
 
             # https://github.com/ericaltendorf/plotman/pull/418
@@ -155,8 +160,6 @@ class Job:
             # both identified as plot processes.  Only the child is
             # really plotting.  Filter out the parent.
 
-            pids = {process.pid for process in processes}
-            ppids = {process.ppid() for process in processes}
             wanted_pids = pids - ppids
 
             wanted_processes = [
@@ -166,23 +169,24 @@ class Job:
             ]
 
             for proc in wanted_processes:
-                if proc.pid in cached_jobs_by_pid.keys():
-                    jobs.append(cached_jobs_by_pid[proc.pid])  # Copy from cache
-                else:
-                    with proc.oneshot():
-                        parsed_command = parse_chia_plots_create_command_line(
-                            command_line=proc.cmdline(),
-                        )
-                        if parsed_command.error is not None:
-                            continue
-                        job = Job(
-                            proc=proc,
-                            parsed_command=parsed_command,
-                            logroot=logroot,
-                        )
-                        if job.help:
-                            continue
-                        jobs.append(job)
+                with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied):
+                    if proc.pid in cached_jobs_by_pid.keys():
+                        jobs.append(cached_jobs_by_pid[proc.pid])  # Copy from cache
+                    else:
+                        with proc.oneshot():
+                            parsed_command = parse_chia_plots_create_command_line(
+                                command_line=proc.cmdline(),
+                            )
+                            if parsed_command.error is not None:
+                                continue
+                            job = Job(
+                                proc=proc,
+                                parsed_command=parsed_command,
+                                logroot=logroot,
+                            )
+                            if job.help:
+                                continue
+                            jobs.append(job)
 
         return jobs
 
@@ -373,14 +377,14 @@ class Job:
 
     def get_tmp_usage(self):
         total_bytes = 0
-        with os.scandir(self.tmpdir) as it:
-            for entry in it:
-                if self.plot_id in entry.name:
-                    try:
-                        total_bytes += entry.stat().st_size
-                    except FileNotFoundError:
-                        # The file might disappear; this being an estimate we don't care
-                        pass
+        with contextlib.suppress(FileNotFoundError):
+            # The directory might not exist at this name, or at all, anymore
+            with os.scandir(self.tmpdir) as it:
+                for entry in it:
+                    if self.plot_id in entry.name:
+                        with contextlib.suppress(FileNotFoundError):
+                            # The file might disappear; this being an estimate we don't care
+                            total_bytes += entry.stat().st_size
         return total_bytes
 
     def get_run_status(self):
