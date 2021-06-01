@@ -1,4 +1,5 @@
 import argparse
+import datetime
 import importlib
 import importlib.resources
 import logging
@@ -7,8 +8,6 @@ import os
 import random
 from shutil import copyfile
 import time
-import sys
-import datetime
 
 import pendulum
 
