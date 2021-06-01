@@ -114,7 +114,7 @@ def curses_main(stdscr, cmd_autostart_plotting, cfg):
             last_refresh = datetime.datetime.now()
             jobs = Job.get_running_jobs(cfg.logging.plots)
 
-            if False and plotting_active:
+            if plotting_active:
                 (started, msg) = manager.maybe_start_new_plot(
                     cfg.directories, cfg.scheduling, cfg.plotting, cfg.logging
                 )
