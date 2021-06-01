@@ -72,10 +72,8 @@ def curses_main(stdscr, cmd_autostart_plotting):
 
     if cmd_autostart_plotting is not None:
         plotting_active = cmd_autostart_plotting
-    elif cfg.commands is not None:
-        plotting_active = cfg.commands.interactive.autostart_plotting
     else:
-        plotting_active = True
+        plotting_active = cfg.commands.interactive.autostart_plotting
 
     archiving_configured = cfg.directories.archive is not None
     archiving_active = archiving_configured

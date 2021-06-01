@@ -31,15 +31,8 @@ class PlotmanArgParser:
         sp.add_parser('dirs', help='show directories info')
 
         p_interactive = sp.add_parser('interactive', help='run interactive control/monitoring mode')
-        p_interactive.add_argument('--autostart-plotting',
-            action='store_true',
-            default=None,
-            help='Automatically start plotting when the tool opens')
-
-        p_interactive.add_argument('--no-autostart-plotting',
-            action='store_true',
-            default=None,
-            help='Do not start plotting when the tool opens')
+        p_interactive.add_argument('--autostart-plotting', action='store_true', default=None, dest='autostart_plotting')
+        p_interactive.add_argument('--no-autostart-plotting', action='store_false', default=None, dest='autostart_plotting')
 
         sp.add_parser('dsched', help='print destination dir schedule')
 
@@ -179,15 +172,7 @@ def main():
             print(reporting.dirs_report(jobs, cfg.directories, cfg.scheduling, get_term_width()))
 
         elif args.cmd == 'interactive':
-            if args.autostart_plotting is not None:
-                autostart_plotting = True
-            elif args.no_autostart_plotting is not None:
-                autostart_plotting = False
-            else:
-                # In this case we'll check the configuration file
-                autostart_plotting = None
-
-            interactive.run_interactive(autostart_plotting)
+            interactive.run_interactive(args.autostart_plotting)
 
         # Start running archival
         elif args.cmd == 'archive':

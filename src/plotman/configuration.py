@@ -107,5 +107,5 @@ class PlotmanConfig:
     directories: Directories
     scheduling: Scheduling
     plotting: Plotting
-    commands: Optional[Commands] = None
+    commands: Commands = attr.ib(factory=Commands)
     user_interface: UserInterface = attr.ib(factory=UserInterface)
