@@ -133,8 +133,14 @@ def get_archdir_freebytes(arch_cfg):
         )
     except subprocess.TimeoutExpired as e:
         log_messages.append(f'Disk space check timed out in {timeout} seconds')
-        stdout = e.stdout.decode('utf-8', errors='ignore').strip()
-        stderr = e.stderr.decode('utf-8', errors='ignore').strip()
+        if e.stdout is None:
+            stdout = ''
+        else:
+            stdout = e.stdout.decode('utf-8', errors='ignore').strip()
+        if e.stderr is None:
+            stderr = ''
+        else:
+            stderr = e.stderr.decode('utf-8', errors='ignore').strip()
     else:
         stdout = completed_process.stdout.decode('utf-8', errors='ignore').strip()
         stderr = completed_process.stderr.decode('utf-8', errors='ignore').strip()
