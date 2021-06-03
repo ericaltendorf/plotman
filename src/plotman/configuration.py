@@ -114,8 +114,17 @@ class UserInterface:
     use_stty_size: bool = True
 
 @attr.frozen
+class Interactive:
+    autostart_plotting: bool = True
+
+@attr.frozen
+class Commands:
+    interactive: Interactive = attr.ib(factory=Interactive)
+
+@attr.frozen
 class PlotmanConfig:
     directories: Directories
     scheduling: Scheduling
     plotting: Plotting
+    commands: Commands = attr.ib(factory=Commands)
     user_interface: UserInterface = attr.ib(factory=UserInterface)

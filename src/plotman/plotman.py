@@ -1,17 +1,17 @@
 import argparse
+import datetime
 import importlib
 import importlib.resources
 import os
 import random
 from shutil import copyfile
 import time
-import datetime
+import sys
 
 # Plotman libraries
 from plotman import analyzer, archive, configuration, interactive, manager, plot_util, reporting
 from plotman import resources as plotman_resources
 from plotman.job import Job
-
 
 class PlotmanArgParser:
     def add_idprefix_arg(self, subparser):
@@ -31,7 +31,9 @@ class PlotmanArgParser:
 
         sp.add_parser('dirs', help='show directories info')
 
-        sp.add_parser('interactive', help='run interactive control/monitoring mode')
+        p_interactive = sp.add_parser('interactive', help='run interactive control/monitoring mode')
+        p_interactive.add_argument('--autostart-plotting', action='store_true', default=None, dest='autostart_plotting')
+        p_interactive.add_argument('--no-autostart-plotting', action='store_false', default=None, dest='autostart_plotting')
 
         sp.add_parser('dsched', help='print destination dir schedule')
 
@@ -176,7 +178,7 @@ def main():
             print(reporting.dirs_report(jobs, cfg.directories, cfg.scheduling, get_term_width()))
 
         elif args.cmd == 'interactive':
-            interactive.run_interactive()
+            interactive.run_interactive(args.autostart_plotting)
 
         # Start running archival
         elif args.cmd == 'archive':

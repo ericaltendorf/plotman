@@ -18,7 +18,6 @@ def test_get_validated_configs__default(config_text):
     res = configuration.get_validated_configs(config_text, '')
     assert isinstance(res, configuration.PlotmanConfig)
 
-
 def test_get_validated_configs__malformed(config_text):
     """Check that get_validated_configs() raises exception with invalid plotman.yaml contents."""
     loaded_yaml = yaml.load(config_text, Loader=yaml.SafeLoader)
