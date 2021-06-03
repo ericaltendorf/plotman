@@ -18,7 +18,9 @@ target_definitions:
       #!/bin/bash
       set -evx
       site_root_stripped=$(echo "${site_root}" | sed 's;/\+$;;')
-      df -BK | grep " ${site_root_stripped}/" | awk '{ gsub(/K$/,"",$4); print $6 ":" $4*1024 }'
+      # printf with %.0f used to handle mawk such as in Ubuntu Docker images
+      # otherwise it saturates and you get saturated sizes like 2147483647
+      df -BK | grep " ${site_root_stripped}/" | awk '{ gsub(/K$/,"",$4); printf "%s:%.0f\n", $6, $4*1024 }'
     transfer_script: |
       #!/bin/bash
       set -evx
@@ -40,7 +42,9 @@ target_definitions:
       #!/bin/bash
       set -evx
       site_root_stripped=$(echo "${site_root}" | sed 's;/\+$;;')
-      ssh -p "${ssh_port}" "${user}@${host}" "df -BK | grep \" $(echo "${site_root_stripped}" | sed 's;/\+$;;')/\" | awk '{ gsub(/K\$/,\"\",\$4); print \$6 \":\" \$4*1024 }'"
+      # printf with %.0f used to handle mawk such as in Ubuntu Docker images
+      # otherwise it saturates and you get saturated sizes like 2147483647
+      ssh -p "${ssh_port}" "${user}@${host}" "df -BK | grep \" $(echo "${site_root_stripped}" | sed 's;/\+$;;')/\" | awk '{ gsub(/K\$/,\"\",\$4); printf \"%s:%.0f\n\", \$6, \$4*1024 }'"
     transfer_script: |
       #!/bin/bash
       set -evx
