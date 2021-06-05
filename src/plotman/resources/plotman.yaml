@@ -15,6 +15,7 @@ commands:
                 # Set it to False if you don't want to auto start plotting when 'interactive' is ran.
                 # You can override this value from the command line, type "plotman interactive -h" for details
                 autostart_plotting: True
+                autostart_archiving: True
 
 # Where to plot and log.
 directories:

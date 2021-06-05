@@ -34,6 +34,8 @@ class PlotmanArgParser:
         p_interactive = sp.add_parser('interactive', help='run interactive control/monitoring mode')
         p_interactive.add_argument('--autostart-plotting', action='store_true', default=None, dest='autostart_plotting')
         p_interactive.add_argument('--no-autostart-plotting', action='store_false', default=None, dest='autostart_plotting')
+        p_interactive.add_argument('--autostart-archiving', action='store_true', default=None, dest='autostart_archiving')
+        p_interactive.add_argument('--no-autostart-archiving', action='store_false', default=None, dest='autostart_archiving')
 
         sp.add_parser('dsched', help='print destination dir schedule')
 
@@ -178,7 +180,7 @@ def main():
             print(reporting.dirs_report(jobs, cfg.directories, cfg.scheduling, get_term_width()))
 
         elif args.cmd == 'interactive':
-            interactive.run_interactive(args.autostart_plotting)
+            interactive.run_interactive(args.autostart_plotting, args.autostart_archiving)
 
         # Start running archival
         elif args.cmd == 'archive':

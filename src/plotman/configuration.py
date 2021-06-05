@@ -116,6 +116,7 @@ class UserInterface:
 @attr.frozen
 class Interactive:
     autostart_plotting: bool = True
+    autostart_archiving: bool = True
 
 @attr.frozen
 class Commands:
