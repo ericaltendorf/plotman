@@ -192,7 +192,7 @@ def dst_dir_report(jobs, dstdirs, width, prefix=''):
     return tab.draw()
 
 def arch_dir_report(archdir_freebytes, width, prefix=''):
-    cells = ['%s:%5dGB' % (abbr_path(d, prefix), int(int(space) / plot_util.GB))
+    cells = ['%s:%5dG' % (abbr_path(d, prefix), int(int(space) / plot_util.GB))
             for (d, space) in sorted(archdir_freebytes.items())]
     if not cells:
         return ''
@@ -207,16 +207,18 @@ def arch_dir_report(archdir_freebytes, width, prefix=''):
     return tab.draw()
 
 # TODO: remove this
-def dirs_report(jobs, dir_cfg, sched_cfg, width):
+def dirs_report(jobs, dir_cfg, arch_cfg, sched_cfg, width):
     dst_dir = dir_cfg.get_dst_directories()
     reports = [
         tmp_dir_report(jobs, dir_cfg, sched_cfg, width),
         dst_dir_report(jobs, dst_dir, width),
     ]
-    if dir_cfg.archive is not None:
+    if arch_cfg is not None:
+        freebytes, archive_log_messages = archive.get_archdir_freebytes(arch_cfg)
         reports.extend([
             'archive dirs free space:',
-            arch_dir_report(archive.get_archdir_freebytes(dir_cfg.archive), width),
+            arch_dir_report(freebytes, width),
+            *archive_log_messages,
         ])
 
     return '\n'.join(reports) + '\n'
