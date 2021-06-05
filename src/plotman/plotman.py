@@ -204,8 +204,12 @@ def main():
             elif args.cmd == 'dirs':
                 print(reporting.dirs_report(jobs, cfg.directories, cfg.scheduling, get_term_width()))
 
-        elif args.cmd == 'interactive':
-            interactive.run_interactive(args.autostart_plotting, args.autostart_archiving, cfg=cfg)
+            elif args.cmd == 'interactive':
+                interactive.run_interactive(
+                    cfg=cfg,
+                    autostart_plotting=args.autostart_plotting,
+                    autostart_archiving=args.autostart_archiving,
+                )
 
             # Start running archival
             elif args.cmd == 'archive':
