@@ -47,11 +47,11 @@ def dstdirs_to_most_space(dst_dirs, jobs):
     '''Return destination disk with most free space, will raise Expeption if no
     disks have free space'''
     plot_size = 108900000000
-    disk_free = dict((i, disk_free(i)) for i in dst_dirs)
+    disks = dict((i, disk_free(i)) for i in dst_dirs)
     for x in jobs: # remove in flight plotting from returned free space
-        if x.dstdir in disk_free:
-            disk_free[x.dstdir] = disk_free[x.dstdir] - plot_size
-    path, free = sorted(disk_free.items(), key=lambda x: x[1], reverse=True)[0]
+        if x.dstdir in disks:
+            disks[x.dstdir] = disks[x.dstdir] - plot_size
+    path, free = sorted(disks.items(), key=lambda x: x[1], reverse=True)[0]
     if free > plot_size:
         return path
     raise Exception("No more free space on any dst dirs.")
