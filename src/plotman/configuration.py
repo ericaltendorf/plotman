@@ -66,10 +66,11 @@ def get_validated_configs(config_text, config_path, preset_target_definitions_te
     preset_target_schema = desert.schema(PresetTargetDefinitions)
     preset_target_definitions = preset_target_schema.load(preset_target_objects)
 
-    loaded.archiving.target_definitions = {
-        **preset_target_definitions.target_definitions,
-        **loaded.archiving.target_definitions,
-    }
+    if loaded.archiving is not None:
+        loaded.archiving.target_definitions = {
+            **preset_target_definitions.target_definitions,
+            **loaded.archiving.target_definitions,
+        }
 
     return loaded
 
