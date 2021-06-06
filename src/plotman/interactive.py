@@ -63,7 +63,7 @@ def archiving_status_msg(configured, active, status):
         return '(not configured)'
 
 # cmd_autostart_plotting is the (optional) argument passed from the command line. May be None
-def curses_main(stdscr, cmd_autostart_plotting, cfg):
+def curses_main(stdscr, cmd_autostart_plotting, cmd_autostart_archiving, cfg):
     log = Log()
 
     if cmd_autostart_plotting is not None:
@@ -72,7 +72,13 @@ def curses_main(stdscr, cmd_autostart_plotting, cfg):
         plotting_active = cfg.commands.interactive.autostart_plotting
 
     archiving_configured = cfg.archiving is not None
-    archiving_active = archiving_configured
+
+    if not archiving_configured:
+        archiving_active = False
+    elif cmd_autostart_archiving is not None:
+        archiving_active = cmd_autostart_archiving
+    else:
+        archiving_active = cfg.commands.interactive.autostart_archiving
 
     plotting_status = '<startup>'    # todo rename these msg?
     archiving_status = '<startup>'
@@ -332,13 +338,18 @@ def curses_main(stdscr, cmd_autostart_plotting, cfg):
         else:
             pressed_key = key
 
-def run_interactive(cfg, autostart_plotting = None):
+def run_interactive(cfg, autostart_plotting=None, autostart_archiving=None):
     locale.setlocale(locale.LC_ALL, '')
     code = locale.getpreferredencoding()
     # Then use code as the encoding for str.encode() calls.
 
     try:
-        curses.wrapper(curses_main, autostart_plotting, cfg=cfg)
+        curses.wrapper(
+            curses_main,
+            cmd_autostart_plotting=autostart_plotting,
+            cmd_autostart_archiving=autostart_archiving,
+            cfg=cfg,
+        )
     except curses.error as e:
         raise TerminalTooSmallError(
             "Your terminal may be too small, try making it bigger.",
