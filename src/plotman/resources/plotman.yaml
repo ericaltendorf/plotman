@@ -111,7 +111,7 @@ scheduling:
         polling_time_s: 20
 
         # Choose dst dir based upon which one has the most free space
-        dst_dir_with_most_free_space: true
+        dst_dir_with_most_free_space: True
 
 
 # Plotting parameters.  These are pass-through parameters to chia plots create.
