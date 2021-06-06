@@ -344,7 +344,12 @@ def run_interactive(cfg, autostart_plotting=None, autostart_archiving=None):
     # Then use code as the encoding for str.encode() calls.
 
     try:
-        curses.wrapper(curses_main, autostart_plotting, autostart_archiving, cfg=cfg)
+        curses.wrapper(
+            curses_main,
+            cmd_autostart_plotting=autostart_plotting,
+            cmd_autostart_archiving=autostart_archiving,
+            cfg=cfg,
+        )
     except curses.error as e:
         raise TerminalTooSmallError(
             "Your terminal may be too small, try making it bigger.",
