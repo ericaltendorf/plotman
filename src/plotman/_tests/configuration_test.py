@@ -62,6 +62,18 @@ def test_loads_without_user_interface(config_text, target_definitions_text):
     assert reloaded_yaml.user_interface == configuration.UserInterface()
 
 
+def test_loads_without_user_archiving(config_text, target_definitions_text):
+    loaded_yaml = yaml.load(config_text, Loader=yaml.SafeLoader)
+
+    del loaded_yaml["archiving"]
+
+    stripped_config_text = yaml.dump(loaded_yaml, Dumper=yaml.SafeDumper)
+
+    reloaded_yaml = configuration.get_validated_configs(stripped_config_text, '', target_definitions_text)
+
+    assert reloaded_yaml.archiving is None
+
+
 def test_get_dst_directories_gets_dst():
     tmp = ['/tmp']
     dst = ['/dst0', '/dst1']

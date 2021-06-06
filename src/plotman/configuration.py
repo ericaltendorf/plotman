@@ -62,14 +62,15 @@ def get_validated_configs(config_text, config_path, preset_target_definitions_te
             f"Config file at: '{config_path}' is malformed"
         ) from e
 
-    preset_target_objects = yaml.safe_load(preset_target_definitions_text)
-    preset_target_schema = desert.schema(PresetTargetDefinitions)
-    preset_target_definitions = preset_target_schema.load(preset_target_objects)
+    if loaded.archiving is not None:
+        preset_target_objects = yaml.safe_load(preset_target_definitions_text)
+        preset_target_schema = desert.schema(PresetTargetDefinitions)
+        preset_target_definitions = preset_target_schema.load(preset_target_objects)
 
-    loaded.archiving.target_definitions = {
-        **preset_target_definitions.target_definitions,
-        **loaded.archiving.target_definitions,
-    }
+        loaded.archiving.target_definitions = {
+            **preset_target_definitions.target_definitions,
+            **loaded.archiving.target_definitions,
+        }
 
     return loaded
 
