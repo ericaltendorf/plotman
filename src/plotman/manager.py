@@ -43,6 +43,24 @@ def dstdirs_to_youngest_phase(all_jobs):
             result[j.dstdir] = j.progress()
     return result
 
+def dstdirs_to_most_space(dst_dirs, jobs):
+    '''Return destination disk with most free space, will raise Expeption if no
+    disks have free space'''
+    plot_size = 108900000000
+    disk_free = dict((i, disk_free(i)) for i in dst_dirs)
+    for x in jobs: # remove in flight plotting from returned free space
+        if x.dstdir in disk_free:
+            disk_free[x.dstdir] = disk_free[x.dstdir] - plot_size
+    path, free = sorted(disk_free.items(), key=lambda x: x[1], reverse=True)[0]
+    if free > plot_size:
+        return path
+    raise Exception("No more free space on any dst dirs.")
+
+def disk_free(dir):
+    '''Return how much free space in bytes for dst_dir'''
+    disk = os.statvfs(dir)
+    return disk.f_bavail * disk.f_bsize
+
 def phases_permit_new_job(phases, d, sched_cfg, dir_cfg):
     '''Scheduling logic: return True if it's OK to start a new job on a tmp dir
        with existing jobs in the provided phases.'''
@@ -97,14 +115,21 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
             tmpdir = max(rankable, key=operator.itemgetter(1))[0]
 
             # Select the dst dir least recently selected
-            dir2ph = { d:ph for (d, ph) in dstdirs_to_youngest_phase(jobs).items()
-                      if d in dir_cfg.dst and ph is not None}
-            unused_dirs = [d for d in dir_cfg.dst if d not in dir2ph.keys()]
-            dstdir = ''
-            if unused_dirs: 
-                dstdir = random.choice(unused_dirs)
+            if sched_cfg.dst_dir_with_most_free_space:
+                dstdir = dstdirs_to_most_space(dir_cfg.dst, jobs)
             else:
-                dstdir = max(dir2ph, key=dir2ph.get)
+                dir2ph = { d:ph for (d, ph) in dstdirs_to_youngest_phase(jobs).items()
+                          if d in dir_cfg.dst and ph is not None}
+                unused_dirs = [d for d in dir_cfg.dst if d not in dir2ph.keys()]
+                dstdir = ''
+                if unused_dirs:
+                    dstdir = random.choice(unused_dirs)
+                else:
+                    dstdir = dstdirs_to_most_space(dir_cfg.dst, jobs)
+
+            plot_size = 108900000000
+            if disk_free(dstdir) < plot_size:
+                return (False, "Not enough disk free on that dst drive %s" % dstdir)
 
             logfile = os.path.join(
                 dir_cfg.log, pendulum.now().isoformat(timespec='microseconds').replace(':', '_') + '.log'
