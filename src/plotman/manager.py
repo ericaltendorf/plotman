@@ -80,9 +80,9 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
     youngest_job_age = min(jobs, key=job.Job.get_time_wall).get_time_wall() if jobs else MAX_AGE
     global_stagger = int(sched_cfg.global_stagger_m * MIN)
     if (youngest_job_age < global_stagger):
-        wait_reason = 'stagger (%ds/%ds)' % (youngest_job_age, global_stagger)
+        wait_reason = 'Wait - stagger (%ds/%ds)' % (youngest_job_age, global_stagger)
     elif len(jobs) >= sched_cfg.global_max_jobs:
-        wait_reason = 'max jobs (%d) - (%ds/%ds)' % (sched_cfg.global_max_jobs, youngest_job_age, global_stagger)
+        wait_reason = 'Wait - max jobs (%d)' % (sched_cfg.global_max_jobs)
     else:
         tmp_to_all_phases = [(d, job.job_phases_for_tmpdir(d, jobs)) for d in dir_cfg.tmp]
         eligible = [ (d, phases) for (d, phases) in tmp_to_all_phases
@@ -91,7 +91,7 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg):
                 for (d, phases) in eligible ]
         
         if not eligible:
-            wait_reason = 'no eligible tempdirs (%ds/%ds)' % (youngest_job_age, global_stagger)
+            wait_reason = 'Wait - job phase'
         else:
             # Plot to oldest tmpdir.
             tmpdir = max(rankable, key=operator.itemgetter(1))[0]
