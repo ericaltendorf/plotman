@@ -49,14 +49,14 @@ class Log:
 
 def plotting_status_msg(active, status):
     if active:
-        return '(active) ' + status
+        return '( active ) ' + status
     else:
         return '(inactive) ' + status
 
 def archiving_status_msg(configured, active, status):
     if configured:
         if active:
-            return '(active) ' + status
+            return '( active ) ' + status
         else:
             return '(inactive) ' + status
     else:
@@ -228,12 +228,14 @@ def curses_main(stdscr):
         # Header
         header_win.addnstr(0, 0, 'Plotman', linecap, curses.A_BOLD)
         timestamp = datetime.datetime.now().strftime("%H:%M:%S")
-        refresh_msg = "now" if do_full_refresh else f"{int(elapsed)}s/{cfg.scheduling.polling_time_s}"
-        header_win.addnstr(f" {timestamp} (refresh {refresh_msg})", linecap)
-        header_win.addnstr('  |  <P>lotting: ', linecap, curses.A_BOLD)
+        refresh_msg = "now" if do_full_refresh else f" {cfg.scheduling.polling_time_s-int(elapsed)}s" if cfg.scheduling.polling_time_s-int(elapsed) < 10 else  f"{cfg.scheduling.polling_time_s-int(elapsed)}s"
+        header_win.addnstr(f" ({refresh_msg})", linecap)
+        header_win.addnstr(' | <C>onfig ', linecap, curses.A_BOLD)
+        header_win.addnstr('reload',linecap)
+        header_win.addnstr(' | <P>lotting: ', linecap, curses.A_BOLD)
         header_win.addnstr(
                 plotting_status_msg(plotting_active, plotting_status), linecap)
-        header_win.addnstr(' <A>rchival: ', linecap, curses.A_BOLD)
+        header_win.addnstr(' | <A>rchival: ', linecap, curses.A_BOLD)
         header_win.addnstr(
                 archiving_status_msg(archiving_configured,
                     archiving_active, archiving_status), linecap) 
@@ -319,6 +321,10 @@ def curses_main(stdscr):
         elif key == ord('a'):
             archiving_active = not archiving_active
             pressed_key = 'a'
+        elif key == ord('c'):
+            config_text = configuration.read_configuration_text(config_path)
+            cfg = configuration.get_validated_configs(config_text, config_path)
+            pressed_key = 'c'
         elif key == ord('q'):
             break
         else:
