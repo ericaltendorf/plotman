@@ -130,6 +130,9 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg, log_cfg):
             if plotting_cfg.pool_pk is not None:
                 plot_args.append('-p')
                 plot_args.append(plotting_cfg.pool_pk)
+            if plotting_cfg.pool_contract_address is not None:
+                plot_args.append('-c')
+                plot_args.append(plotting_cfg.pool_contract_address)
             if dir_cfg.tmp2 is not None:
                 plot_args.append('-2')
                 plot_args.append(dir_cfg.tmp2)

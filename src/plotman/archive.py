@@ -227,8 +227,12 @@ def archive(dir_cfg, arch_cfg, all_jobs):
         return(False, 'No free archive dirs found.', log_messages)
 
     archdir = ''
+    chosen_plot_size = os.stat(chosen_plot).st_size
+    # 10MB is big enough to outsize filesystem block sizes hopefully, but small
+    # enough to make this a pretty tight corner for people to get stuck in.
+    free_space_margin = 10_000_000
     available = [(d, space) for (d, space) in archdir_freebytes.items() if
-                 space > 1.2 * plot_util.get_k32_plotsize()]
+                 space > (chosen_plot_size + free_space_margin)]
     if len(available) > 0:
         index = min(arch_cfg.index, len(available) - 1)
         (archdir, freespace) = sorted(available)[index]

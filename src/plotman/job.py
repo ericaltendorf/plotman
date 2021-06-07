@@ -174,8 +174,12 @@ class Job:
                         jobs.append(cached_jobs_by_pid[proc.pid])  # Copy from cache
                     else:
                         with proc.oneshot():
+                            command_line = list(proc.cmdline())
+                            if len(command_line) == 0:
+                                # https://github.com/ericaltendorf/plotman/issues/610
+                                continue
                             parsed_command = parse_chia_plots_create_command_line(
-                                command_line=proc.cmdline(),
+                                command_line=command_line,
                             )
                             if parsed_command.error is not None:
                                 continue
