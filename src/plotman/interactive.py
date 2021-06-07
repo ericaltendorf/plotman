@@ -228,7 +228,13 @@ def curses_main(stdscr):
         # Header
         header_win.addnstr(0, 0, 'Plotman', linecap, curses.A_BOLD)
         timestamp = datetime.datetime.now().strftime("%H:%M:%S")
-        refresh_msg = "now" if do_full_refresh else f" {cfg.scheduling.polling_time_s-int(elapsed)}s" if cfg.scheduling.polling_time_s-int(elapsed) < 10 else  f"{cfg.scheduling.polling_time_s-int(elapsed)}s"
+        if do_full_refresh:
+            refresh_msg = "now"
+        else:
+            if (cfg.scheduling.polling_time_s-int(elapsed)) < 10:
+                refresh_msg = f" {cfg.scheduling.polling_time_s-int(elapsed)}s"
+            else:
+                f"{cfg.scheduling.polling_time_s-int(elapsed)}s"
         header_win.addnstr(f" ({refresh_msg})", linecap)
         header_win.addnstr(' | <C>onfig ', linecap, curses.A_BOLD)
         header_win.addnstr('reload',linecap)
