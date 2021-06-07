@@ -272,17 +272,18 @@ class Job:
         found_log = False
         for attempt_number in range(3):
             with open(self.logfile, 'r') as f:
-                for line in f:
-                    m = re.match('^ID: ([0-9a-f]*)', line)
-                    if m:
-                        self.plot_id = m.group(1)
-                        found_id = True
-                    m = re.match(r'^Starting phase 1/4:.*\.\.\. (.*)', line)
-                    if m:
-                        # Mon Nov  2 08:39:53 2020
-                        self.start_time = parse_chia_plot_time(m.group(1))
-                        found_log = True
-                        break  # Stop reading lines in file
+                with contextlib.suppress(UnicodeDecodeError):
+                    for line in f:
+                        m = re.match('^ID: ([0-9a-f]*)', line)
+                        if m:
+                            self.plot_id = m.group(1)
+                            found_id = True
+                        m = re.match(r'^Starting phase 1/4:.*\.\.\. (.*)', line)
+                        if m:
+                            # Mon Nov  2 08:39:53 2020
+                            self.start_time = parse_chia_plot_time(m.group(1))
+                            found_log = True
+                            break  # Stop reading lines in file
 
             if found_id and found_log:
                 break  # Stop trying
@@ -313,39 +314,40 @@ class Job:
         phase_subphases = {}
 
         with open(self.logfile, 'r') as f:
-            for line in f:
-                # "Starting phase 1/4: Forward Propagation into tmp files... Sat Oct 31 11:27:04 2020"
-                m = re.match(r'^Starting phase (\d).*', line)
-                if m:
-                    phase = int(m.group(1))
-                    phase_subphases[phase] = 0
+            with contextlib.suppress(UnicodeDecodeError):
+                for line in f:
+                    # "Starting phase 1/4: Forward Propagation into tmp files... Sat Oct 31 11:27:04 2020"
+                    m = re.match(r'^Starting phase (\d).*', line)
+                    if m:
+                        phase = int(m.group(1))
+                        phase_subphases[phase] = 0
 
-                # Phase 1: "Computing table 2"
-                m = re.match(r'^Computing table (\d).*', line)
-                if m:
-                    phase_subphases[1] = max(phase_subphases[1], int(m.group(1)))
+                    # Phase 1: "Computing table 2"
+                    m = re.match(r'^Computing table (\d).*', line)
+                    if m:
+                        phase_subphases[1] = max(phase_subphases[1], int(m.group(1)))
 
-                # Phase 2: "Backpropagating on table 2"
-                m = re.match(r'^Backpropagating on table (\d).*', line)
-                if m:
-                    phase_subphases[2] = max(phase_subphases[2], 7 - int(m.group(1)))
+                    # Phase 2: "Backpropagating on table 2"
+                    m = re.match(r'^Backpropagating on table (\d).*', line)
+                    if m:
+                        phase_subphases[2] = max(phase_subphases[2], 7 - int(m.group(1)))
 
-                # Phase 3: "Compressing tables 4 and 5"
-                m = re.match(r'^Compressing tables (\d) and (\d).*', line)
-                if m:
-                    phase_subphases[3] = max(phase_subphases[3], int(m.group(1)))
+                    # Phase 3: "Compressing tables 4 and 5"
+                    m = re.match(r'^Compressing tables (\d) and (\d).*', line)
+                    if m:
+                        phase_subphases[3] = max(phase_subphases[3], int(m.group(1)))
 
-                # TODO also collect timing info:
+                    # TODO also collect timing info:
 
-                # "Time for phase 1 = 22796.7 seconds. CPU (98%) Tue Sep 29 17:57:19 2020"
-                # for phase in ['1', '2', '3', '4']:
-                    # m = re.match(r'^Time for phase ' + phase + ' = (\d+.\d+) seconds..*', line)
-                        # data.setdefault....
+                    # "Time for phase 1 = 22796.7 seconds. CPU (98%) Tue Sep 29 17:57:19 2020"
+                    # for phase in ['1', '2', '3', '4']:
+                        # m = re.match(r'^Time for phase ' + phase + ' = (\d+.\d+) seconds..*', line)
+                            # data.setdefault....
 
-                # Total time = 49487.1 seconds. CPU (97.26%) Wed Sep 30 01:22:10 2020
-                # m = re.match(r'^Total time = (\d+.\d+) seconds.*', line)
-                # if m:
-                    # data.setdefault(key, {}).setdefault('total time', []).append(float(m.group(1)))
+                    # Total time = 49487.1 seconds. CPU (97.26%) Wed Sep 30 01:22:10 2020
+                    # m = re.match(r'^Total time = (\d+.\d+) seconds.*', line)
+                    # if m:
+                        # data.setdefault(key, {}).setdefault('total time', []).append(float(m.group(1)))
 
         if phase_subphases:
             phase = max(phase_subphases.keys())
