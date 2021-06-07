@@ -33,7 +33,7 @@ def is_plotting_cmdline(cmdline):
         cmdline = cmdline[1:]
     return (
         len(cmdline) >= 3
-        and cmdline[0].endswith("chia")
+        and 'chia' in cmdline[0]
         and 'plots' == cmdline[1]
         and 'create' == cmdline[2]
     )
