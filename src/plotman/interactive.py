@@ -226,11 +226,12 @@ def curses_main(stdscr):
         #
 
         # Header
-        header_win.addnstr(0, 0, 'Plotman', linecap, curses.A_BOLD)
         timestamp = datetime.datetime.now().strftime("%H:%M:%S")
         if do_full_refresh:
+            header_win.addnstr(0, 0, 'Refresh', linecap)
             refresh_msg = "now"
         else:
+            header_win.addnstr(0, 0, 'Plotman', linecap, curses.A_BOLD)
             if (cfg.scheduling.polling_time_s-int(elapsed)) < 10:
                 refresh_msg = f" {cfg.scheduling.polling_time_s-int(elapsed)}s"
             else:
