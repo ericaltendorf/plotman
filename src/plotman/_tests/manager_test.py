@@ -20,7 +20,6 @@ def sched_cfg():
 @pytest.fixture
 def dir_cfg():
     return configuration.Directories(
-        log="/plots/log",
         tmp=["/var/tmp", "/tmp"],
         dst=["/mnt/dst/00", "/mnt/dst/01", "/mnt/dst/03"],
         tmp_overrides={"/mnt/tmp/04": configuration.TmpOverrides(tmpdir_max_jobs=4)}
@@ -85,7 +84,7 @@ def test_dstdirs_to_furthest_phase():
             { '/plots1' : (1, 5),
               '/plots2' : (3, 1),
               '/plots3' : (4, 1) } )
-           
+
 
 def test_dstdirs_to_youngest_phase():
     all_jobs = [ job_w_dstdir_phase('/plots1', (1, 5)),

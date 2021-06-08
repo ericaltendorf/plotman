@@ -137,17 +137,49 @@ class Job:
         jobs = []
         cached_jobs_by_pid = { j.proc.pid: j for j in cached_jobs }
 
-        for proc in psutil.process_iter(['pid', 'cmdline']):
-            # Ignore processes which most likely have terminated between the time of
-            # iteration and data access.
-            with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied):
-                if is_plotting_cmdline(proc.cmdline()):
+        with contextlib.ExitStack() as exit_stack:
+            processes = []
+
+            pids = set()
+            ppids = set()
+
+            for process in psutil.process_iter():
+                # Ignore processes which most likely have terminated between the time of
+                # iteration and data access.
+                with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied):
+                    exit_stack.enter_context(process.oneshot())
+                    if is_plotting_cmdline(process.cmdline()):
+                        ppids.add(process.ppid())
+                        pids.add(process.pid)
+                        processes.append(process)
+
+            # https://github.com/ericaltendorf/plotman/pull/418
+            # The experimental Chia GUI .deb installer launches plots
+            # in a manner that results in a parent and child process
+            # that both share the same command line and, as such, are
+            # both identified as plot processes.  Only the child is
+            # really plotting.  Filter out the parent.
+
+            wanted_pids = pids - ppids
+
+            wanted_processes = [
+                process
+                for process in processes
+                if process.pid in wanted_pids
+            ]
+
+            for proc in wanted_processes:
+                with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied):
                     if proc.pid in cached_jobs_by_pid.keys():
                         jobs.append(cached_jobs_by_pid[proc.pid])  # Copy from cache
                     else:
                         with proc.oneshot():
+                            command_line = list(proc.cmdline())
+                            if len(command_line) == 0:
+                                # https://github.com/ericaltendorf/plotman/issues/610
+                                continue
                             parsed_command = parse_chia_plots_create_command_line(
-                                command_line=proc.cmdline(),
+                                command_line=command_line,
                             )
                             if parsed_command.error is not None:
                                 continue
@@ -221,11 +253,12 @@ class Job:
         if self.logfile:
             # Initialize data that needs to be loaded from the logfile
             self.init_from_logfile()
-        else:
-            print('Found plotting process PID {pid}, but could not find '
-                    'logfile in its open files:'.format(pid = self.proc.pid))
-            for f in self.proc.open_files():
-                print(f.path)
+# TODO: turn this into logging or somesuch
+#         else:
+#             print('Found plotting process PID {pid}, but could not find '
+#                     'logfile in its open files:'.format(pid = self.proc.pid))
+#             for f in self.proc.open_files():
+#                 print(f.path)
 
 
 
@@ -239,17 +272,18 @@ class Job:
         found_log = False
         for attempt_number in range(3):
             with open(self.logfile, 'r') as f:
-                for line in f:
-                    m = re.match('^ID: ([0-9a-f]*)', line)
-                    if m:
-                        self.plot_id = m.group(1)
-                        found_id = True
-                    m = re.match(r'^Starting phase 1/4:.*\.\.\. (.*)', line)
-                    if m:
-                        # Mon Nov  2 08:39:53 2020
-                        self.start_time = parse_chia_plot_time(m.group(1))
-                        found_log = True
-                        break  # Stop reading lines in file
+                with contextlib.suppress(UnicodeDecodeError):
+                    for line in f:
+                        m = re.match('^ID: ([0-9a-f]*)', line)
+                        if m:
+                            self.plot_id = m.group(1)
+                            found_id = True
+                        m = re.match(r'^Starting phase 1/4:.*\.\.\. (.*)', line)
+                        if m:
+                            # Mon Nov  2 08:39:53 2020
+                            self.start_time = parse_chia_plot_time(m.group(1))
+                            found_log = True
+                            break  # Stop reading lines in file
 
             if found_id and found_log:
                 break  # Stop trying
@@ -280,39 +314,40 @@ class Job:
         phase_subphases = {}
 
         with open(self.logfile, 'r') as f:
-            for line in f:
-                # "Starting phase 1/4: Forward Propagation into tmp files... Sat Oct 31 11:27:04 2020"
-                m = re.match(r'^Starting phase (\d).*', line)
-                if m:
-                    phase = int(m.group(1))
-                    phase_subphases[phase] = 0
+            with contextlib.suppress(UnicodeDecodeError):
+                for line in f:
+                    # "Starting phase 1/4: Forward Propagation into tmp files... Sat Oct 31 11:27:04 2020"
+                    m = re.match(r'^Starting phase (\d).*', line)
+                    if m:
+                        phase = int(m.group(1))
+                        phase_subphases[phase] = 0
 
-                # Phase 1: "Computing table 2"
-                m = re.match(r'^Computing table (\d).*', line)
-                if m:
-                    phase_subphases[1] = max(phase_subphases[1], int(m.group(1)))
+                    # Phase 1: "Computing table 2"
+                    m = re.match(r'^Computing table (\d).*', line)
+                    if m:
+                        phase_subphases[1] = max(phase_subphases[1], int(m.group(1)))
 
-                # Phase 2: "Backpropagating on table 2"
-                m = re.match(r'^Backpropagating on table (\d).*', line)
-                if m:
-                    phase_subphases[2] = max(phase_subphases[2], 7 - int(m.group(1)))
+                    # Phase 2: "Backpropagating on table 2"
+                    m = re.match(r'^Backpropagating on table (\d).*', line)
+                    if m:
+                        phase_subphases[2] = max(phase_subphases[2], 7 - int(m.group(1)))
 
-                # Phase 3: "Compressing tables 4 and 5"
-                m = re.match(r'^Compressing tables (\d) and (\d).*', line)
-                if m:
-                    phase_subphases[3] = max(phase_subphases[3], int(m.group(1)))
+                    # Phase 3: "Compressing tables 4 and 5"
+                    m = re.match(r'^Compressing tables (\d) and (\d).*', line)
+                    if m:
+                        phase_subphases[3] = max(phase_subphases[3], int(m.group(1)))
 
-                # TODO also collect timing info:
+                    # TODO also collect timing info:
 
-                # "Time for phase 1 = 22796.7 seconds. CPU (98%) Tue Sep 29 17:57:19 2020"
-                # for phase in ['1', '2', '3', '4']:
-                    # m = re.match(r'^Time for phase ' + phase + ' = (\d+.\d+) seconds..*', line)
-                        # data.setdefault....
+                    # "Time for phase 1 = 22796.7 seconds. CPU (98%) Tue Sep 29 17:57:19 2020"
+                    # for phase in ['1', '2', '3', '4']:
+                        # m = re.match(r'^Time for phase ' + phase + ' = (\d+.\d+) seconds..*', line)
+                            # data.setdefault....
 
-                # Total time = 49487.1 seconds. CPU (97.26%) Wed Sep 30 01:22:10 2020
-                # m = re.match(r'^Total time = (\d+.\d+) seconds.*', line)
-                # if m:
-                    # data.setdefault(key, {}).setdefault('total time', []).append(float(m.group(1)))
+                    # Total time = 49487.1 seconds. CPU (97.26%) Wed Sep 30 01:22:10 2020
+                    # m = re.match(r'^Total time = (\d+.\d+) seconds.*', line)
+                    # if m:
+                        # data.setdefault(key, {}).setdefault('total time', []).append(float(m.group(1)))
 
         if phase_subphases:
             phase = max(phase_subphases.keys())
@@ -348,14 +383,14 @@ class Job:
 
     def get_tmp_usage(self):
         total_bytes = 0
-        with os.scandir(self.tmpdir) as it:
-            for entry in it:
-                if self.plot_id in entry.name:
-                    try:
-                        total_bytes += entry.stat().st_size
-                    except FileNotFoundError:
-                        # The file might disappear; this being an estimate we don't care
-                        pass
+        with contextlib.suppress(FileNotFoundError):
+            # The directory might not exist at this name, or at all, anymore
+            with os.scandir(self.tmpdir) as it:
+                for entry in it:
+                    if self.plot_id in entry.name:
+                        with contextlib.suppress(FileNotFoundError):
+                            # The file might disappear; this being an estimate we don't care
+                            total_bytes += entry.stat().st_size
         return total_bytes
 
     def get_run_status(self):
