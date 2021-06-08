@@ -135,7 +135,7 @@ scheduling:
                 # than the global setting above.
                 "/mnt/tmp/00":
                         tmpdir_stagger_phase_major: 1
-                        tmpdir_stagger_phase_minr: 5
+                        tmpdir_stagger_phase_minor: 5
                         tmpdir_stagger_phase_limit: 1
                         tmpdir_max_jobs: 5
 
