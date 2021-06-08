@@ -49,7 +49,7 @@ target_definitions:
       #!/bin/bash
       set -evx
       echo Launching transfer activity
-      relative_path=$(realpath --relative-to="${site_root}" "${destination}")
+      relative_path=$(realpath --canonicalize-missing --relative-to="${site_root}" "${destination}")
       url_root="rsync://${user}@${host}:${rsync_port}/${site}"
       "${command}" ${options} "${source}" "${url_root}/${relative_path}"
     transfer_process_name: "{command}"
