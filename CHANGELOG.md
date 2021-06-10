@@ -21,9 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The config for previous plotman versions has been retroactively defined to be version 0
   The new version is 1.
   An error will be raised when launching plotman which includes a link to the wiki.
-  See [the wiki configuration page](../../wiki/Configuration#1-v04).
+  See [the wiki configuration page](https://github.com/ericaltendorf/plotman/wiki/Configuration#1-v04).
 - Archiving configuration has been reworked offering both a simple builtin local archiving setup as well as arbitrary configuration of the disk space check and transfer operations.
-  See [the wiki archiving page](../../wiki/Archiving)
+  See [the wiki archiving page](https://github.com/ericaltendorf/plotman/wiki/Archiving)
 - The `directories:` `dst:` section is optional.
   If not specified then generally the tmp drive for the plot will be used as dst.
   If tmp2 is specified then it will be used as dst.
