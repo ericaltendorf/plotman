@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - More accurately calculates expected size of plots.
 - Archival requires only minimal extra space on target drive.
-  The required space is based on the size of the actual plot to be transferred
+  The required space is based on the size of the actual plot to be transferred.
   Previously a 20% (~20GB) margin was required relative to a rough approximation of plot size.
 - Identify more cases of chia plotting processes such as on NixOS.
 - Avoid some more `NoSuchProcess` and `AccessDenied` errors when identifying plotting processes.
