@@ -1,1 +1,1 @@
-<!-- Please develop and target PRs agains the development branch, not main. -->
+<!-- Please develop and target PRs against the development branch, not main. -->
