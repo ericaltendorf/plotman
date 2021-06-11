@@ -1,10 +1,13 @@
+import os
 import re
 from plotman.plotinfo import PlotInfo
+import plotman.job
+
 
 class PlotLogParser:
     """Parser for a finished plotting job"""
 
-    def parse(self, filename: str) -> PlotInfo:
+    def parse(self, file) -> PlotInfo:
         """Parses a single log and returns its info"""
         entry = PlotInfo()
 
@@ -26,11 +29,10 @@ class PlotLogParser:
             self.filename
         ]
 
-        with open(filename, 'r') as f:
-            for line in f:
-                for matcher in matchers:
-                    if (matcher(line, entry)):
-                        break
+        for line in file:
+            for matcher in matchers:
+                if (matcher(line, entry)):
+                    break
         
         return entry
 
@@ -130,7 +132,7 @@ class PlotLogParser:
     def plot_start_date(self, line: str, entry: PlotInfo) -> bool:
         m = re.search(r'^Starting phase 1/4: Forward Propagation into tmp files\.\.\. (.+)', line)
         if m:
-            entry.started_at = m.group(1)
+            entry.started_at = plotman.job.parse_chia_plot_time(s=m.group(1))
         return m != None
 
 

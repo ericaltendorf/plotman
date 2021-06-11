@@ -1,9 +1,13 @@
-import attr
+import typing
 
-@attr.s(repr=True, init=False)
+import attr
+import pendulum
+
+
+@attr.mutable
 class PlotInfo:
     """Represents the results of a finished plot job"""
-    started_at: str = ""
+    started_at: typing.Optional[pendulum.DateTime] = None
     plot_id: str = ""
     buckets: int = 0
     threads: int = 0
@@ -19,8 +23,8 @@ class PlotInfo:
     copy_time_raw: float = 0
     filename: str = ""
 
-    def is_empty(self) -> bool:
-      "Data is considered empty if total_time is zero"
+    def in_progress(self) -> bool:
+      "The plot is in progress if no total time has been reported."
       return self.total_time == 0
 
     # Phase 1 duration
