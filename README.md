@@ -147,6 +147,25 @@ archive jobs initiated.  This is the one part of the interactive tool which is
 stateful.  There is no permanent record of these executed command lines, so if
 you start a new interactive plotman session, this log is empty.
 
+## `plotman` commands
+To get a complete list of all available commands run: 
+```shell
+plotman -h
+```
+
+You can also use `plotman <command> -h` to get help about a specific command, like 
+```shell
+plotman interactive -h
+```
+
+## Running `plotman` as a daemon
+> _PS: this section assumes that you have already configured `plotman.yaml`._
+
+By default the command `plotman plot` will start the plotting job and continue to run on the foregroud as long as you keep the terminal window open. If you want to have it constantly running, try the following:
+```shell
+nohup plotman plot >> ~/plotman.log 2>&1 &
+```
+
 ## Limitations and Issues
 
 The system is tested on Linux only.  Plotman should be generalizable to other
@@ -202,6 +221,22 @@ Installation for Linux and macOS:
    The default configuration file used as a starting point is located [here](./src/plotman/resources/plotman.yaml)
 4. That's it! You can now run Plotman by typing `plotman version` to verify its version.
    Run `plotman --help` to learn about the available commands.
+
+*Note:* If you see `ModuleNotFoundError: No module named 'readline'` when using `plotman` on [RHEL based linux](https://github.com/ericaltendorf/plotman/issues/195) after installing using [chia's guide](https://github.com/Chia-Network/chia-blockchain/wiki/INSTALL#centos--red-hat--fedora), install `readline-devel` then reinstall chia starting at compiling python in a new build environment; or consider using a project like `pyenv`.
+
+## Basic Usage:
+
+1. Install
+
+2. Generate initial config
+
+3. Configure (default location can be found with `plotman config path`). Options explained in the default config file (step 2)
+
+4. Create log directory specified in `directories: { log: "" }`
+
+5. Start plotman: `plotman plot` or `plotman interactive`
+
+6. Check status: `plotman status`
 
 ### Development note:
 

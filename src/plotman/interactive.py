@@ -4,7 +4,7 @@ import locale
 import math
 import os
 import subprocess
-
+import sys
 from plotman import archive, configuration, manager, reporting
 from plotman.job import Job
 
@@ -62,16 +62,23 @@ def archiving_status_msg(configured, active, status):
     else:
         return '(not configured)'
 
-def curses_main(stdscr):
+# cmd_autostart_plotting is the (optional) argument passed from the command line. May be None
+def curses_main(stdscr, cmd_autostart_plotting, cmd_autostart_archiving, cfg):
     log = Log()
 
-    config_path = configuration.get_path()
-    config_text = configuration.read_configuration_text(config_path)
-    cfg = configuration.get_validated_configs(config_text, config_path)
+    if cmd_autostart_plotting is not None:
+        plotting_active = cmd_autostart_plotting
+    else:
+        plotting_active = cfg.commands.interactive.autostart_plotting
 
-    plotting_active = True
-    archiving_configured = cfg.directories.archive is not None
-    archiving_active = archiving_configured
+    archiving_configured = cfg.archiving is not None
+
+    if not archiving_configured:
+        archiving_active = False
+    elif cmd_autostart_archiving is not None:
+        archiving_active = cmd_autostart_archiving
+    else:
+        archiving_active = cfg.commands.interactive.autostart_archiving
 
     plotting_status = '<startup>'    # todo rename these msg?
     archiving_status = '<startup>'
@@ -85,7 +92,7 @@ def curses_main(stdscr):
     jobs_win = curses.newwin(1, 1, 1, 0)
     dirs_win = curses.newwin(1, 1, 1, 0)
 
-    jobs = Job.get_running_jobs(cfg.directories.log)
+    jobs = Job.get_running_jobs(cfg.logging.plots)
     last_refresh = None
 
     pressed_key = ''   # For debugging
@@ -103,19 +110,19 @@ def curses_main(stdscr):
         if last_refresh is None:
             do_full_refresh = True
         else:
-            elapsed = (datetime.datetime.now() - last_refresh).total_seconds() 
+            elapsed = (datetime.datetime.now() - last_refresh).total_seconds()
             do_full_refresh = elapsed >= cfg.scheduling.polling_time_s
 
         if not do_full_refresh:
-            jobs = Job.get_running_jobs(cfg.directories.log, cached_jobs=jobs)
+            jobs = Job.get_running_jobs(cfg.logging.plots, cached_jobs=jobs)
 
         else:
             last_refresh = datetime.datetime.now()
-            jobs = Job.get_running_jobs(cfg.directories.log)
+            jobs = Job.get_running_jobs(cfg.logging.plots)
 
             if plotting_active:
                 (started, msg) = manager.maybe_start_new_plot(
-                    cfg.directories, cfg.scheduling, cfg.plotting
+                    cfg.directories, cfg.scheduling, cfg.plotting, cfg.logging
                 )
                 if (started):
                     if aging_reason is not None:
@@ -123,7 +130,7 @@ def curses_main(stdscr):
                         aging_reason = None
                     log.log(msg)
                     plotting_status = '<just started job>'
-                    jobs = Job.get_running_jobs(cfg.directories.log, cached_jobs=jobs)
+                    jobs = Job.get_running_jobs(cfg.logging.plots, cached_jobs=jobs)
                 else:
                     # If a plot is delayed for any reason other than stagger, log it
                     if msg.find("stagger") < 0:
@@ -132,11 +139,13 @@ def curses_main(stdscr):
 
             if archiving_configured:
                 if archiving_active:
-                    archiving_status, log_message = archive.spawn_archive_process(cfg.directories, jobs)
-                    if log_message:
+                    archiving_status, log_messages = archive.spawn_archive_process(cfg.directories, cfg.archiving, cfg.logging, jobs)
+                    for log_message in log_messages:
                         log.log(log_message)
 
-                archdir_freebytes = archive.get_archdir_freebytes(cfg.directories.archive)
+                archdir_freebytes, log_messages = archive.get_archdir_freebytes(cfg.archiving)
+                for log_message in log_messages:
+                    log.log(log_message)
 
 
         # Get terminal size.  Recommended method is stdscr.getmaxyx(), but this
@@ -168,9 +177,14 @@ def curses_main(stdscr):
 
         # Directory prefixes, for abbreviation
         tmp_prefix = os.path.commonpath(cfg.directories.tmp)
-        dst_prefix = os.path.commonpath(cfg.directories.dst)
+        dst_dir = cfg.directories.get_dst_directories()
+        dst_prefix = os.path.commonpath(dst_dir)
         if archiving_configured:
-            arch_prefix = cfg.directories.archive.rsyncd_path
+            archive_directories = archdir_freebytes.keys()
+            if len(archive_directories) == 0:
+                arch_prefix = ''
+            else:
+                arch_prefix = os.path.commonpath(archive_directories)
 
         n_tmpdirs = len(cfg.directories.tmp)
 
@@ -178,7 +192,7 @@ def curses_main(stdscr):
         tmp_report = reporting.tmp_dir_report(
             jobs, cfg.directories, cfg.scheduling, n_cols, 0, n_tmpdirs, tmp_prefix)
         dst_report = reporting.dst_dir_report(
-            jobs, cfg.directories.dst, n_cols, dst_prefix)
+            jobs, dst_dir, n_cols, dst_prefix)
         if archiving_configured:
             arch_report = reporting.arch_dir_report(archdir_freebytes, n_cols, arch_prefix)
             if not arch_report:
@@ -189,7 +203,7 @@ def curses_main(stdscr):
         #
         # Layout
         #
-            
+
         tmp_h = len(tmp_report.splitlines())
         tmp_w = len(max(tmp_report.splitlines(), key=len)) + 1
         dst_h = len(dst_report.splitlines())
@@ -236,7 +250,7 @@ def curses_main(stdscr):
         header_win.addnstr(' <A>rchival: ', linecap, curses.A_BOLD)
         header_win.addnstr(
                 archiving_status_msg(archiving_configured,
-                    archiving_active, archiving_status), linecap) 
+                    archiving_active, archiving_status), linecap)
 
         # Oneliner progress display
         header_win.addnstr(1, 0, 'Jobs (%d): ' % len(jobs), linecap)
@@ -255,10 +269,10 @@ def curses_main(stdscr):
             header_win.addnstr('  archive=', linecap, curses.A_BOLD)
             header_win.addnstr(arch_prefix, linecap)
         header_win.addnstr(' (remote)', linecap)
-        
+
 
         # Jobs
-        jobs_win.addstr(0, 0, reporting.status_report(jobs, n_cols, jobs_h, 
+        jobs_win.addstr(0, 0, reporting.status_report(jobs, n_cols, jobs_h,
             tmp_prefix, dst_prefix))
         jobs_win.chgat(0, 0, curses.A_REVERSE)
 
@@ -324,14 +338,18 @@ def curses_main(stdscr):
         else:
             pressed_key = key
 
-
-def run_interactive():
+def run_interactive(cfg, autostart_plotting=None, autostart_archiving=None):
     locale.setlocale(locale.LC_ALL, '')
     code = locale.getpreferredencoding()
     # Then use code as the encoding for str.encode() calls.
 
     try:
-        curses.wrapper(curses_main)
+        curses.wrapper(
+            curses_main,
+            cmd_autostart_plotting=autostart_plotting,
+            cmd_autostart_archiving=autostart_archiving,
+            cfg=cfg,
+        )
     except curses.error as e:
         raise TerminalTooSmallError(
             "Your terminal may be too small, try making it bigger.",
