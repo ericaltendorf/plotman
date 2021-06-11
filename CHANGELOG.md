@@ -20,7 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Configuration file is versioned.
   The config for previous plotman versions has been retroactively defined to be version 0
   The new version is 1.
-  An error will be raised when launching plotman which includes a link to the wiki.
+  An error will be raised when you launch plotman with a configuration file whose version does not match the expected configuration version.
+  That error will include a link to the wiki to help understand the needed changes.
   See [the wiki configuration page](https://github.com/ericaltendorf/plotman/wiki/Configuration#1-v04).
 - Archiving configuration has been reworked offering both a simple builtin local archiving setup as well as arbitrary configuration of the disk space check and transfer operations.
   See [the wiki archiving page](https://github.com/ericaltendorf/plotman/wiki/Archiving)
