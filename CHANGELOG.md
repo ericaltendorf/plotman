@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Archival disk space check finds drives with multiple mount points again.
   This fixes a regression introduced in v0.4.1.
   [#773](https://github.com/ericaltendorf/plotman/issues/773)
+- `plotman dirs` does not fail for every invocation.
+  `TypeError: dirs_report() missing 1 required positional argument: 'width'`
+  [#778](https://github.com/ericaltendorf/plotman/issues/778)
 
 ## [0.4] - 2021-06-10
 ### Fixed
