@@ -8,6 +8,7 @@ import os
 import glob
 import random
 from shutil import copyfile
+import sys
 import time
 
 import pendulum
@@ -193,14 +194,18 @@ def main():
                     args.bytmp, args.bybitfield)
 
         #
-    # Exports log metadata to CSV
-    #
-    elif args.cmd == 'export':
-        logfilenames = glob.glob(os.path.join(cfg.directories.log, '*'))
-        csv_exporter.export(logfilenames, args.save_to)
+        # Exports log metadata to CSV
+        #
+        elif args.cmd == 'export':
+            logfilenames = glob.glob(os.path.join(cfg.logging.plots, '*.plot.log'))
+            if args.save_to is None:
+                csv_exporter.generate(logfilenames=logfilenames, file=sys.stdout)
+            else:
+                with open(args.save_to, 'w', encoding='utf-8') as file:
+                    csv_exporter.generate(logfilenames=logfilenames, file=file)
 
-    else:
-        jobs = Job.get_running_jobs(cfg.logging.plots)
+        else:
+            jobs = Job.get_running_jobs(cfg.logging.plots)
 
             # Status report
             if args.cmd == 'status':
