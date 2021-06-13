@@ -5,10 +5,11 @@ import typing
 
 import click
 from pathlib import Path
+import typing_extensions
 
 
-class CommandProtocol(typing.Protocol):
-    def make_context(self, info_name:str, args:typing.List[str]) -> click.Context:
+class CommandProtocol(typing_extensions.Protocol):
+    def make_context(self, info_name: str, args: typing.List[str]) -> click.Context:
         ...
 
     def __call__(self) -> None:
