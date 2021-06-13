@@ -9,6 +9,8 @@ from typing import Dict, Generator, List, Mapping, Optional
 import appdirs
 import attr
 import desert
+# TODO: should be a desert.ib() but mypy doesn't understand it then, see below
+import desert._make
 import marshmallow
 import pendulum
 import yaml
@@ -96,10 +98,12 @@ class ArchivingTarget:
     env: Dict[str, Optional[str]] = attr.ib(
         factory=dict,
         metadata={
-            'marshmallow_field': marshmallow.fields.Dict(
-                keys=marshmallow.fields.String(),
-                values=CustomStringField(allow_none=True),
-            )
+            desert._make._DESERT_SENTINEL: {
+                'marshmallow_field': marshmallow.fields.Dict(
+                    keys=marshmallow.fields.String(),
+                    values=CustomStringField(allow_none=True),
+                )
+            },
         },
     )
     disk_space_path: Optional[str] = None
@@ -120,10 +124,12 @@ class Archiving:
     env: Dict[str, str] = attr.ib(
         factory=dict,
         metadata={
-            'marshmallow_field': marshmallow.fields.Dict(
-                keys=marshmallow.fields.String(),
-                values=CustomStringField(),
-            ),
+            desert._make._DESERT_SENTINEL: {
+                'marshmallow_field': marshmallow.fields.Dict(
+                    keys=marshmallow.fields.String(),
+                    values=CustomStringField(),
+                )
+            },
         },
     )
     index: int = 0  # If not explicit, "index" will default to 0
