@@ -218,7 +218,7 @@ def main():
 
             # Directories report
             elif args.cmd == 'dirs':
-                print(reporting.dirs_report(jobs, cfg.directories, cfg.scheduling, get_term_width()))
+                print(reporting.dirs_report(jobs, cfg.directories, cfg.archiving, cfg.scheduling, get_term_width()))
 
             elif args.cmd == 'interactive':
                 interactive.run_interactive(
