@@ -92,12 +92,15 @@ class ArchivingTarget:
     transfer_process_name: str
     transfer_process_argument_prefix: str
     # TODO: mutable attribute...
-    env: Dict[str, Optional[str]] = desert.ib(
+    # TODO: should be a desert.ib() but mypy doesn't understand it then
+    env: Dict[str, Optional[str]] = attr.ib(
         factory=dict,
-        marshmallow_field=marshmallow.fields.Dict(
-            keys=marshmallow.fields.String(),
-            values=CustomStringField(allow_none=True),
-        ),
+        metadata={
+            'marshmallow_field': marshmallow.fields.Dict(
+                keys=marshmallow.fields.String(),
+                values=CustomStringField(allow_none=True),
+            )
+        },
     )
     disk_space_path: Optional[str] = None
     disk_space_script: Optional[str] = None
@@ -113,12 +116,15 @@ class PresetTargetDefinitions:
 class Archiving:
     target: str
     # TODO: mutable attribute...
-    env: Dict[str, str] = desert.ib(
+    # TODO: should be a desert.ib() but mypy doesn't understand it then
+    env: Dict[str, str] = attr.ib(
         factory=dict,
-        marshmallow_field=marshmallow.fields.Dict(
-            keys=marshmallow.fields.String(),
-            values=CustomStringField(),
-        ),
+        metadata={
+            'marshmallow_field': marshmallow.fields.Dict(
+                keys=marshmallow.fields.String(),
+                values=CustomStringField(),
+            ),
+        },
     )
     index: int = 0  # If not explicit, "index" will default to 0
     target_definitions: Dict[str, ArchivingTarget] = attr.ib(factory=dict)
