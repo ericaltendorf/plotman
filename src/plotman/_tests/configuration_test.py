@@ -9,23 +9,23 @@ from plotman import resources as plotman_resources
 
 
 @pytest.fixture(name='config_text')
-def config_text_fixture():
+def config_text_fixture() -> str:
     return importlib.resources.read_text(plotman_resources, "plotman.yaml")
 
 
 @pytest.fixture(name='target_definitions_text')
-def target_definitions_text_fixture():
+def target_definitions_text_fixture() -> str:
     return importlib.resources.read_text(
         plotman_resources, "target_definitions.yaml",
     )
 
 
-def test_get_validated_configs__default(config_text, target_definitions_text):
+def test_get_validated_configs__default(config_text: str, target_definitions_text: str) -> None:
     """Check that get_validated_configs() works with default/example plotman.yaml file."""
     res = configuration.get_validated_configs(config_text, '', target_definitions_text)
     assert isinstance(res, configuration.PlotmanConfig)
 
-def test_get_validated_configs__malformed(config_text, target_definitions_text):
+def test_get_validated_configs__malformed(config_text: str, target_definitions_text: str) -> None:
     """Check that get_validated_configs() raises exception with invalid plotman.yaml contents."""
     loaded_yaml = yaml.load(config_text, Loader=yaml.SafeLoader)
 
@@ -39,7 +39,7 @@ def test_get_validated_configs__malformed(config_text, target_definitions_text):
     assert exc_info.value.args[0] == f"Config file at: '/the_path' is malformed"
 
 
-def test_get_validated_configs__missing():
+def test_get_validated_configs__missing() -> None:
     """Check that get_validated_configs() raises exception when plotman.yaml does not exist."""
     with pytest.raises(configuration.ConfigurationException) as exc_info:
         configuration.read_configuration_text('/invalid_path')
@@ -50,7 +50,7 @@ def test_get_validated_configs__missing():
     )
 
 
-def test_loads_without_user_interface(config_text, target_definitions_text):
+def test_loads_without_user_interface(config_text: str, target_definitions_text: str) -> None:
     loaded_yaml = yaml.load(config_text, Loader=yaml.SafeLoader)
 
     del loaded_yaml["user_interface"]
@@ -62,7 +62,7 @@ def test_loads_without_user_interface(config_text, target_definitions_text):
     assert reloaded_yaml.user_interface == configuration.UserInterface()
 
 
-def test_loads_without_user_archiving(config_text, target_definitions_text):
+def test_loads_without_user_archiving(config_text: str, target_definitions_text: str) -> None:
     loaded_yaml = yaml.load(config_text, Loader=yaml.SafeLoader)
 
     del loaded_yaml["archiving"]
@@ -74,7 +74,7 @@ def test_loads_without_user_archiving(config_text, target_definitions_text):
     assert reloaded_yaml.archiving is None
 
 
-def test_get_dst_directories_gets_dst():
+def test_get_dst_directories_gets_dst() -> None:
     tmp = ['/tmp']
     dst = ['/dst0', '/dst1']
     directories = configuration.Directories(tmp=tmp, dst=dst)
@@ -82,14 +82,14 @@ def test_get_dst_directories_gets_dst():
     assert directories.get_dst_directories() == dst
 
 
-def test_get_dst_directories_gets_tmp():
+def test_get_dst_directories_gets_tmp() -> None:
     tmp = ['/tmp']
     directories = configuration.Directories(tmp=tmp)
 
     assert directories.get_dst_directories() == tmp
 
 
-def test_dst_is_dst():
+def test_dst_is_dst() -> None:
     tmp = ['/tmp']
     dst = ['/dst0', '/dst1']
     directories = configuration.Directories(tmp=tmp, dst=dst)
@@ -97,7 +97,7 @@ def test_dst_is_dst():
     assert not directories.dst_is_tmp()
 
 
-def test_dst_is_tmp():
+def test_dst_is_tmp() -> None:
     tmp = ['/tmp']
     directories = configuration.Directories(tmp=tmp)
 

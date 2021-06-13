@@ -1,5 +1,7 @@
 import os
 import re
+import typing
+
 from plotman.plotinfo import PlotInfo
 import plotman.job
 
@@ -7,7 +9,7 @@ import plotman.job
 class PlotLogParser:
     """Parser for a finished plotting job"""
 
-    def parse(self, file) -> PlotInfo:
+    def parse(self, file: typing.TextIO) -> PlotInfo:
         """Parses a single log and returns its info"""
         entry = PlotInfo()
 
@@ -139,4 +141,5 @@ class PlotLogParser:
     # Ignore lines starting with Bucket
     # Bucket 0 uniform sort. Ram: 3.250GiB, u_sort min: 0.563GiB, qs min: 0.281GiB.
     def ignore_line(self, line: str, _: PlotInfo) -> bool:
-        return re.search(r'^\tBucket', line)
+        m = re.search(r'^\tBucket', line)
+        return m != None

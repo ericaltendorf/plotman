@@ -4,12 +4,13 @@ import os
 import stat
 import tempfile
 import textwrap
-from typing import Dict, List, Optional
+from typing import Dict, Generator, List, Mapping, Optional
 
 import appdirs
 import attr
 import desert
 import marshmallow
+import pendulum
 import yaml
 
 from plotman import resources as plotman_resources
@@ -19,12 +20,13 @@ class ConfigurationException(Exception):
     """Raised when plotman.yaml configuration is missing or malformed."""
 
 
-def get_path():
+def get_path() -> str:
     """Return path to where plotman.yaml configuration file should exist."""
-    return appdirs.user_config_dir("plotman") + "/plotman.yaml"
+    config_dir: str = appdirs.user_config_dir("plotman")
+    return config_dir + "/plotman.yaml"
 
 
-def read_configuration_text(config_path):
+def read_configuration_text(config_path: str) -> str:
     try:
         with open(config_path, "r") as file:
             return file.read()
@@ -35,7 +37,7 @@ def read_configuration_text(config_path):
         ) from e
 
 
-def get_validated_configs(config_text, config_path, preset_target_definitions_text):
+def get_validated_configs(config_text: str, config_path: str, preset_target_definitions_text: str) -> "PlotmanConfig":
     """Return a validated instance of PlotmanConfig with data from plotman.yaml
 
     :raises ConfigurationException: Raised when plotman.yaml is either missing or malformed
@@ -55,6 +57,7 @@ def get_validated_configs(config_text, config_path, preset_target_definitions_te
 
         raise Exception(message)
 
+    loaded: PlotmanConfig
     try:
         loaded = schema.load(config_objects)
     except marshmallow.exceptions.ValidationError as e:
@@ -75,11 +78,11 @@ def get_validated_configs(config_text, config_path, preset_target_definitions_te
     return loaded
 
 class CustomStringField(marshmallow.fields.String):
-    def _deserialize(self, value, attr, data, **kwargs):
+    def _deserialize(self, value: object, attr: Optional[str], data: Optional[Mapping[str, object]], **kwargs: Dict[str, object]) -> str:
         if isinstance(value, int):
             value = str(value)
 
-        return super()._deserialize(value, attr, data, **kwargs)
+        return super()._deserialize(value, attr, data, **kwargs)  # type: ignore[no-any-return]
 
 # Data models used to deserializing/formatting plotman.yaml files.
 
@@ -120,27 +123,28 @@ class Archiving:
     index: int = 0  # If not explicit, "index" will default to 0
     target_definitions: Dict[str, ArchivingTarget] = attr.ib(factory=dict)
 
-    def target_definition(self):
+    def target_definition(self) -> ArchivingTarget:
         return self.target_definitions[self.target]
 
     def environment(
             self,
-            source=None,
-            destination=None,
-    ):
+            source: Optional[str] = None,
+            destination: Optional[str] = None,
+    ) -> Dict[str, str]:
         target = self.target_definition()
-        complete = {**target.env, **self.env}
+        maybe_complete = {**target.env, **self.env}
 
-        missing_mandatory_keys = [
-            key
-            for key, value in complete.items()
-            if value is None
-        ]
+        complete = {
+            key: value
+            for key, value in maybe_complete.items()
+            if value is not None
+        }
 
-        if len(missing_mandatory_keys) > 0:
-            target = repr(self.target)
+        if len(complete) != len(maybe_complete):
+            missing_mandatory_keys = sorted(maybe_complete.keys() - complete.keys())
+            target_repr = repr(self.target)
             missing = ', '.join(repr(key) for key in missing_mandatory_keys)
-            message = f'Missing env options for archival target {target}: {missing}'
+            message = f'Missing env options for archival target {target_repr}: {missing}'
             raise Exception(message)
 
         variables = {**os.environ, **complete}
@@ -154,11 +158,14 @@ class Archiving:
 
         return complete
 
-    def maybe_create_scripts(self, temp):
+    def maybe_create_scripts(self, temp: str) -> None:
         rwx = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
         target = self.target_definition()
 
         if target.disk_space_path is None:
+            if target.disk_space_script is None:
+                raise Exception(f"One of `disk_space_path` or `disk_space_script` must be specified.  Using target {self.target!r}")
+
             with tempfile.NamedTemporaryFile(
                 mode='w',
                 encoding='utf-8',
@@ -172,6 +179,9 @@ class Archiving:
             os.chmod(target.disk_space_path, rwx)
 
         if target.transfer_path is None:
+            if target.transfer_script is None:
+                raise Exception(f"One of `transfer_path` or `transfer_script` must be specified.  Using target {self.target!r}")
+
             with tempfile.NamedTemporaryFile(
                 mode='w',
                 encoding='utf-8',
@@ -194,26 +204,26 @@ class Logging:
     transfers: str = os.path.join(appdirs.user_data_dir("plotman"), 'transfers')
     application: str = os.path.join(appdirs.user_log_dir("plotman"), 'plotman.log')
 
-    def setup(self):
+    def setup(self) -> None:
         os.makedirs(self.plots, exist_ok=True)
         os.makedirs(self.transfers, exist_ok=True)
         os.makedirs(os.path.dirname(self.application), exist_ok=True)
 
-    def create_plot_log_path(self, time):
+    def create_plot_log_path(self, time: pendulum.DateTime) -> str:
         return self._create_log_path(
             time=time,
             directory=self.plots,
             group='plot',
         )
 
-    def create_transfer_log_path(self, time):
+    def create_transfer_log_path(self, time: pendulum.DateTime) -> str:
         return self._create_log_path(
             time=time,
             directory=self.transfers,
             group='transfer',
         )
 
-    def _create_log_path(self, time, directory, group):
+    def _create_log_path(self, time: pendulum.DateTime, directory: str, group: str) -> str:
         timestamp = time.isoformat(timespec='microseconds').replace(':', '_')
         return os.path.join(directory, f'{timestamp}.{group}.log')
 
@@ -224,22 +234,22 @@ class Directories:
     tmp2: Optional[str] = None
     tmp_overrides: Optional[Dict[str, TmpOverrides]] = None
 
-    def dst_is_tmp(self):
+    def dst_is_tmp(self) -> bool:
         return self.dst is None and self.tmp2 is None
 
-    def dst_is_tmp2(self):
+    def dst_is_tmp2(self) -> bool:
         return self.dst is None and self.tmp2 is not None
 
-    def get_dst_directories(self):
+    def get_dst_directories(self) -> List[str]:
         """Returns either <Directories.dst> or <Directories.tmp>. If
         Directories.dst is None, Use Directories.tmp as dst directory.
         """
         if self.dst_is_tmp2():
-            return [self.tmp2]
+            return [self.tmp2]  # type: ignore[list-item]
         elif self.dst_is_tmp():
             return self.tmp
 
-        return self.dst
+        return self.dst  # type: ignore[return-value]
 
 @attr.frozen
 class Scheduling:
@@ -288,7 +298,7 @@ class PlotmanConfig:
     version: List[int] = [0]
 
     @contextlib.contextmanager
-    def setup(self):
+    def setup(self) -> Generator[None, None, None]:
         prefix = f'plotman-pid_{os.getpid()}-'
 
         self.logging.setup()
