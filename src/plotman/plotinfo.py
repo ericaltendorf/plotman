@@ -105,8 +105,8 @@ class PlotInfo:
     def copy_time_hours(self) -> float:
         return self.duration_to_hours(self.copy_time_raw)
 
-    def duration_to_minutes(self, duration): 
+    def duration_to_minutes(self, duration: float) -> int:
         return round(duration / 60)
 
-    def duration_to_hours(self, duration): 
+    def duration_to_hours(self, duration: float) -> float:
         return round(duration / 60 / 60, 2)

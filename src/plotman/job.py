@@ -11,6 +11,7 @@ import time
 from datetime import datetime
 from enum import Enum, auto
 from subprocess import call
+import typing
 
 import attr
 import click
@@ -20,15 +21,15 @@ import psutil
 from plotman import chia
 
 
-def job_phases_for_tmpdir(d, all_jobs):
+def job_phases_for_tmpdir(d: str, all_jobs: typing.List["Job"]) -> typing.List["Phase"]:
     '''Return phase 2-tuples for jobs running on tmpdir d'''
     return sorted([j.progress() for j in all_jobs if j.tmpdir == d])
 
-def job_phases_for_dstdir(d, all_jobs):
+def job_phases_for_dstdir(d: str, all_jobs: typing.List["Job"]) -> typing.List["Phase"]:
     '''Return phase 2-tuples for jobs outputting to dstdir d'''
     return sorted([j.progress() for j in all_jobs if j.dstdir == d])
 
-def is_plotting_cmdline(cmdline):
+def is_plotting_cmdline(cmdline: typing.List[str]) -> bool:
     if cmdline and 'python' in cmdline[0].lower():
         cmdline = cmdline[1:]
     return (
@@ -38,11 +39,15 @@ def is_plotting_cmdline(cmdline):
         and 'create' == cmdline[2]
     )
 
-def parse_chia_plot_time(s):
+def parse_chia_plot_time(s: str) -> pendulum.DateTime:
     # This will grow to try ISO8601 as well for when Chia logs that way
-    return pendulum.from_format(s, 'ddd MMM DD HH:mm:ss YYYY', locale='en', tz=None)
+    # TODO: unignore once fixed upstream
+    #       https://github.com/sdispater/pendulum/pull/548
+    return pendulum.from_format(s, 'ddd MMM DD HH:mm:ss YYYY', locale='en', tz=None)  # type: ignore[arg-type]
 
-def parse_chia_plots_create_command_line(command_line):
+def parse_chia_plots_create_command_line(
+    command_line: typing.List[str],
+) -> "ParsedChiaPlotsCreateCommand":
     command_line = list(command_line)
     # Parse command line args
     if 'python' in command_line[0].lower():
@@ -84,7 +89,12 @@ def parse_chia_plots_create_command_line(command_line):
     )
 
 class ParsedChiaPlotsCreateCommand:
-    def __init__(self, error, help, parameters):
+    def __init__(
+        self,
+        error: click.ClickException,
+        help: bool,
+        parameters: typing.Dict[str, object],
+    ) -> None:
         self.error = error
         self.help = help
         self.parameters = parameters
@@ -96,14 +106,14 @@ class Phase:
     minor: int = 0
     known: bool = True
 
-    def __lt__(self, other):
+    def __lt__(self, other: "Phase") -> bool:
         return (
             (not self.known, self.major, self.minor)
             < (not other.known, other.major, other.minor)
         )
 
     @classmethod
-    def from_tuple(cls, t):
+    def from_tuple(cls, t: typing.Tuple[typing.Optional[int], typing.Optional[int]]) -> "Phase":
         if len(t) != 2:
             raise Exception(f'phase must be created from 2-tuple: {t!r}')
 
@@ -113,10 +123,13 @@ class Phase:
         if t[0] is None:
             return cls(known=False)
 
-        return cls(major=t[0], minor=t[1])
+        return cls(major=t[0], minor=t[1])  # type: ignore[arg-type]
 
     @classmethod
-    def list_from_tuples(cls, l):
+    def list_from_tuples(
+        cls,
+        l: typing.Sequence[typing.Tuple[typing.Optional[int], typing.Optional[int]]],
+    ) -> typing.List["Phase"]:
         return [cls.from_tuple(t) for t in l]
 
 # TODO: be more principled and explicit about what we cache vs. what we look up
@@ -124,17 +137,30 @@ class Phase:
 class Job:
     'Represents a plotter job'
 
-    logfile = ''
-    jobfile = ''
-    job_id = 0
-    plot_id = '--------'
-    proc = None   # will get a psutil.Process
+    logfile: str = ''
+    jobfile: str = ''
+    job_id: int = 0
+    plot_id: str = '--------'
+    proc: psutil.Process
+    k: int
+    r: int
+    u: int
+    b: int
+    n: int
+    tmpdir: str
+    tmp2dir: str
+    dstdir: str
 
-    def get_running_jobs(logroot, cached_jobs=()):
+    @classmethod
+    def get_running_jobs(
+        cls,
+        logroot: str,
+        cached_jobs: typing.Sequence["Job"] = (),
+    ) -> typing.List["Job"]:
         '''Return a list of running plot jobs.  If a cache of preexisting jobs is provided,
            reuse those previous jobs without updating their information.  Always look for
            new jobs not already in the cache.'''
-        jobs = []
+        jobs: typing.List[Job] = []
         cached_jobs_by_pid = { j.proc.pid: j for j in cached_jobs }
 
         with contextlib.ExitStack() as exit_stack:
@@ -183,7 +209,7 @@ class Job:
                             )
                             if parsed_command.error is not None:
                                 continue
-                            job = Job(
+                            job = cls(
                                 proc=proc,
                                 parsed_command=parsed_command,
                                 logroot=logroot,
@@ -195,7 +221,12 @@ class Job:
         return jobs
 
 
-    def __init__(self, proc, parsed_command, logroot):
+    def __init__(
+        self,
+        proc: psutil.Process,
+        parsed_command: ParsedChiaPlotsCreateCommand,
+        logroot: str,
+    ) -> None:
         '''Initialize from an existing psutil.Process object.  must know logroot in order to understand open files'''
         self.proc = proc
         # These are dynamic, cached, and need to be udpated periodically
@@ -225,16 +256,16 @@ class Job:
         #     'exclude_final_dir': False,
         # }
 
-        self.k = self.args['size']
-        self.r = self.args['num_threads']
-        self.u = self.args['buckets']
-        self.b = self.args['buffer']
-        self.n = self.args['num']
-        self.tmpdir = self.args['tmp_dir']
-        self.tmp2dir = self.args['tmp2_dir']
-        self.dstdir = self.args['final_dir']
+        self.k = self.args['size']  # type: ignore[assignment]
+        self.r = self.args['num_threads']  # type: ignore[assignment]
+        self.u = self.args['buckets']  # type: ignore[assignment]
+        self.b = self.args['buffer']  # type: ignore[assignment]
+        self.n = self.args['num']  # type: ignore[assignment]
+        self.tmpdir = self.args['tmp_dir']  # type: ignore[assignment]
+        self.tmp2dir = self.args['tmp2_dir']  # type: ignore[assignment]
+        self.dstdir = self.args['final_dir']  # type: ignore[assignment]
 
-        plot_cwd = self.proc.cwd()
+        plot_cwd: str = self.proc.cwd()
         self.tmpdir = os.path.join(plot_cwd, self.tmpdir)
         if self.tmp2dir is not None:
             self.tmp2dir = os.path.join(plot_cwd, self.tmp2dir)
@@ -262,7 +293,7 @@ class Job:
 
 
 
-    def init_from_logfile(self):
+    def init_from_logfile(self) -> None:
         '''Read plot ID and job start time from logfile.  Return true if we
            find all the info as expected, false otherwise'''
         assert self.logfile
@@ -295,15 +326,15 @@ class Job:
         # TODO: we never come back to this; e.g. plot_id may remain uninitialized.
         # TODO: should we just use the process start time instead?
         if not found_log:
-            self.start_time = datetime.fromtimestamp(os.path.getctime(self.logfile))
+            self.start_time = pendulum.from_timestamp(os.path.getctime(self.logfile))
 
         # Load things from logfile that are dynamic
         self.update_from_logfile()
 
-    def update_from_logfile(self):
+    def update_from_logfile(self) -> None:
         self.set_phase_from_logfile()
 
-    def set_phase_from_logfile(self):
+    def set_phase_from_logfile(self) -> None:
         assert self.logfile
 
         # Map from phase number to subphase number reached in that phase.
@@ -355,15 +386,15 @@ class Job:
         else:
             self.phase = Phase(major=0, minor=0)
 
-    def progress(self):
+    def progress(self) -> Phase:
         '''Return a 2-tuple with the job phase and subphase (by reading the logfile)'''
         return self.phase
 
-    def plot_id_prefix(self):
+    def plot_id_prefix(self) -> str:
         return self.plot_id[:8]
 
     # TODO: make this more useful and complete, and/or make it configurable
-    def status_str_long(self):
+    def status_str_long(self) -> str:
         return '{plot_id}\nk={k} r={r} b={b} u={u}\npid:{pid}\ntmp:{tmp}\ntmp2:{tmp2}\ndst:{dst}\nlogfile:{logfile}'.format(
             plot_id = self.plot_id,
             k = self.k,
@@ -374,14 +405,14 @@ class Job:
             tmp = self.tmpdir,
             tmp2 = self.tmp2dir,
             dst = self.dstdir,
-            plotid = self.plot_id,
             logfile = self.logfile
             )
 
-    def get_mem_usage(self):
-        return self.proc.memory_info().vms  # Total, inc swapped
+    def get_mem_usage(self) -> int:
+        # Total, inc swapped
+        return self.proc.memory_info().vms  # type: ignore[no-any-return]
 
-    def get_tmp_usage(self):
+    def get_tmp_usage(self) -> int:
         total_bytes = 0
         with contextlib.suppress(FileNotFoundError):
             # The directory might not exist at this name, or at all, anymore
@@ -393,7 +424,7 @@ class Job:
                             total_bytes += entry.stat().st_size
         return total_bytes
 
-    def get_run_status(self):
+    def get_run_status(self) -> str:
         '''Running, suspended, etc.'''
         status = self.proc.status()
         if status == psutil.STATUS_RUNNING:
@@ -405,19 +436,19 @@ class Job:
         elif status == psutil.STATUS_STOPPED:
             return 'STP'
         else:
-            return self.proc.status()
+            return self.proc.status()  # type: ignore[no-any-return]
 
-    def get_time_wall(self):
+    def get_time_wall(self) -> int:
         create_time = datetime.fromtimestamp(self.proc.create_time())
         return int((datetime.now() - create_time).total_seconds())
 
-    def get_time_user(self):
+    def get_time_user(self) -> int:
         return int(self.proc.cpu_times().user)
 
-    def get_time_sys(self):
+    def get_time_sys(self) -> int:
         return int(self.proc.cpu_times().system)
 
-    def get_time_iowait(self):
+    def get_time_iowait(self) -> typing.Optional[int]:
         cpu_times = self.proc.cpu_times()
         iowait = getattr(cpu_times, 'iowait', None)
         if iowait is None:
@@ -425,14 +456,14 @@ class Job:
 
         return int(iowait)
 
-    def suspend(self, reason=''):
+    def suspend(self, reason: str = '') -> None:
         self.proc.suspend()
         self.status_note = reason
 
-    def resume(self):
+    def resume(self) -> None:
         self.proc.resume()
 
-    def get_temp_files(self):
+    def get_temp_files(self) -> typing.Set[str]:
         # Prevent duplicate file paths by using set.
         temp_files = set([])
         for f in self.proc.open_files():
@@ -444,7 +475,7 @@ class Job:
                 temp_files.add(f.path)
         return temp_files
 
-    def cancel(self):
+    def cancel(self) -> None:
         'Cancel an already running job'
         # We typically suspend the job as the first action in killing it, so it
         # doesn't create more tmp files during death.  However, terminate() won't
