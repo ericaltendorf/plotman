@@ -19,8 +19,6 @@ import pendulum
 import psutil
 
 from plotman import chia
-from plotman.reporting import phase_str
-
 
 def job_phases_for_tmpdir(d: str, all_jobs: typing.List["Job"]) -> typing.List["Phase"]:
     '''Return phase 2-tuples for jobs running on tmpdir d'''
@@ -132,6 +130,11 @@ class Phase:
         l: typing.Sequence[typing.Tuple[typing.Optional[int], typing.Optional[int]]],
     ) -> typing.List["Phase"]:
         return [cls.from_tuple(t) for t in l]
+
+    def __str__(self):
+        if not self.known:
+            return '?:?'
+        return f'{self.major}:{self.minor}'
 
 # TODO: be more principled and explicit about what we cache vs. what we look up
 # dynamically from the logfile
@@ -417,7 +420,7 @@ class Job:
             k=self.k,
             tmp_dir=self.tmpdir,
             dst_dir=self.dstdir,
-            progress=phase_str(self.progress()),
+            progress=str(self.progress()),
             tmp_usage=self.get_tmp_usage(),
             pid=self.proc.pid,
             run_status=self.get_run_status(),
