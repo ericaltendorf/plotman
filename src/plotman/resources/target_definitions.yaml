@@ -1,0 +1,64 @@
+target_definitions:
+  local_rsync:
+    env:
+      command: rsync
+      options: --preallocate --remove-source-files --skip-compress plot --whole-file
+      site_root: null
+
+    # The disk space script must return a line for each directory
+    # to consider archiving to with the following form.
+    #
+    #   /some/path:1000000000000
+    #
+    # That line tells plotman that it should consider archiving
+    # plots to files at paths such as /some/path/theplotid.plot and
+    # that there is 1TB of space available for use in that
+    # directory.
+    disk_space_script: |
+      #!/bin/bash
+      set -evx
+      site_root_stripped=$(echo "${site_root}" | sed 's;/\+$;;')
+      # printf with %.0f used to handle mawk such as in Ubuntu Docker images
+      # otherwise it saturates and you get saturated sizes like 2147483647
+      df -aBK | grep " ${site_root_stripped}/" | awk '{ gsub(/K$/,"",$4); printf "%s:%.0f\n", $6, $4*1024 }'
+    transfer_script: |
+      #!/bin/bash
+      set -evx
+      "${command}" ${options} "${source}" "${destination}"
+    transfer_process_name: "{command}"
+    transfer_process_argument_prefix: "{site_root}"
+  rsyncd:
+    env:
+      # A value of null indicates a mandatory option
+      command: rsync
+      options: --bwlimit=80000 --preallocate --remove-source-files --skip-compress plot --whole-file
+      rsync_port: 873
+      ssh_port: 22
+      user: null
+      host: null
+      site_root: null
+      site: null
+    disk_space_script: |
+      #!/bin/bash
+      set -evx
+      site_root_stripped=$(echo "${site_root}" | sed 's;/\+$;;')
+      # printf with %.0f used to handle mawk such as in Ubuntu Docker images
+      # otherwise it saturates and you get saturated sizes like 2147483647
+      ssh -p "${ssh_port}" "${user}@${host}" "df -aBK | grep \" $(echo "${site_root_stripped}" | sed 's;/\+$;;')/\" | awk '{ gsub(/K\$/,\"\",\$4); printf \"%s:%.0f\n\", \$6, \$4*1024 }'"
+    transfer_script: |
+      #!/bin/bash
+      set -evx
+      echo Launching transfer activity
+      relative_path=$(realpath --canonicalize-missing --relative-to="${site_root}" "${destination}")
+      url_root="rsync://${user}@${host}:${rsync_port}/${site}"
+      "${command}" ${options} "${source}" "${url_root}/${relative_path}"
+    transfer_process_name: "{command}"
+    transfer_process_argument_prefix: "rsync://{user}@{host}:{rsync_port}/{site}"
+#  external_script:
+#    env:
+#      some_common_value_with_a_default: /a/path
+#      some_mandatory option: null
+#    disk_space_path: /home/me/my_disk_space_script.sh
+#    transfer_path: /home/me/my_transfer_script.sh
+#    transfer_process_name: rsync
+#    transfer_process_argument_prefix: /the/destination/directory/root
