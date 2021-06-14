@@ -1,14 +1,26 @@
+# mypy: allow_untyped_decorators
+
 import functools
+import typing
 
 import click
 from pathlib import Path
+import typing_extensions
+
+
+class CommandProtocol(typing_extensions.Protocol):
+    def make_context(self, info_name: str, args: typing.List[str]) -> click.Context:
+        ...
+
+    def __call__(self) -> None:
+        ...
 
 
 class Commands:
-    def __init__(self):
-        self.by_version = {}
+    def __init__(self) -> None:
+        self.by_version: typing.Dict[typing.Sequence[int], CommandProtocol] = {}
 
-    def register(self, version):
+    def register(self, version: typing.Sequence[int]) -> typing.Callable[[CommandProtocol], None]:
         if version in self.by_version:
             raise Exception(f'Version already registered: {version!r}')
         if not isinstance(version, tuple):
@@ -16,19 +28,18 @@ class Commands:
 
         return functools.partial(self._decorator, version=version)
 
-    def _decorator(self, command, *, version):
+    def _decorator(self, command: CommandProtocol, *, version: typing.Sequence[int]) -> None:
         self.by_version[version] = command
         # self.by_version = dict(sorted(self.by_version.items()))
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: typing.Sequence[int]) -> typing.Callable[[], None]:
         return self.by_version[item]
 
-    def latest_command(self):
+    def latest_command(self) -> CommandProtocol:
         return max(self.by_version.items())[1]
 
 
 commands = Commands()
-
 
 @commands.register(version=(1, 1, 2))
 @click.command()
@@ -81,7 +92,7 @@ commands = Commands()
     "-x", "--exclude_final_dir", help="Skips adding [final dir] to harvester for farming", default=False, is_flag=True
 )
 # end copied code
-def _cli():
+def _cli_1_1_2() -> None:
     pass
 
 
@@ -136,7 +147,7 @@ def _cli():
     "-x", "--exclude_final_dir", help="Skips adding [final dir] to harvester for farming", default=False, is_flag=True
 )
 # end copied code
-def _cli():
+def _cli_1_1_3() -> None:
     pass
 
 
@@ -191,7 +202,7 @@ def _cli():
     "-x", "--exclude_final_dir", help="Skips adding [final dir] to harvester for farming", default=False, is_flag=True
 )
 # end copied code
-def _cli():
+def _cli_1_1_4() -> None:
     pass
 
 
@@ -246,7 +257,7 @@ def _cli():
     "-x", "--exclude_final_dir", help="Skips adding [final dir] to harvester for farming", default=False, is_flag=True
 )
 # end copied code
-def _cli():
+def _cli_1_1_5() -> None:
     pass
 
 
@@ -301,7 +312,7 @@ def _cli():
     "-x", "--exclude_final_dir", help="Skips adding [final dir] to harvester for farming", default=False, is_flag=True
 )
 # end copied code
-def _cli():
+def _cli_1_1_6() -> None:
     pass
 
 
@@ -356,5 +367,5 @@ def _cli():
     "-x", "--exclude_final_dir", help="Skips adding [final dir] to harvester for farming", default=False, is_flag=True
 )
 # end copied code
-def _cli():
+def _cli_1_1_7() -> None:
     pass

@@ -1,61 +1,65 @@
 import csv
 import sys
-from dateutil.parser import parse as parse_date
+import typing
 
 import attr
+import attr._make
+import pendulum
 
 from plotman.log_parser import PlotLogParser
+import plotman.plotinfo
 
-def row_ib(name):
-    return attr.ib(converter=str, metadata={'name': name})
 
 @attr.frozen
 class Row:
-    plot_id: str = row_ib(name='Plot ID')
-    started_at: str = row_ib(name='Started at')
-    date: str = row_ib(name='Date')
-    size: str = row_ib(name='Size')
-    buffer: str = row_ib(name='Buffer')
-    buckets: str = row_ib(name='Buckets')
-    threads: str = row_ib(name='Threads')
-    tmp_dir_1: str = row_ib(name='Tmp dir 1')
-    tmp_dir_2: str = row_ib(name='Tmp dir 2')
-    phase_1_duration_raw: str = row_ib(name='Phase 1 duration (raw)')
-    phase_1_duration: str = row_ib(name='Phase 1 duration')
-    phase_1_duration_minutes: str = row_ib(name='Phase 1 duration (minutes)')
-    phase_1_duration_hours: str = row_ib(name='Phase 1 duration (hours)')
-    phase_2_duration_raw: str = row_ib(name='Phase 2 duration (raw)')
-    phase_2_duration: str = row_ib(name='Phase 2 duration')
-    phase_2_duration_minutes: str = row_ib(name='Phase 2 duration (minutes)')
-    phase_2_duration_hours: str = row_ib(name='Phase 2 duration (hours)')
-    phase_3_duration_raw: str = row_ib(name='Phase 3 duration (raw)')
-    phase_3_duration: str = row_ib(name='Phase 3 duration')
-    phase_3_duration_minutes: str = row_ib(name='Phase 3 duration (minutes)')
-    phase_3_duration_hours: str = row_ib(name='Phase 3 duration (hours)')
-    phase_4_duration_raw: str = row_ib(name='Phase 4 duration (raw)')
-    phase_4_duration: str = row_ib(name='Phase 4 duration')
-    phase_4_duration_minutes: str = row_ib(name='Phase 4 duration (minutes)')
-    phase_4_duration_hours: str = row_ib(name='Phase 4 duration (hours)')
-    total_time_raw: str = row_ib(name='Total time (raw)')
-    total_time: str = row_ib(name='Total time')
-    total_time_minutes: str = row_ib(name='Total time (minutes)')
-    total_time_hours: str = row_ib(name='Total time (hours)')
-    copy_time_raw: str = row_ib(name='Copy time (raw)')
-    copy_time: str = row_ib(name='Copy time')
-    copy_time_minutes: str = row_ib(name='Copy time (minutes)')
-    copy_time_hours: str = row_ib(name='Copy time (hours)')
-    filename: str = row_ib(name='Filename')
+    plot_id: str = attr.ib(converter=str, metadata={'name': 'Plot ID'})
+    started_at: str = attr.ib(converter=str, metadata={'name': 'Started at'})
+    date: str = attr.ib(converter=str, metadata={'name': 'Date'})
+    size: str = attr.ib(converter=str, metadata={'name': 'Size'})
+    buffer: str = attr.ib(converter=str, metadata={'name': 'Buffer'})
+    buckets: str = attr.ib(converter=str, metadata={'name': 'Buckets'})
+    threads: str = attr.ib(converter=str, metadata={'name': 'Threads'})
+    tmp_dir_1: str = attr.ib(converter=str, metadata={'name': 'Tmp dir 1'})
+    tmp_dir_2: str = attr.ib(converter=str, metadata={'name': 'Tmp dir 2'})
+    phase_1_duration_raw: str = attr.ib(converter=str, metadata={'name': 'Phase 1 duration (raw)'})
+    phase_1_duration: str = attr.ib(converter=str, metadata={'name': 'Phase 1 duration'})
+    phase_1_duration_minutes: str = attr.ib(converter=str, metadata={'name': 'Phase 1 duration (minutes)'})
+    phase_1_duration_hours: str = attr.ib(converter=str, metadata={'name': 'Phase 1 duration (hours)'})
+    phase_2_duration_raw: str = attr.ib(converter=str, metadata={'name': 'Phase 2 duration (raw)'})
+    phase_2_duration: str = attr.ib(converter=str, metadata={'name': 'Phase 2 duration'})
+    phase_2_duration_minutes: str = attr.ib(converter=str, metadata={'name': 'Phase 2 duration (minutes)'})
+    phase_2_duration_hours: str = attr.ib(converter=str, metadata={'name': 'Phase 2 duration (hours)'})
+    phase_3_duration_raw: str = attr.ib(converter=str, metadata={'name': 'Phase 3 duration (raw)'})
+    phase_3_duration: str = attr.ib(converter=str, metadata={'name': 'Phase 3 duration'})
+    phase_3_duration_minutes: str = attr.ib(converter=str, metadata={'name': 'Phase 3 duration (minutes)'})
+    phase_3_duration_hours: str = attr.ib(converter=str, metadata={'name': 'Phase 3 duration (hours)'})
+    phase_4_duration_raw: str = attr.ib(converter=str, metadata={'name': 'Phase 4 duration (raw)'})
+    phase_4_duration: str = attr.ib(converter=str, metadata={'name': 'Phase 4 duration'})
+    phase_4_duration_minutes: str = attr.ib(converter=str, metadata={'name': 'Phase 4 duration (minutes)'})
+    phase_4_duration_hours: str = attr.ib(converter=str, metadata={'name': 'Phase 4 duration (hours)'})
+    total_time_raw: str = attr.ib(converter=str, metadata={'name': 'Total time (raw)'})
+    total_time: str = attr.ib(converter=str, metadata={'name': 'Total time'})
+    total_time_minutes: str = attr.ib(converter=str, metadata={'name': 'Total time (minutes)'})
+    total_time_hours: str = attr.ib(converter=str, metadata={'name': 'Total time (hours)'})
+    copy_time_raw: str = attr.ib(converter=str, metadata={'name': 'Copy time (raw)'})
+    copy_time: str = attr.ib(converter=str, metadata={'name': 'Copy time'})
+    copy_time_minutes: str = attr.ib(converter=str, metadata={'name': 'Copy time (minutes)'})
+    copy_time_hours: str = attr.ib(converter=str, metadata={'name': 'Copy time (hours)'})
+    filename: str = attr.ib(converter=str, metadata={'name': 'Filename'})
 
     @classmethod
-    def names(cls):
+    def names(cls) -> typing.List[str]:
         return [field.metadata['name'] for field in attr.fields(cls)]
 
     @classmethod
-    def from_info(cls, info):
+    def from_info(cls, info: plotman.plotinfo.PlotInfo) -> "Row":
+        if info.started_at is None:
+            raise Exception(f'Unexpected None start time for file: {info.filename}')
+
         return cls(
             plot_id=info.plot_id,
             started_at=info.started_at.isoformat(),
-            date=info.started_at.date().isoformat(),
+            date=info.started_at.date().isoformat(),  # type: ignore[no-untyped-call]
             size=info.plot_size,
             buffer=info.buffer,
             buckets=info.buckets,
@@ -89,13 +93,21 @@ class Row:
             filename=info.filename,
         )
 
-    def name_dict(self):
+    def name_dict(self) -> typing.Dict[str, object]:
         return {
             field.metadata['name']: value
             for field, value in zip(attr.fields(type(self)), attr.astuple(self))
         }
 
-def parse_logs(logfilenames):
+
+def key_on_plot_info_started_at(element: plotman.plotinfo.PlotInfo) -> pendulum.DateTime:
+    if element.started_at is None:
+        return pendulum.now().add(years=9999)
+
+    return element.started_at
+
+
+def parse_logs(logfilenames: typing.Sequence[str]) -> typing.List[plotman.plotinfo.PlotInfo]:
     parser = PlotLogParser()
     result = []
 
@@ -106,11 +118,12 @@ def parse_logs(logfilenames):
         if not info.in_progress():
             result.append(info)
 
-    result.sort(key=lambda element: element.started_at)
+    result.sort(key=key_on_plot_info_started_at)
+
     return result
 
 
-def generate(logfilenames, file):
+def generate(logfilenames: typing.List[str], file: typing.TextIO) -> None:
     writer = csv.DictWriter(file, fieldnames=Row.names())
     writer.writeheader()
 

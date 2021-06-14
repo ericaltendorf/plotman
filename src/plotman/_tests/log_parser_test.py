@@ -24,7 +24,7 @@ example_info = plotman.plotinfo.PlotInfo(
 )
 
 
-def test_should_correctly_parse():
+def test_should_correctly_parse() -> None:
     with importlib.resources.open_text(
         resources,
         "2021-04-04T19_00_47.681088-0400.log",
