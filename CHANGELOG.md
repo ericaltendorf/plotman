@@ -7,18 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 ### Added
-- `plotman export` command to output summaries from plot logs in `.csv` format.  ([#557](https://github.com/ericaltendorf/plotman/pull/557))
-- `--json` option for `plotman status`.  ([#549](https://github.com/ericaltendorf/plotman/pull/549))
-- If the tmp drive selected for a plot is also listed as a dst drive then plotman will use the same drive for both. ([#643](https://github.com/ericaltendorf/plotman/pull/643))
+- `plotman export` command to output summaries from plot logs in `.csv` format.
+  ([#557](https://github.com/ericaltendorf/plotman/pull/557))
+- `--json` option for `plotman status`.
+  ([#549](https://github.com/ericaltendorf/plotman/pull/549))
+- If the tmp drive selected for a plot is also listed as a dst drive then plotman will use the same drive for both.
+  ([#643](https://github.com/ericaltendorf/plotman/pull/643))
 
 ## [0.4.1] - 2021-06-11
 ### Fixed
 - Archival disk space check finds drives with multiple mount points again.
   This fixes a regression introduced in v0.4.1.
-  [#773](https://github.com/ericaltendorf/plotman/issues/773)
+  ([#773](https://github.com/ericaltendorf/plotman/issues/773))
 - `plotman dirs` does not fail for every invocation.
   `TypeError: dirs_report() missing 1 required positional argument: 'width'`
-  [#778](https://github.com/ericaltendorf/plotman/issues/778)
+  ([#778](https://github.com/ericaltendorf/plotman/issues/778))
 
 ## [0.4] - 2021-06-10
 ### Fixed
