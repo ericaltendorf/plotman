@@ -8,6 +8,7 @@ import random
 import re
 import subprocess
 import sys
+import typing
 from datetime import datetime
 
 import pendulum
@@ -23,7 +24,7 @@ _WINDOWS = sys.platform == 'win32'
 
 # TODO : write-protect and delete-protect archived plots
 
-def spawn_archive_process(dir_cfg, arch_cfg, log_cfg, all_jobs):
+def spawn_archive_process(dir_cfg: configuration.Directories, arch_cfg: configuration.Archiving, log_cfg: configuration.Logging, all_jobs: typing.List[job.Job]) -> typing.Tuple[typing.Union[bool, str, typing.Dict[str, object]], typing.List[str]]:
     '''Spawns a new archive process using the command created
     in the archive() function. Returns archiving status and a log message to print.'''
 
@@ -32,7 +33,7 @@ def spawn_archive_process(dir_cfg, arch_cfg, log_cfg, all_jobs):
 
     # Look for running archive jobs.  Be robust to finding more than one
     # even though the scheduler should only run one at a time.
-    arch_jobs = get_running_archive_jobs(arch_cfg)
+    arch_jobs: typing.List[typing.Union[int, str]] = [*get_running_archive_jobs(arch_cfg)]
 
     if not arch_jobs:
         (should_start, status_or_cmd, archive_log_messages) = archive(dir_cfg, arch_cfg, all_jobs)
@@ -40,7 +41,7 @@ def spawn_archive_process(dir_cfg, arch_cfg, log_cfg, all_jobs):
         if not should_start:
             archiving_status = status_or_cmd
         else:
-            args = status_or_cmd
+            args: typing.Dict[str, object] = status_or_cmd  # type: ignore[assignment]
 
             log_file_path = log_cfg.create_transfer_log_path(time=pendulum.now())
 
@@ -67,14 +68,19 @@ def spawn_archive_process(dir_cfg, arch_cfg, log_cfg, all_jobs):
             # of the log file will get closed explicitly while still
             # allowing handling of just the log file opening error.
 
+            if sys.platform == 'win32':
+                creationflags = subprocess.CREATE_NO_WINDOW
+            else:
+                creationflags = 0
+
             with open_log_file:
                 # start_new_sessions to make the job independent of this controlling tty.
-                p = subprocess.Popen(**args,
+                p = subprocess.Popen(**args,  # type: ignore[call-overload]
                     shell=True,
                     stdout=open_log_file,
                     stderr=subprocess.STDOUT,
                     start_new_session=True,
-                    creationflags=0 if not _WINDOWS else subprocess.CREATE_NO_WINDOW)
+                    creationflags=creationflags)
             # At least for now it seems that even if we get a new running
             # archive jobs list it doesn't contain the new rsync process.
             # My guess is that this is because the bash in the middle due to
@@ -88,7 +94,7 @@ def spawn_archive_process(dir_cfg, arch_cfg, log_cfg, all_jobs):
 
     return archiving_status, log_messages
 
-def compute_priority(phase, gb_free, n_plots):
+def compute_priority(phase: job.Phase, gb_free: float, n_plots: int) -> int:
     # All these values are designed around dst buffer dirs of about
     # ~2TB size and containing k32 plots.  TODO: Generalize, and
     # rewrite as a sort function.
@@ -120,7 +126,7 @@ def compute_priority(phase, gb_free, n_plots):
 
     return priority
 
-def get_archdir_freebytes(arch_cfg):
+def get_archdir_freebytes(arch_cfg: configuration.Archiving) -> typing.Tuple[typing.Dict[str, int], typing.List[str]]:
     log_messages = []
     target = arch_cfg.target_definition()
 
@@ -128,7 +134,7 @@ def get_archdir_freebytes(arch_cfg):
     timeout = 5
     try:
         completed_process = subprocess.run(
-            [target.disk_space_path],
+            [target.disk_space_path],  # type: ignore[list-item]
             env={**os.environ, **arch_cfg.environment()},
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -171,7 +177,7 @@ def get_archdir_freebytes(arch_cfg):
     return archdir_freebytes, log_messages
 
 # TODO: maybe consolidate with similar code in job.py?
-def get_running_archive_jobs(arch_cfg):
+def get_running_archive_jobs(arch_cfg: configuration.Archiving) -> typing.List[int]:
     '''Look for running rsync jobs that seem to match the pattern we use for archiving
        them.  Return a list of PIDs of matching jobs.'''
     jobs = []
@@ -189,12 +195,12 @@ def get_running_archive_jobs(arch_cfg):
                             jobs.append(proc.pid)
     return jobs
 
-def archive(dir_cfg, arch_cfg, all_jobs):
+def archive(dir_cfg: configuration.Directories, arch_cfg: configuration.Archiving, all_jobs: typing.List[job.Job]) -> typing.Tuple[bool, typing.Optional[typing.Union[typing.Dict[str, object], str]], typing.List[str]]:
     '''Configure one archive job.  Needs to know all jobs so it can avoid IO
     contention on the plotting dstdir drives.  Returns either (False, <reason>)
     if we should not execute an archive job or (True, <cmd>) with the archive
     command if we should.'''
-    log_messages = []
+    log_messages: typing.List[str] = []
     if arch_cfg is None:
         return (False, "No 'archive' settings declared in plotman.yaml", log_messages)
 
@@ -244,7 +250,7 @@ def archive(dir_cfg, arch_cfg, all_jobs):
         source=chosen_plot,
         destination=archdir,
     )
-    subprocess_arguments = {
+    subprocess_arguments: typing.Dict[str, object] = {
         'args': arch_cfg.target_definition().transfer_path,
         'env': {**os.environ, **env}
     }
