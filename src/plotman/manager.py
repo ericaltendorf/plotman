@@ -53,38 +53,38 @@ def phases_permit_new_job(phases: typing.List[job.Phase], d: str, sched_cfg: plo
     if len(phases) == 0:
         return True
 
+    # Assign variables
+    major = sched_cfg.tmpdir_stagger_phase_major
+    minor = sched_cfg.tmpdir_stagger_phase_minor
+    # tmpdir_stagger_phase_limit default is 1, as declared in configuration.py
+    stagger_phase_limit = sched_cfg.tmpdir_stagger_phase_limit
+    
+    # Limit the total number of jobs per tmp dir. Default to overall max
+    # jobs configuration, but restrict to any configured overrides.
+    max_plots = sched_cfg.tmpdir_max_jobs
+    
     # Check if any overrides exist for the current job
     if sched_cfg.tmp_overrides is not None and d in sched_cfg.tmp_overrides:
         curr_overrides = sched_cfg.tmp_overrides[d]
     
-    # Check and apply overrides for major, minor and phase limit
-    if curr_overrides.tmpdir_stagger_phase_major is not None:
-        major = curr_overrides.tmpdir_stagger_phase_major
-    else:
-        major = sched_cfg.tmpdir_stagger_phase_major
-    if curr_overrides.tmpdir_stagger_phase_minor is not None:
-        minor = curr_overrides.tmpdir_stagger_phase_minor
-    else:
-        minor = sched_cfg.tmpdir_stagger_phase_minor
+        # Check for and assign major & minor phase overrides
+        if curr_overrides.tmpdir_stagger_phase_major is not None:
+            major = curr_overrides.tmpdir_stagger_phase_major
+            minor = curr_overrides.tmpdir_stagger_phase_minor
+        # Check for and assign stagger phase limit override
+        if curr_overrides.tmpdir_stagger_phase_limit is not None:
+            stagger_phase_limit = curr_overrides.tmpdir_stagger_phase_limit
+        # Check for and assign stagger phase limit override
+        if curr_overrides.tmpdir_max_jobs is not None:
+            max_plots = curr_overrides.tmpdir_max_jobs
+        
     milestone = job.Phase(major,minor,)
-    if curr_overrides.tmpdir_stagger_phase_limit is not None:
-        stagger_phase_limit = curr_overrides.tmpdir_stagger_phase_limit
-    else:
-        stagger_phase_limit = sched_cfg.tmpdir_stagger_phase_limit
-    # tmpdir_stagger_phase_limit default is 1, as declared in configuration.py
-    if len([p for p in phases if p < milestone]) >= stagger_phase_limit:
+    
+    # Check if phases pass the criteria
+    if len([p for p in phases if p < milestone]) >= stagger_phase_limit or len(phases) >= max_plots:
         return False
-
-    # Limit the total number of jobs per tmp dir. Default to the overall max
-    # jobs configuration, but restrict to any configured overrides.
-    if curr_overrides.tmpdir_max_jobs is not None:
-        max_plots = curr_overrides.tmpdir_max_jobs
     else:
-        max_plots = sched_cfg.tmpdir_max_jobs
-    if len(phases) >= max_plots:
-        return False
-
-    return True
+        return True
 
 def maybe_start_new_plot(dir_cfg: plotman.configuration.Directories, sched_cfg: plotman.configuration.Scheduling, plotting_cfg: plotman.configuration.Plotting, log_cfg: plotman.configuration.Logging) -> typing.Tuple[bool, str]:
     jobs = job.Job.get_running_jobs(log_cfg.plots)
@@ -94,9 +94,9 @@ def maybe_start_new_plot(dir_cfg: plotman.configuration.Directories, sched_cfg: 
     youngest_job_age = min(jobs, key=job.Job.get_time_wall).get_time_wall() if jobs else MAX_AGE
     global_stagger = int(sched_cfg.global_stagger_m * MIN)
     if (youngest_job_age < global_stagger):
-        wait_reason = 'stagger (%ds/%ds)' % (youngest_job_age, global_stagger)
+        wait_reason = 'global stagger (%ds/%ds)' % (youngest_job_age, global_stagger)
     elif len(jobs) >= sched_cfg.global_max_jobs:
-        wait_reason = 'max jobs (%d) - (%ds/%ds)' % (sched_cfg.global_max_jobs, youngest_job_age, global_stagger)
+        wait_reason = 'global max jobs reached (%d)' % (sched_cfg.global_max_jobs)
     else:
         tmp_to_all_phases = [(d, job.job_phases_for_tmpdir(d, jobs)) for d in dir_cfg.tmp]
         eligible = [ (d, phases) for (d, phases) in tmp_to_all_phases
@@ -105,7 +105,7 @@ def maybe_start_new_plot(dir_cfg: plotman.configuration.Directories, sched_cfg: 
                 for (d, phases) in eligible ]
 
         if not eligible:
-            wait_reason = 'no eligible tempdirs (%ds/%ds)' % (youngest_job_age, global_stagger)
+            wait_reason = 'waiting for phase match'
         else:
             # Plot to oldest tmpdir.
             tmpdir = max(rankable, key=operator.itemgetter(1))[0]
