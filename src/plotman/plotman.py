@@ -33,7 +33,9 @@ class PlotmanArgParser:
 
         sp.add_parser('version', help='print the version')
 
-        sp.add_parser('status', help='show current plotting status')
+        p_status = sp.add_parser('status', help='show current plotting status')
+        p_status.add_argument("--json", action="store_true", 
+                help="export status report in json format")
 
         sp.add_parser('dirs', help='show directories info')
 
@@ -210,11 +212,15 @@ def main() -> None:
 
             # Status report
             if args.cmd == 'status':
-                result = "{0}\n\n{1}\n\nUpdated at: {2}".format(
-                    reporting.status_report(jobs, get_term_width()),
-                    reporting.summary(jobs),
-                    datetime.datetime.today().strftime("%c"),
-                )
+                if args.json:
+                    # convert jobs list into json
+                    result = reporting.json_report(jobs)
+                else:
+                    result = "{0}\n\n{1}\n\nUpdated at: {2}".format(
+                        reporting.status_report(jobs, get_term_width()),
+                        reporting.summary(jobs),
+                        datetime.datetime.today().strftime("%c"),
+                    )
                 print(result)
 
             # Directories report

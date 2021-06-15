@@ -1,3 +1,5 @@
+import time
+import json
 import math
 import os
 import typing
@@ -5,7 +7,6 @@ import typing
 import psutil
 import texttable as tt  # from somewhere?
 from itertools import groupby
-
 from plotman import archive, configuration, job, manager, plot_util
 
 
@@ -15,23 +16,17 @@ def abbr_path(path: str, putative_prefix: str) -> str:
     else:
         return path
 
-def phase_str(phase: job.Phase) -> str:
-    if not phase.known:
-        return '?:?'
-
-    return f'{phase.major}:{phase.minor}'
-
 def phases_str(phases: typing.List[job.Phase], max_num: typing.Optional[int] = None) -> str:
     '''Take a list of phase-subphase pairs and return them as a compact string'''
     if not max_num or len(phases) <= max_num:
-        return ' '.join([phase_str(pair) for pair in phases])
+        return ' '.join([str(pair) for pair in phases])
     else:
         n_first = math.floor(max_num / 2)
         n_last = max_num - n_first
         n_elided = len(phases) - (n_first + n_last)
-        first = ' '.join([phase_str(pair) for pair in phases[:n_first]])
+        first = ' '.join([str(pair) for pair in phases[:n_first]])
         elided = " [+%d] " % n_elided
-        last = ' '.join([phase_str(pair) for pair in phases[n_first + n_elided:]])
+        last = ' '.join([str(pair) for pair in phases[n_first + n_elided:]])
         return first + elided + last
 
 def n_at_ph(jobs: typing.List[job.Job], ph: job.Phase) -> int:
@@ -106,7 +101,7 @@ def status_report(jobs: typing.List[job.Job], width: int, height: typing.Optiona
                         abbr_path(j.tmpdir, tmp_prefix), # Temp directory
                         abbr_path(j.dstdir, dst_prefix), # Destination directory
                         plot_util.time_format(j.get_time_wall()), # Time wall
-                        phase_str(j.progress()), # Overall progress (major:minor)
+                        str(j.progress()), # Overall progress (major:minor)
                         plot_util.human_format(j.get_tmp_usage(), 0), # Current temp file size
                         j.proc.pid, # System pid
                         j.get_run_status(), # OS status for the job process
@@ -222,3 +217,18 @@ def dirs_report(jobs: typing.List[job.Job], dir_cfg: configuration.Directories, 
         ])
 
     return '\n'.join(reports) + '\n'
+
+def json_report(jobs: typing.List[job.Job]) -> str:
+    jobs_dicts = []
+    for j in sorted(jobs, key=job.Job.get_time_wall):
+        with j.proc.oneshot():
+            jobs_dicts.append(j.to_dict())
+
+    stuff = {
+        "jobs": jobs_dicts,
+        "total_jobs": len(jobs),
+        "updated": time.time(),
+    }
+
+    return json.dumps(stuff)
+

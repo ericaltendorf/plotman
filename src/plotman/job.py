@@ -132,6 +132,11 @@ class Phase:
     ) -> typing.List["Phase"]:
         return [cls.from_tuple(t) for t in l]
 
+    def __str__(self) -> str:
+        if not self.known:
+            return '?:?'
+        return f'{self.major}:{self.minor}'
+
 # TODO: be more principled and explicit about what we cache vs. what we look up
 # dynamically from the logfile
 class Job:
@@ -407,6 +412,25 @@ class Job:
             dst = self.dstdir,
             logfile = self.logfile
             )
+    
+    def to_dict(self) -> typing.Dict[str, object]:
+        '''Exports important information as dictionary.'''
+        return dict(
+            plot_id=self.plot_id[:8],
+            k=self.k,
+            tmp_dir=self.tmpdir,
+            dst_dir=self.dstdir,
+            progress=str(self.progress()),
+            tmp_usage=self.get_tmp_usage(),
+            pid=self.proc.pid,
+            run_status=self.get_run_status(),
+            mem_usage=self.get_mem_usage(),
+            time_wall=self.get_time_wall(),
+            time_user=self.get_time_user(),
+            time_sys=self.get_time_sys(),
+            time_iowait=self.get_time_iowait()
+        )
+
 
     def get_mem_usage(self) -> int:
         # Total, inc swapped
