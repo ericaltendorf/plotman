@@ -97,14 +97,17 @@ def maybe_start_new_plot(dir_cfg: plotman.configuration.Directories, sched_cfg: 
             # Plot to oldest tmpdir.
             tmpdir = max(rankable, key=operator.itemgetter(1))[0]
 
+            dst_dirs = dir_cfg.get_dst_directories()
+
             dstdir: str
             if dir_cfg.dst_is_tmp2():
                 dstdir = dir_cfg.tmp2  # type: ignore[assignment]
+            elif tmpdir in dst_dirs:
+                dstdir = tmpdir
             elif dir_cfg.dst_is_tmp():
                 dstdir = tmpdir
             else:
                 # Select the dst dir least recently selected
-                dst_dirs = dir_cfg.get_dst_directories()
                 dir2ph = { d:ph for (d, ph) in dstdirs_to_youngest_phase(jobs).items()
                         if d in dst_dirs and ph is not None}
                 unused_dirs = [d for d in dst_dirs if d not in dir2ph.keys()]
