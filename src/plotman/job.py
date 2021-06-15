@@ -20,6 +20,7 @@ import psutil
 
 from plotman import chia
 
+
 def job_phases_for_tmpdir(d: str, all_jobs: typing.List["Job"]) -> typing.List["Phase"]:
     '''Return phase 2-tuples for jobs running on tmpdir d'''
     return sorted([j.progress() for j in all_jobs if j.tmpdir == d])
@@ -131,7 +132,7 @@ class Phase:
     ) -> typing.List["Phase"]:
         return [cls.from_tuple(t) for t in l]
 
-    def __str__(self):
+    def __str__(self) -> str:
         if not self.known:
             return '?:?'
         return f'{self.major}:{self.minor}'
@@ -412,9 +413,8 @@ class Job:
             logfile = self.logfile
             )
     
-    def to_dict(self):
+    def to_dict(self) -> typing.Dict[str, object]:
         '''Exports important information as dictionary.'''
-        # TODO: Check if being called in oneshot context to improve performance
         return dict(
             plot_id=self.plot_id[:8],
             k=self.k,

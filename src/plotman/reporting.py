@@ -7,7 +7,6 @@ import typing
 import psutil
 import texttable as tt  # from somewhere?
 from itertools import groupby
-from collections import defaultdict
 from plotman import archive, configuration, job, manager, plot_util
 
 
@@ -219,12 +218,17 @@ def dirs_report(jobs: typing.List[job.Job], dir_cfg: configuration.Directories, 
 
     return '\n'.join(reports) + '\n'
 
-def json_report(jobs):
-    jobs_dict = defaultdict(list)
-    for _, j in enumerate(sorted(jobs, key=job.Job.get_time_wall)):
+def json_report(jobs: typing.List[job.Job]) -> str:
+    jobs_dicts = []
+    for j in sorted(jobs, key=job.Job.get_time_wall):
         with j.proc.oneshot():
-            jobs_dict["jobs"].append(j.to_dict())
-    jobs_dict["total_jobs"] = len(jobs)
-    jobs_dict["updated"] = time.time()
-    return json.dumps(jobs_dict)
+            jobs_dicts.append(j.to_dict())
+
+    stuff = {
+        "jobs": jobs_dicts,
+        "total_jobs": len(jobs),
+        "updated": time.time(),
+    }
+
+    return json.dumps(stuff)
 
