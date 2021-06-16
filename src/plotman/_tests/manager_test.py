@@ -23,7 +23,7 @@ def sched_cfg() -> configuration.Scheduling:
 def dir_cfg() -> configuration.Directories:
     return configuration.Directories(
         tmp=["/var/tmp", "/tmp"],
-        dst=["/mnt/dst/00", "/mnt/dst/01", "/mnt/dst/03"]}
+        dst=["/mnt/dst/00", "/mnt/dst/01", "/mnt/dst/03"]
     )
 
 def test_permit_new_job_post_milestone(sched_cfg: configuration.Scheduling, dir_cfg: configuration.Directories) -> None:
