@@ -54,14 +54,14 @@ def phases_permit_new_job(phases: typing.List[job.Phase], d: str, sched_cfg: plo
         return True
 
     # Assign variables
-    major = sched_cfg.tmpdir_stagger_phase_major
-    minor = sched_cfg.tmpdir_stagger_phase_minor
+    major = sched_cfg.global_tmpdir_stagger_phase_major
+    minor = sched_cfg.global_tmpdir_stagger_phase_minor
     # tmpdir_stagger_phase_limit default is 1, as declared in configuration.py
-    stagger_phase_limit = sched_cfg.tmpdir_stagger_phase_limit
+    stagger_phase_limit = sched_cfg.global_tmpdir_stagger_phase_limit
     
     # Limit the total number of jobs per tmp dir. Default to overall max
     # jobs configuration, but restrict to any configured overrides.
-    max_plots = sched_cfg.tmpdir_max_jobs
+    max_plots = sched_cfg.global_tmpdir_max_jobs
     
     # Check if any overrides exist for the current job
     if sched_cfg.tmp_overrides is not None and d in sched_cfg.tmp_overrides:
