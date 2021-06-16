@@ -101,13 +101,13 @@ scheduling:
         # e.g, with default settings, a new plot will start only when your plot
         # reaches phase [2 : 1] on your temp drive. This setting takes precidence
         # over global_stagger_m
-        global_tmpdir_stagger_phase_major: 2
-        global_tmpdir_stagger_phase_minor: 1
+        tmpdir_stagger_phase_major: 2
+        tmpdir_stagger_phase_minor: 1
         # Optional: default is 1
-        global_tmpdir_stagger_phase_limit: 1
+        tmpdir_stagger_phase_limit: 1
 
         # Don't run more than this many jobs at a time on a single temp dir.
-        global_tmpdir_max_jobs: 3
+        tmpdir_max_jobs: 3
 
         # Don't run more than this many jobs at a time in total.
         global_max_jobs: 12

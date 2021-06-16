@@ -13,9 +13,9 @@ def sched_cfg() -> configuration.Scheduling:
         global_max_jobs=1,
         global_stagger_m=2,
         polling_time_s=2,
-        global_tmpdir_stagger_phase_major=3,
-        global_tmpdir_stagger_phase_minor=0,
-        global_tmpdir_max_jobs=3,
+        tmpdir_stagger_phase_major=3,
+        tmpdir_stagger_phase_minor=0,
+        tmpdir_max_jobs=3,
         tmp_overrides={"/mnt/tmp/04": configuration.TmpOverrides(tmpdir_max_jobs=4)}
     )
 

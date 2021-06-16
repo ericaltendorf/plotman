@@ -270,10 +270,10 @@ class Scheduling:
     global_max_jobs: int
     global_stagger_m: int
     polling_time_s: int
-    global_tmpdir_max_jobs: int
-    global_tmpdir_stagger_phase_major: int
-    global_tmpdir_stagger_phase_minor: int
-    global_tmpdir_stagger_phase_limit: int = 1  # If not explicit, "tmpdir_stagger_phase_limit" will default to 1
+    tmpdir_max_jobs: int
+    tmpdir_stagger_phase_major: int
+    tmpdir_stagger_phase_minor: int
+    tmpdir_stagger_phase_limit: int = 1  # If not explicit, "tmpdir_stagger_phase_limit" will default to 1
     tmp_overrides: Optional[Dict[str, TmpOverrides]] = None
 
 @attr.frozen
