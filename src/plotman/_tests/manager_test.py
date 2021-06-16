@@ -15,15 +15,15 @@ def sched_cfg() -> configuration.Scheduling:
         polling_time_s=2,
         tmpdir_stagger_phase_major=3,
         tmpdir_stagger_phase_minor=0,
-        tmpdir_max_jobs=3
+        tmpdir_max_jobs=3,
+        tmp_overrides={"/mnt/tmp/04": configuration.TmpOverrides(tmpdir_max_jobs=4)
     )
 
 @pytest.fixture
 def dir_cfg() -> configuration.Directories:
     return configuration.Directories(
         tmp=["/var/tmp", "/tmp"],
-        dst=["/mnt/dst/00", "/mnt/dst/01", "/mnt/dst/03"],
-        tmp_overrides={"/mnt/tmp/04": configuration.TmpOverrides(tmpdir_max_jobs=4)}
+        dst=["/mnt/dst/00", "/mnt/dst/01", "/mnt/dst/03"]}
     )
 
 def test_permit_new_job_post_milestone(sched_cfg: configuration.Scheduling, dir_cfg: configuration.Directories) -> None:
