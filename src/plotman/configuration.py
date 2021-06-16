@@ -212,8 +212,6 @@ class TmpOverrides:
     tmpdir_stagger_phase_minor: Optional[int] = None        
     tmpdir_stagger_phase_limit: Optional[int] = None
     tmpdir_max_jobs: Optional[int] = None
-    
-    raise Exception(tmpdir_stagger_phase_major)
 
 @attr.frozen
 class Logging:
