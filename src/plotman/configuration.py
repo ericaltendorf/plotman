@@ -209,7 +209,7 @@ class Archiving:
 @attr.frozen
 class TmpOverrides:
     tmpdir_stagger_phase_major: Optional[int] = None
-    tmpdir_stagger_phase_minor: Optional[int] = None        
+    tmpdir_stagger_phase_minor: Optional[int] = None
     tmpdir_stagger_phase_limit: Optional[int] = None
     tmpdir_max_jobs: Optional[int] = None
 
