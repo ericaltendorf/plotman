@@ -141,7 +141,7 @@ scheduling:
                 # Here, /mnt/tmp/03 is smaller, so a different config might be
                 # to space the phase stagger further apart and only allow 2 jobs
                 # to run concurrently in it
-                @/mnt/tmp/03::
+                "/mnt/tmp/03":
                         tmpdir_stagger_phase_major: 3
                         tmpdir_stagger_phase_minor: 1
                         tmpdir_max_jobs: 2
