@@ -79,7 +79,7 @@ def phases_permit_new_job(phases: typing.List[job.Phase], d: str, sched_cfg: plo
         if curr_overrides.tmpdir_max_jobs is not None:
             max_plots = curr_overrides.tmpdir_max_jobs
         
-    milestone = job.Phase(major,minor,)
+    milestone = job.Phase(major,minor)
     
     # Check if phases pass the criteria
     if len([p for p in phases if p < milestone]) >= stagger_phase_limit or len(phases) >= max_plots:
