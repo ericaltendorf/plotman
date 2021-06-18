@@ -87,8 +87,8 @@ def phases_permit_new_job(phases: typing.List[job.Phase], d: str, sched_cfg: plo
 
     if len(phases) >= max_plots:
         return False
-    else:
-        return True
+
+    return True
 
 def maybe_start_new_plot(dir_cfg: plotman.configuration.Directories, sched_cfg: plotman.configuration.Scheduling, plotting_cfg: plotman.configuration.Plotting, log_cfg: plotman.configuration.Logging) -> typing.Tuple[bool, str]:
     jobs = job.Job.get_running_jobs(log_cfg.plots)
