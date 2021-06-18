@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [unreleased]
 ### Added
 - optional tmpdir_overrides added for each specified tmpdir
-- ([#758](https://github.com/ericaltendorf/plotman/pull/758))
+  ([#758](https://github.com/ericaltendorf/plotman/pull/758))
 - `plotman export` command to output summaries from plot logs in `.csv` format.
   ([#557](https://github.com/ericaltendorf/plotman/pull/557))
 - `--json` option for `plotman status`.
