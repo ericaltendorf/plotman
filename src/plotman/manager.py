@@ -115,29 +115,38 @@ def maybe_start_new_plot(dir_cfg, sched_cfg, plotting_cfg, log_cfg):
 
             log_file_path = log_cfg.create_plot_log_path(time=pendulum.now())
 
-            plot_args = ['chia', 'plots', 'create',
+            if plotting_cfg.type == "madmax":
+                plot_args = ['chia_plot',
+                    '-n', str(1),
+                    '-r', str(plotting_cfg.n_threads),
+                    '-u', str(plotting_cfg.n_buckets),
+                    '-t', tmpdir if tmpdir.endswith('/') else (tmpdir + '/'),
+                    '-d', dstdir if dstdir.endswith('/') else (dstdir + '/') ]
+            else:
+                plot_args = ['chia', 'plots', 'create',
                     '-k', str(plotting_cfg.k),
                     '-r', str(plotting_cfg.n_threads),
                     '-u', str(plotting_cfg.n_buckets),
                     '-b', str(plotting_cfg.job_buffer),
                     '-t', tmpdir,
                     '-d', dstdir ]
-            if plotting_cfg.e:
-                plot_args.append('-e')
+                if plotting_cfg.e:
+                    plot_args.append('-e')
+                if plotting_cfg.pool_contract_address is not None:
+                    plot_args.append('-c')
+                    plot_args.append(plotting_cfg.pool_contract_address)
+                if plotting_cfg.x:
+                    plot_args.append('-x')  
             if plotting_cfg.farmer_pk is not None:
                 plot_args.append('-f')
                 plot_args.append(plotting_cfg.farmer_pk)
             if plotting_cfg.pool_pk is not None:
                 plot_args.append('-p')
                 plot_args.append(plotting_cfg.pool_pk)
-            if plotting_cfg.pool_contract_address is not None:
-                plot_args.append('-c')
-                plot_args.append(plotting_cfg.pool_contract_address)
             if dir_cfg.tmp2 is not None:
                 plot_args.append('-2')
                 plot_args.append(dir_cfg.tmp2)
-            if plotting_cfg.x:
-                plot_args.append('-x')  
+
 
             logmsg = ('Starting plot job: %s ; logging to %s' % (' '.join(plot_args), log_file_path))
 

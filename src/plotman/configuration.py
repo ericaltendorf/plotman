@@ -253,11 +253,12 @@ class Scheduling:
 
 @attr.frozen
 class Plotting:
-    k: int
-    e: bool
-    n_threads: int
-    n_buckets: int
-    job_buffer: int
+    type: str = "chia"
+    n_threads: int = 2
+    n_buckets: int = 128
+    k: Optional[int] = 32
+    e: Optional[bool] = False
+    job_buffer: Optional[int] = 3389
     farmer_pk: Optional[str] = None
     pool_pk: Optional[str] = None
     pool_contract_address: Optional[str] = None

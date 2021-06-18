@@ -29,14 +29,17 @@ def job_phases_for_dstdir(d, all_jobs):
     return sorted([j.progress() for j in all_jobs if j.dstdir == d])
 
 def is_plotting_cmdline(cmdline):
-    if cmdline and 'python' in cmdline[0].lower():
+    if cmdline and 'python' in cmdline[0].lower():  # Stock Chia plotter
         cmdline = cmdline[1:]
-    return (
-        len(cmdline) >= 3
-        and 'chia' in cmdline[0]
-        and 'plots' == cmdline[1]
-        and 'create' == cmdline[2]
-    )
+        return (
+            len(cmdline) >= 3
+            and 'chia' in cmdline[0]
+            and 'plots' == cmdline[1]
+            and 'create' == cmdline[2]
+        )
+    elif cmdline and 'chia_plot' == cmdline[0].lower():  # Madmax plotter
+        return True
+    return False
 
 def parse_chia_plot_time(s):
     # This will grow to try ISO8601 as well for when Chia logs that way
@@ -45,14 +48,16 @@ def parse_chia_plot_time(s):
 def parse_chia_plots_create_command_line(command_line):
     command_line = list(command_line)
     # Parse command line args
-    if 'python' in command_line[0].lower():
+    if 'python' in command_line[0].lower():  # Stock Chia plotter
         command_line = command_line[1:]
-    assert len(command_line) >= 3
-    assert 'chia' in command_line[0]
-    assert 'plots' == command_line[1]
-    assert 'create' == command_line[2]
-
-    all_command_arguments = command_line[3:]
+        assert len(command_line) >= 3
+        assert 'chia' in command_line[0]
+        assert 'plots' == command_line[1]
+        assert 'create' == command_line[2]
+        all_command_arguments = command_line[3:]
+    elif 'chia_plot' in command_line[0].lower():  # Madmax plotter
+        command_line = command_line[1:]
+        all_command_arguments = command_line[2:]
 
     # nice idea, but this doesn't include -h
     # help_option_names = command.get_help_option_names(ctx=context)
@@ -275,15 +280,22 @@ class Job:
                 with contextlib.suppress(UnicodeDecodeError):
                     for line in f:
                         m = re.match('^ID: ([0-9a-f]*)', line)
-                        if m:
+                        if m: # CHIA
                             self.plot_id = m.group(1)
                             found_id = True
+                        else: 
+                            m = re.match("^Plot Name: plot-k(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\w+)$", line)
+                            if m: # MADMAX
+                                self.plot_id = m.group(7)
+                                found_id = True
                         m = re.match(r'^Starting phase 1/4:.*\.\.\. (.*)', line)
-                        if m:
+                        if m: # CHIA
                             # Mon Nov  2 08:39:53 2020
                             self.start_time = parse_chia_plot_time(m.group(1))
                             found_log = True
                             break  # Stop reading lines in file
+                        else: # MADMAX
+                            self.start_time = datetime.fromtimestamp(os.path.getctime(self.logfile))
 
             if found_id and found_log:
                 break  # Stop trying
@@ -316,24 +328,45 @@ class Job:
         with open(self.logfile, 'r') as f:
             with contextlib.suppress(UnicodeDecodeError):
                 for line in f:
-                    # "Starting phase 1/4: Forward Propagation into tmp files... Sat Oct 31 11:27:04 2020"
+                    # CHIA: "Starting phase 1/4: Forward Propagation into tmp files... Sat Oct 31 11:27:04 2020"
                     m = re.match(r'^Starting phase (\d).*', line)
                     if m:
                         phase = int(m.group(1))
                         phase_subphases[phase] = 0
+                    
+                    # MADMAX: "[P1]" or "[P2]" or "[P3]" or "[P4]"
+                    m = re.match(r'^\[P(\d)\].*', line)
+                    if m:
+                        phase = int(m.group(1))
+                        phase_subphases[phase] = 0
 
-                    # Phase 1: "Computing table 2"
+                    # CHIA: Phase 1: "Computing table 2"
                     m = re.match(r'^Computing table (\d).*', line)
                     if m:
                         phase_subphases[1] = max(phase_subphases[1], int(m.group(1)))
+                    
+                    # MADMAX: Phase 1: "[P1] Table 2"
+                    m = re.match(r'^\[P1\] Table (\d).*', line)
+                    if m:
+                        phase_subphases[1] = max(phase_subphases[1], int(m.group(1)))
 
-                    # Phase 2: "Backpropagating on table 2"
+                    # CHIA: Phase 2: "Backpropagating on table 2"
                     m = re.match(r'^Backpropagating on table (\d).*', line)
                     if m:
                         phase_subphases[2] = max(phase_subphases[2], 7 - int(m.group(1)))
 
-                    # Phase 3: "Compressing tables 4 and 5"
+                    # MADMAX: Phase 2: "[P2] Table 2"
+                    m = re.match(r'^\[P2\] Table (\d).*', line)
+                    if m:
+                        phase_subphases[2] = max(phase_subphases[2], 7 - int(m.group(1)))
+
+                    # CHIA: Phase 3: "Compressing tables 4 and 5"
                     m = re.match(r'^Compressing tables (\d) and (\d).*', line)
+                    if m:
+                        phase_subphases[3] = max(phase_subphases[3], int(m.group(1)))
+                    
+                    # MADMAX: Phase 3: "[P3-1] Table 4"
+                    m = re.match(r'^\[P3\-\d\] Table (\d).*', line)
                     if m:
                         phase_subphases[3] = max(phase_subphases[3], int(m.group(1)))
 
