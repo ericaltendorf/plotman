@@ -368,7 +368,10 @@ class Job:
                     # MADMAX: Phase 3: "[P3-1] Table 4"
                     m = re.match(r'^\[P3\-\d\] Table (\d).*', line)
                     if m:
-                        phase_subphases[3] = max(phase_subphases[3], int(m.group(1)))
+                        if 3 in phase_subphases:
+                            phase_subphases[3] = max(phase_subphases[3], int(m.group(1)))
+                        else:
+                            phase_subphases[3] = int(m.group(1))
 
                     # TODO also collect timing info:
 
