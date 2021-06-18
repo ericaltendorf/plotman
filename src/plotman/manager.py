@@ -97,7 +97,7 @@ def maybe_start_new_plot(dir_cfg: plotman.configuration.Directories, sched_cfg: 
     if (youngest_job_age < global_stagger):
         wait_reason = 'global stagger (%ds/%ds)' % (youngest_job_age, global_stagger)
     elif len(jobs) >= sched_cfg.global_max_jobs:
-        wait_reason = 'global max jobs reached (%d)' % (sched_cfg.global_max_jobs)
+        wait_reason = 'global max jobs reached (%d) - (%ds/%ds)' % (sched_cfg.global_max_jobs, youngest_job_age, global_stagger)
     else:
         tmp_to_all_phases = [(d, job.job_phases_for_tmpdir(d, jobs)) for d in dir_cfg.tmp]
         eligible = [ (d, phases) for (d, phases) in tmp_to_all_phases
