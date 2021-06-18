@@ -108,14 +108,14 @@ def analyze(logfilenames: typing.List[str], clipterminals: bool, bytmp: bool, by
                     data.setdefault(sl, {}).setdefault('total time', []).append(float(m.group(1)))
                     for phase in ['1', '2', '3', '4']:
                         data.setdefault(sl, {}).setdefault('phase ' + phase, []).append(phase_time[phase])
-                    data.setdefault(sl, {}).setdefault('%usort', []).append('')  # Not available for MADMAX
+                    data.setdefault(sl, {}).setdefault('%usort', []).append(0)  # Not available for MADMAX
 
     # Prepare report
     tab = tt.Texttable()
     all_measures = ['%usort', 'phase 1', 'phase 2', 'phase 3', 'phase 4', 'total time']
     headings = ['Slice', 'n'] + all_measures
     tab.header(headings)
-
+    
     for sl in data.keys():
         row = [sl]
 
