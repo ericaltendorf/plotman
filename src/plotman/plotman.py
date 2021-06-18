@@ -5,32 +5,37 @@ import importlib.resources
 import logging
 import logging.handlers
 import os
+import glob
 import random
 from shutil import copyfile
+import sys
 import time
+import typing
 
 import pendulum
 
 # Plotman libraries
-from plotman import analyzer, archive, configuration, interactive, manager, plot_util, reporting
+from plotman import analyzer, archive, configuration, interactive, manager, plot_util, reporting, csv_exporter
 from plotman import resources as plotman_resources
 from plotman.job import Job
 
 class PlotmanArgParser:
-    def add_idprefix_arg(self, subparser):
+    def add_idprefix_arg(self, subparser: argparse.ArgumentParser) -> None:
         subparser.add_argument(
                 'idprefix',
                 type=str,
                 nargs='+',
                 help='disambiguating prefix of plot ID')
 
-    def parse_args(self):
+    def parse_args(self) -> typing.Any:
         parser = argparse.ArgumentParser(description='Chia plotting manager.')
         sp = parser.add_subparsers(dest='cmd')
 
         sp.add_parser('version', help='print the version')
 
-        sp.add_parser('status', help='show current plotting status')
+        p_status = sp.add_parser('status', help='show current plotting status')
+        p_status.add_argument("--json", action="store_true", 
+                help="export status report in json format")
 
         sp.add_parser('dirs', help='show directories info')
 
@@ -45,6 +50,9 @@ class PlotmanArgParser:
         sp.add_parser('plot', help='run plotting loop')
 
         sp.add_parser('archive', help='move completed plots to farming location')
+
+        p_export = sp.add_parser('export', help='exports metadata from the plot logs as CSV')
+        p_export.add_argument('-o', dest='save_to', default=None, type=str, help='save to file. Optional, prints to stdout by default')
 
         p_config = sp.add_parser('config', help='display or generate plotman.yaml configuration')
         sp_config = p_config.add_subparsers(dest='config_subcommand')
@@ -85,21 +93,20 @@ class PlotmanArgParser:
         args = parser.parse_args()
         return args
 
-def get_term_width():
-    columns = 0
+def get_term_width() -> int:
     try:
-        (rows, columns) = os.popen('stty size', 'r').read().split()
-        columns = int(columns)
+        (rows_string, columns_string) = os.popen('stty size', 'r').read().split()
+        columns = int(columns_string)
     except:
         columns = 120  # 80 is typically too narrow.  TODO: make a command line arg.
     return columns
 
 class Iso8601Formatter(logging.Formatter):
-    def formatTime(self, record, datefmt=None):
+    def formatTime(self, record: logging.LogRecord, datefmt: typing.Optional[str] = None) -> str:
         time = pendulum.from_timestamp(timestamp=record.created, tz='local')
-        return time.isoformat(timespec='microseconds', )
+        return time.isoformat(timespec='microseconds')
 
-def main():
+def main() -> None:
     random.seed()
 
     pm_parser = PlotmanArgParser()
@@ -118,7 +125,7 @@ def main():
                 return
             print(f"No 'plotman.yaml' file exists at expected location: '{config_file_path}'")
             print(f"To generate a default config file, run: 'plotman config generate'")
-            return 1
+            return
         if args.config_subcommand == 'generate':
             if os.path.isfile(config_file_path):
                 overwrite = None
@@ -165,6 +172,7 @@ def main():
         handler.setFormatter(formatter)
         root_logger.addHandler(handler)
         root_logger.setLevel(logging.INFO)
+        root_logger.info('abc')
 
         #
         # Stay alive, spawning plot jobs
@@ -188,16 +196,31 @@ def main():
             analyzer.analyze(args.logfile, args.clipterminals,
                     args.bytmp, args.bybitfield)
 
+        #
+        # Exports log metadata to CSV
+        #
+        elif args.cmd == 'export':
+            logfilenames = glob.glob(os.path.join(cfg.logging.plots, '*.plot.log'))
+            if args.save_to is None:
+                csv_exporter.generate(logfilenames=logfilenames, file=sys.stdout)
+            else:
+                with open(args.save_to, 'w', encoding='utf-8') as file:
+                    csv_exporter.generate(logfilenames=logfilenames, file=file)
+
         else:
             jobs = Job.get_running_jobs(cfg.logging.plots)
 
             # Status report
             if args.cmd == 'status':
-                result = "{0}\n\n{1}\n\nUpdated at: {2}".format(
-                    reporting.status_report(jobs, get_term_width()),
-                    reporting.summary(jobs),
-                    datetime.datetime.today().strftime("%c"),
-                )
+                if args.json:
+                    # convert jobs list into json
+                    result = reporting.json_report(jobs)
+                else:
+                    result = "{0}\n\n{1}\n\nUpdated at: {2}".format(
+                        reporting.status_report(jobs, get_term_width()),
+                        reporting.summary(jobs),
+                        datetime.datetime.today().strftime("%c"),
+                    )
                 print(result)
 
             # Directories report
@@ -213,18 +236,21 @@ def main():
 
             # Start running archival
             elif args.cmd == 'archive':
-                print('...starting archive loop')
-                firstit = True
-                while True:
-                    if not firstit:
-                        print('Sleeping 60s until next iteration...')
-                        time.sleep(60)
-                        jobs = Job.get_running_jobs(cfg.logging.plots)
-                    firstit = False
+                if cfg.archiving is None:
+                    print('archiving not configured but is required for this command')
+                else:
+                    print('...starting archive loop')
+                    firstit = True
+                    while True:
+                        if not firstit:
+                            print('Sleeping 60s until next iteration...')
+                            time.sleep(60)
+                            jobs = Job.get_running_jobs(cfg.logging.plots)
+                        firstit = False
 
-                    archiving_status, log_messages = archive.spawn_archive_process(cfg.directories, cfg.archiving, cfg.logging, jobs)
-                    for log_message in log_messages:
-                        print(log_message)
+                        archiving_status, log_messages = archive.spawn_archive_process(cfg.directories, cfg.archiving, cfg.logging, jobs)
+                        for log_message in log_messages:
+                            print(log_message)
 
 
             # Debugging: show the destination drive usage schedule

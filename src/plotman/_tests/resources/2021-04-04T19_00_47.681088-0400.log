@@ -2081,6 +2081,7 @@ Approximate working space used (without final file): 286.598 GiB
 Final File size: 101.336 GiB
 Total time = 39945.080 seconds. CPU (123.100%) Mon Apr  5 06:06:35 2021
 Copied final file from "/farm/yards/901/plot-k32-2021-04-04-19-00-3eb8a37981de1cc76187a36ed947ab4307943cf92967a7e166841186c7899e24.plot.2.tmp" to "/farm/wagons/801/plot-k32-2021-04-04-19-00-3eb8a37981de1cc76187a36ed947ab4307943cf92967a7e166841186c7899e24.plot.2.tmp"
+Copy time = 501.696 seconds. CPU (23.860%) Sun May  9 22:52:41 2021
 Removed temp2 file "/farm/yards/901/plot-k32-2021-04-04-19-00-3eb8a37981de1cc76187a36ed947ab4307943cf92967a7e166841186c7899e24.plot.2.tmp"? 1
 Renamed final file from "/farm/wagons/801/plot-k32-2021-04-04-19-00-3eb8a37981de1cc76187a36ed947ab4307943cf92967a7e166841186c7899e24.plot.2.tmp" to "/farm/wagons/801/plot-k32-2021-04-04-19-00-3eb8a37981de1cc76187a36ed947ab4307943cf92967a7e166841186c7899e24.plot"
 06:22:40.715  src.plotting.create_plots        : [32mINFO    [0m Summary:[0m
