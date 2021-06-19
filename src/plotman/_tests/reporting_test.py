@@ -62,7 +62,7 @@ def test_job_viz_counts() -> None:
 
     assert(reporting.job_viz(jobs) == '1        2  .:;!  3 !     4 ') # type: ignore[arg-type]
 
-def test_to_prometheus_format():
+def test_to_prometheus_format() -> None:
     prom_stati = [
         ('foo="bar",baz="2"', {'metric1': 1, 'metric2': 2}),
         ('foo="blubb",baz="3"', {'metric1': 2, 'metric2': 3})
