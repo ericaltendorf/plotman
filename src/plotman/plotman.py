@@ -34,8 +34,10 @@ class PlotmanArgParser:
         sp.add_parser('version', help='print the version')
 
         p_status = sp.add_parser('status', help='show current plotting status')
-        p_status.add_argument("--json", action="store_true", 
+        p_status.add_argument("--json", action="store_true",
                 help="export status report in json format")
+
+        sp.add_parser('prometheus', help='show current plotting status in prometheus readable format')
 
         sp.add_parser('dirs', help='show directories info')
 
@@ -222,6 +224,10 @@ def main() -> None:
                         datetime.datetime.today().strftime("%c"),
                     )
                 print(result)
+
+            # Prometheus report
+            if args.cmd == 'prometheus':
+                print(reporting.prometheus_report(jobs))
 
             # Directories report
             elif args.cmd == 'dirs':
