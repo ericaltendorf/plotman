@@ -82,7 +82,7 @@ def phases_permit_new_job(phases: typing.List[job.Phase], d: str, sched_cfg: plo
     milestone = job.Phase(major,minor)
     
     # Check if phases pass the criteria
-    if len([p for p in phases if p < milestone]) >= stagger_phase_limit
+    if len([p for p in phases if p < milestone]) >= stagger_phase_limit:
         return False
 
     if len(phases) >= max_plots:
