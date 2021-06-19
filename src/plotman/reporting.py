@@ -124,6 +124,47 @@ def status_report(jobs: typing.List[job.Job], width: int, height: typing.Optiona
 
     return tab.draw()  # type: ignore[no-any-return]
 
+def to_prometheus_format(metrics: typing.Dict[str, str], prom_stati: typing.Sequence[typing.Tuple[str, typing.Mapping[str, typing.Optional[int]]]]) -> typing.List[str]:
+    prom_str_list = []
+    for metric_name, metric_desc in metrics.items():
+        prom_str_list.append(f'# HELP {metric_name} {metric_desc}.')
+        prom_str_list.append(f'# TYPE {metric_name} gauge')
+        for label_str, values in prom_stati:
+            prom_str_list.append('%s{%s} %s' % (metric_name, label_str, values[metric_name]))
+    return prom_str_list
+
+def prometheus_report(jobs: typing.List[job.Job], tmp_prefix: str = '', dst_prefix: str = '') -> str:
+    metrics = {
+        'plotman_plot_phase_major': 'The phase the plot is currently in',
+        'plotman_plot_phase_minor': 'The part of the phase the plot is currently in',
+        'plotman_plot_tmp_usage': 'Tmp dir usage in bytes',
+        'plotman_plot_mem_usage': 'Memory usage in bytes',
+        'plotman_plot_user_time': 'Processor time (user) in s',
+        'plotman_plot_sys_time': 'Processor time (sys) in s',
+        'plotman_plot_iowait_time': 'Processor time (iowait) in s',
+    }
+    prom_stati = []
+    for j in jobs:
+        labels = {
+            'plot_id': j.plot_id[:8],
+            'tmp_dir': abbr_path(j.tmpdir, tmp_prefix),
+            'dst_dir': abbr_path(j.dstdir, dst_prefix),
+            'run_status': j.get_run_status(),
+            'phase': str(j.progress()),
+        }
+        label_str = ','.join([f'{k}="{v}"' for k, v in labels.items()])
+        values = {
+            'plotman_plot_phase_major': j.progress().major,
+            'plotman_plot_phase_minor': j.progress().minor,
+            'plotman_plot_tmp_usage': j.get_tmp_usage(),
+            'plotman_plot_mem_usage': j.get_mem_usage(),
+            'plotman_plot_user_time': j.get_time_user(),
+            'plotman_plot_sys_time': j.get_time_sys(),
+            'plotman_plot_iowait_time': j.get_time_iowait(),
+        }
+        prom_stati += [(label_str, values)]
+    return '\n'.join(to_prometheus_format(metrics, prom_stati))
+
 def summary(jobs: typing.List[job.Job], tmp_prefix: str = '') -> str:
     """Creates a small summary of running jobs"""
 

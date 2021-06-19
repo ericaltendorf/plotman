@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([#549](https://github.com/ericaltendorf/plotman/pull/549))
 - If the tmp drive selected for a plot is also listed as a dst drive then plotman will use the same drive for both.
   ([#643](https://github.com/ericaltendorf/plotman/pull/643))
+- `plotman prometheus` command to output status for consumption by [Prometheus](https://prometheus.io/).
+  ([#430](https://github.com/ericaltendorf/plotman/pull/430))
 
 ## [0.4.1] - 2021-06-11
 ### Fixed
