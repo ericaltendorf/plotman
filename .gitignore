@@ -2,3 +2,4 @@ __pycache__
 venv
 .DS_Store
 .vscode
+src/plotman.egg-info

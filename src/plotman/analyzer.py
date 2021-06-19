@@ -2,19 +2,20 @@ import os
 import re
 import statistics
 import sys
+import typing
 
 import texttable as tt
 
 from plotman import plot_util
 
 
-def analyze(logfilenames, clipterminals, bytmp, bybitfield):
-    data = {}
+def analyze(logfilenames: typing.List[str], clipterminals: bool, bytmp: bool, bybitfield: bool) -> None:
+    data: typing.Dict[str, typing.Dict[str, typing.List[float]]] = {}
     for logfilename in logfilenames:
         with open(logfilename, 'r') as f:
             # Record of slicing and data associated with the slice
             sl = 'x'         # Slice key
-            phase_time = {}  # Map from phase index to time
+            phase_time: typing.Dict[str, float] = {}  # Map from phase index to time
             n_sorts = 0
             n_uniform = 0
             is_first_last = False
