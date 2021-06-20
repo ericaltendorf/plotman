@@ -109,7 +109,7 @@ def maybe_start_new_plot(dir_cfg: plotman.configuration.Directories, sched_cfg: 
                 for (d, phases) in eligible ]
 
         if not eligible:
-            wait_reason = 'no eligible tempdirs (%ds/%ds)' % (youngest_job_age, global_stagger)'
+            wait_reason = 'no eligible tempdirs (%ds/%ds)' % (youngest_job_age, global_stagger)
         else:
             # Plot to oldest tmpdir.
             tmpdir = max(rankable, key=operator.itemgetter(1))[0]
