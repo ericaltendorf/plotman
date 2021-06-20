@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([#643](https://github.com/ericaltendorf/plotman/pull/643))
 - `plotman prometheus` command to output status for consumption by [Prometheus](https://prometheus.io/).
   ([#430](https://github.com/ericaltendorf/plotman/pull/430))
+- Initial support for MadMax plotter.
+  ([#797](https://github.com/ericaltendorf/plotman/pull/797))
 
 ## [0.4.1] - 2021-06-11
 ### Fixed

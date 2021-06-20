@@ -151,6 +151,7 @@ class Job:
     jobfile: str = ''
     job_id: int = 0
     plot_id: str = '--------'
+    plotter: str = ''
     proc: psutil.Process
     k: int
     r: int
@@ -318,11 +319,13 @@ class Job:
                         m = re.match('^ID: ([0-9a-f]*)', line)
                         if m: # CHIA
                             self.plot_id = m.group(1)
+                            self.plotter = 'chia'
                             found_id = True
                         else: 
                             m = re.match("^Plot Name: plot-k(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\w+)$", line)
                             if m: # MADMAX
                                 self.plot_id = m.group(7)
+                                self.plotter = 'madmax'
                                 found_id = True
                         m = re.match(r'^Starting phase 1/4:.*\.\.\. (.*)', line)
                         if m: # CHIA
