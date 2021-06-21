@@ -413,7 +413,7 @@ class Job:
             logfile = self.logfile
             )
 
-    def print_logs(self, follow=None):
+    def print_logs(self, follow: bool = False) -> None:
         with open(self.logfile, 'r') as f:
             if follow:
                 line = ''
