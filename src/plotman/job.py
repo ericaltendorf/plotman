@@ -334,7 +334,7 @@ class Job:
                             found_log = True
                             break  # Stop reading lines in file
                         else: # MADMAX
-                            self.start_time = datetime.fromtimestamp(os.path.getctime(self.logfile))
+                            self.start_time = pendulum.from_timestamp(os.path.getctime(self.logfile))
 
             if found_id and found_log:
                 break  # Stop trying
