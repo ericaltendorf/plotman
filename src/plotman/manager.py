@@ -121,15 +121,16 @@ def maybe_start_new_plot(dir_cfg: plotman.configuration.Directories, sched_cfg: 
 
             log_file_path = log_cfg.create_plot_log_path(time=pendulum.now())
 
+            plot_args: typing.List[str]
             if plotting_cfg.type == "madmax":
-                plot_args: typing.List[str] = ['chia_plot',
+                plot_args = ['chia_plot',
                     '-n', str(1),
                     '-r', str(plotting_cfg.n_threads),
                     '-u', str(plotting_cfg.n_buckets),
                     '-t', tmpdir if tmpdir.endswith('/') else (tmpdir + '/'),
                     '-d', dstdir if dstdir.endswith('/') else (dstdir + '/') ]
             else:
-                plot_args: typing.List[str] = ['chia', 'plots', 'create',
+                plot_args = ['chia', 'plots', 'create',
                     '-k', str(plotting_cfg.k),
                     '-r', str(plotting_cfg.n_threads),
                     '-u', str(plotting_cfg.n_buckets),
