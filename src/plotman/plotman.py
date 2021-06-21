@@ -34,8 +34,10 @@ class PlotmanArgParser:
         sp.add_parser('version', help='print the version')
 
         p_status = sp.add_parser('status', help='show current plotting status')
-        p_status.add_argument("--json", action="store_true", 
+        p_status.add_argument("--json", action="store_true",
                 help="export status report in json format")
+
+        sp.add_parser('prometheus', help='show current plotting status in prometheus readable format')
 
         sp.add_parser('dirs', help='show directories info')
 
@@ -61,6 +63,11 @@ class PlotmanArgParser:
 
         p_details = sp.add_parser('details', help='show details for job')
         self.add_idprefix_arg(p_details)
+
+        p_logs = sp.add_parser('logs', help='fetch the logs for job')
+
+        p_logs.add_argument('-f', '--follow', action='store_true', help='Follow log output')
+        self.add_idprefix_arg(p_logs)
 
         p_files = sp.add_parser('files', help='show temp files associated with job')
         self.add_idprefix_arg(p_files)
@@ -223,6 +230,10 @@ def main() -> None:
                     )
                 print(result)
 
+            # Prometheus report
+            if args.cmd == 'prometheus':
+                print(reporting.prometheus_report(jobs))
+
             # Directories report
             elif args.cmd == 'dirs':
                 print(reporting.dirs_report(jobs, cfg.directories, cfg.archiving, cfg.scheduling, get_term_width()))
@@ -261,7 +272,7 @@ def main() -> None:
             #
             # Job control commands
             #
-            elif args.cmd in [ 'details', 'files', 'kill', 'suspend', 'resume' ]:
+            elif args.cmd in [ 'details', 'logs', 'files', 'kill', 'suspend', 'resume' ]:
                 print(args)
 
                 selected = []
@@ -283,6 +294,9 @@ def main() -> None:
                 for job in selected:
                     if args.cmd == 'details':
                         print(job.status_str_long())
+
+                    elif args.cmd == 'logs':
+                        job.print_logs(args.follow)
 
                     elif args.cmd == 'files':
                         temp_files = job.get_temp_files()
