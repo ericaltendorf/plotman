@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([#643](https://github.com/ericaltendorf/plotman/pull/643))
 - `plotman prometheus` command to output status for consumption by [Prometheus](https://prometheus.io/).
   ([#430](https://github.com/ericaltendorf/plotman/pull/430))
+- `path_suffix` option for rsync and rsyncd archive targets.
+  Allows adding suffixes to the destination path such as to separate original vs. pool plots.
+  ([#800](https://github.com/ericaltendorf/plotman/pull/800))
 
 ## [0.4.1] - 2021-06-11
 ### Fixed
