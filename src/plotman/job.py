@@ -7,6 +7,7 @@ import os
 import random
 import re
 import sys
+import glob
 import time
 from datetime import datetime
 from enum import Enum, auto
@@ -555,13 +556,11 @@ class Job:
     def get_temp_files(self) -> typing.Set[str]:
         # Prevent duplicate file paths by using set.
         temp_files = set([])
-        for f in self.proc.open_files():
-            if any(
-                dir in f.path
-                for dir in [self.tmpdir, self.tmp2dir, self.dstdir]
-                if dir is not None
-            ):
-                temp_files.add(f.path)
+
+        for dir in [self.tmpdir, self.tmp2dir, self.dstdir]:
+            if dir is not None:
+                temp_files.update(glob.glob(os.path.join(dir, "plot-*-{0}.*".format(self.plot_id))))
+
         return temp_files
 
     def cancel(self) -> None:
