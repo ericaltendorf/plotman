@@ -412,7 +412,23 @@ class Job:
             dst = self.dstdir,
             logfile = self.logfile
             )
-    
+
+    def print_logs(self, follow: bool = False) -> None:
+        with open(self.logfile, 'r') as f:
+            if follow:
+                line = ''
+                while True:
+                    tmp = f.readline()
+                    if tmp is not None:
+                        line += tmp
+                        if line.endswith("\n"):
+                            print(line.rstrip('\n'))
+                            line = ''
+                    else:
+                        time.sleep(0.1)
+            else:
+                print(f.read())
+
     def to_dict(self) -> typing.Dict[str, object]:
         '''Exports important information as dictionary.'''
         return dict(
