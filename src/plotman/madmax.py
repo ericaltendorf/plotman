@@ -67,6 +67,5 @@ commands = Commands()
     type=str, default=None)
 @click.option("-G", "--tmptoggle", help="Alternate tmpdir/tmpdir2", 
     type=str, default=None)
-)
 def _cli_c8121b9() -> None:
     pass
