@@ -1,20 +1,21 @@
-#!/bin/sh
+#!/bin/bash
 
-DOCKER_REGISTRY="graemes"
-LOCAL_REGISTRY="registry.graemes.com/graemes"
+LOCAL_REGISTRY="<local-registry>"
+#DOCKER_REGISTRY="<docker-registry>"
 PROJECT="chia-plotman"
 TAG="plotter"
-CHIA_BRANCH="1.1.7"
+BASE_CONTAINER="ubuntu:20.04"
+CHIA_GIT_REFERENCE="1.1.7"
 
 docker rmi ${LOCAL_REGISTRY}/${PROJECT}:${TAG}
 
 docker build . \
 	--squash \
-	--build-arg CHIA_BRANCH=${CHIA_BRANCH} \
+	--build-arg BASE_CONTAINER=${BASE_CONTAINER} \
+	--build-arg CHIA_GIT_REFERENCE=${CHIA_GIT_REFERENCE} \
 	-f Dockerfile \
 	-t ${LOCAL_REGISTRY}/${PROJECT}:${TAG}
-
-#     -t ${DOCKER_REGISTRY}/${PROJECT}:${TAG} \
+#     -t ${DOCKER_REGISTRY}/${PROJECT}:${TAG}
 
 docker push ${LOCAL_REGISTRY}/${PROJECT}:${TAG}
 #docker push ${DOCKER_REGISTRY}/${PROJECT}:${TAG}
