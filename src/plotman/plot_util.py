@@ -55,17 +55,18 @@ def split_path_prefix(items: typing.List[str]) -> typing.Tuple[str, typing.List[
         return (prefix, remainders)
 
 def list_k32_plots(d: str) -> typing.List[str]:
-    'List completed k32 plots in a directory (not recursive)'
+    'List completed k32 (and others) plots in a directory (not recursive)'
     plots = []
     for plot in os.listdir(d):
-        if re.match(r'^plot-k32-.*plot$', plot):
+        if matches := re.search(r"^plot-k(\d*)-.*plot$", plot):
+            grps = matches.groups()
+            plot_k = int(grps[0])
             plot = os.path.join(d, plot)
             try:
-                if os.stat(plot).st_size > (0.95 * get_k32_plotsize()):
+                if os.stat(plot).st_size > (0.95 * get_plotsize(plot_k)):
                     plots.append(plot)
             except FileNotFoundError:
                 continue
-
     return plots
 
 def column_wrap(
