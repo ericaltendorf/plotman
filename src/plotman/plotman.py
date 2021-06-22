@@ -101,6 +101,18 @@ class PlotmanArgParser:
         p_analyze.add_argument('--figfile', type=str, default=None,
                 help='figure to be created if logdir is passed')
 
+        p_graph = sp.add_parser('graph', help='create graph with plotting statistics')
+        p_graph.add_argument('--logdir', type=str, default=None,
+                help='directory containing multiple logfiles to analyze')
+        p_graph.add_argument('--figfile', type=str, default=None,
+                help='graph file produced as output (.png, .jpg, etc.)')
+        p_graph.add_argument('--bytmp',
+                action='store_true',
+                help='slice by tmp dirs')
+        p_graph.add_argument('--bybitfield',
+                action='store_true',
+                help='slice by bitfield/non-bitfield sorting')
+
         args = parser.parse_args()
         return args
 
@@ -206,6 +218,12 @@ def main() -> None:
 
             analyzer.analyze(args.logfile, args.clipterminals,
                     args.bytmp, args.bybitfield)
+
+        #
+        # Graphing of completed jobs
+        #
+        elif args.cmd == 'graph':
+            graph.graph(args.logfile, args.figfile, args.bytmp, args.bybitfield)
 
         #
         # Exports log metadata to CSV
