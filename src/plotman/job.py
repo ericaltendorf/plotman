@@ -18,7 +18,7 @@ import click
 import pendulum
 import psutil
 
-from plotman import chia
+from plotman import chia, madmax
 
 
 def job_phases_for_tmpdir(d: str, all_jobs: typing.List["Job"]) -> typing.List["Phase"]:
@@ -60,9 +60,14 @@ def parse_chia_plots_create_command_line(
         assert 'plots' == command_line[1]
         assert 'create' == command_line[2]
         all_command_arguments = command_line[3:]
+        # TODO: We could at some point do chia version detection and pick the
+        #       associated command.  For now we'll just use the latest one we have
+        #       copied.
+        command = chia.commands.latest_command()
     elif 'chia_plot' in command_line[0].lower():  # Madmax plotter
         command_line = command_line[1:]
         all_command_arguments = command_line[2:]
+        command = madmax._cli_c8121b9
 
     # nice idea, but this doesn't include -h
     # help_option_names = command.get_help_option_names(ctx=context)
@@ -74,10 +79,6 @@ def parse_chia_plots_create_command_line(
         if argument not in help_option_names
     ]
 
-    # TODO: We could at some point do chia version detection and pick the
-    #       associated command.  For now we'll just use the latest one we have
-    #       copied.
-    command = chia.commands.latest_command()
     try:
         context = command.make_context(info_name='', args=list(command_arguments))
     except click.ClickException as e:

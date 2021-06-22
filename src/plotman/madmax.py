@@ -43,7 +43,9 @@ class Commands:
 
 commands = Commands()
 # Madmax Git on 2021-06-19 -> https://github.com/madMAx43v3r/chia-plotter/commit/c8121b987186c42c895b49818e6c13acecc51332
-@commands.register(version=("c8121b9"))  
+# TODO: make Commands able to handle this.  maybe configure with a list defining order?
+#       for now we can just access directly.
+# @commands.register(version=("c8121b9"))
 @click.command()
 # https://github.com/madMAx43v3r/chia-plotter/blob/master/LICENSE
 # https://github.com/madMAx43v3r/chia-plotter/blob/master/src/chia_plot.cpp#L180
