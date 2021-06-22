@@ -12,6 +12,8 @@ import desert
 # TODO: should be a desert.ib() but mypy doesn't understand it then, see below
 import desert._make
 import marshmallow
+import marshmallow.fields
+import marshmallow.validate
 import pendulum
 import yaml
 
@@ -66,6 +68,27 @@ def get_validated_configs(config_text: str, config_path: str, preset_target_defi
         raise ConfigurationException(
             f"Config file at: '{config_path}' is malformed"
         ) from e
+
+    if loaded.plotting.type == "chia" and loaded.plotting.chia is None:
+        raise ConfigurationException(
+            "chia selected as plotter but plotting: chia: was not specified in the config",
+        )
+    elif loaded.plotting.type == "madmax":
+        if loaded.plotting.madmax is None:
+            raise ConfigurationException(
+                "madmax selected as plotter but plotting: madmax: was not specified in the config",
+            )
+
+        if loaded.plotting.farmer_pk is None:
+            raise ConfigurationException(
+                "madmax selected as plotter but no plotting: farmer_pk: was specified",
+            )
+
+        if loaded.plotting.pool_pk is None:
+            raise ConfigurationException(
+                "madmax selected as plotter but no plotting: pool_pk: was specified",
+            )
+
 
     if loaded.archiving is not None:
         preset_target_objects = yaml.safe_load(preset_target_definitions_text)
@@ -273,18 +296,38 @@ class Scheduling:
     tmpdir_stagger_phase_minor: int
     tmpdir_stagger_phase_limit: int = 1  # If not explicit, "tmpdir_stagger_phase_limit" will default to 1
 
+
 @attr.frozen
-class Plotting:
-    type: str = "chia"
+class ChiaPlotterOptions:
     n_threads: int = 2
     n_buckets: int = 128
     k: Optional[int] = 32
     e: Optional[bool] = False
     job_buffer: Optional[int] = 3389
+    x: bool = False
+    pool_contract_address: Optional[str] = None
+
+@attr.frozen
+class MadmaxPlotterOptions:
+    n_threads: int = 4
+    n_buckets: int = 256
+
+@attr.frozen
+class Plotting:
     farmer_pk: Optional[str] = None
     pool_pk: Optional[str] = None
-    pool_contract_address: Optional[str] = None
-    x: bool = False
+    type: str = attr.ib(
+        default="chia",
+        metadata={
+            desert._make._DESERT_SENTINEL: {
+                'marshmallow_field': marshmallow.fields.String(
+                    validate=marshmallow.validate.OneOf(choices=["chia", "madmax"]),
+                ),
+            },
+        },
+    )
+    chia: Optional[ChiaPlotterOptions] = None
+    madmax: Optional[MadmaxPlotterOptions] = None
 
 @attr.frozen
 class UserInterface:
