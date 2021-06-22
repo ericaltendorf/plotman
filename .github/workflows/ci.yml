@@ -1,0 +1,286 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - development
+    tags: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    # Should match JOB_NAME below
+    name: ${{ matrix.task.name }} - ${{ matrix.os.name }} ${{ matrix.python.name }}
+    runs-on: ${{ matrix.os.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - name: Linux
+            runs-on: ubuntu-latest
+            matrix: linux
+        python:
+          - name: CPython 3.8
+            tox: py38
+            action: 3.8
+        task:
+          - name: Build
+            tox: build
+
+    env:
+      # Should match name above
+      JOB_NAME: ${{ matrix.task.name }} - ${{ matrix.os.name }} ${{ matrix.python.name }}
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+    - name: Set up ${{ matrix.python.name }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python.action }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        python -m pip install build check-manifest twine
+
+    - uses: twisted/python-info-action@v1
+
+    - name: Build
+      run: |
+        check-manifest --verbose .
+
+        python -m build --sdist --outdir dist/ .
+
+        mkdir empty/
+        cd empty
+
+        tar -xvf ../dist/*
+        cd *
+
+        # build the wheel from the sdist
+        python -m build --wheel --outdir ../../dist/ .
+        cd ../../
+
+        twine check dist/*
+
+    - name: Publish
+      uses: actions/upload-artifact@v2
+      with:
+        name: dist
+        path: dist/
+
+  test:
+    # Should match JOB_NAME below
+    name: ${{ matrix.task.name }} - ${{ matrix.os.name }} ${{ matrix.python.name }}
+    runs-on: ${{ matrix.os.runs-on }}
+    needs:
+      - build
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - name: Linux
+            runs-on: ubuntu-latest
+            matrix: linux
+          - name: macOS
+            runs-on: macos-latest
+            matrix: macos
+        python:
+          - name: CPython 3.7
+            tox: py37
+            action: 3.7
+          - name: CPython 3.8
+            tox: py38
+            action: 3.8
+          - name: CPython 3.9
+            tox: py39
+            action: 3.9
+        task:
+          - name: Test
+            tox: test
+            coverage: true
+          - name: Check hints
+            tox: check-hints
+        include:
+          - task:
+              name: Check manifest
+              tox: check-manifest
+            os:
+              name: Linux
+              runs-on: ubuntu-latest
+            python:
+              name: CPython 3.8
+              action: 3.8
+
+
+    env:
+      # Should match name above
+      JOB_NAME: ${{ matrix.task.name }} - ${{ matrix.os.name }} ${{ matrix.python.name }}
+      TOXENV: ${{ matrix.task.tox }}${{ fromJSON('["", "-"]')[matrix.python.tox != null] }}${{ matrix.python.tox }}
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Download package files
+      uses: actions/download-artifact@v2
+      with:
+        name: dist
+        path: dist/
+
+    - name: Set up ${{ matrix.python.name }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python.action }}
+
+    - name: Generate extra locales (Linux)
+      if: ${{ matrix.os.matrix == 'linux' }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install --yes tzdata locales
+        sudo locale-gen en_US.UTF-8 de_DE.UTF-8
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        pip install tox
+
+    - name: Prepare tox environment
+      run: |
+        tox --notest --installpkg dist/*.whl
+
+    - name: Runner info
+      uses: twisted/python-info-action@v1
+
+    - name: Tox info
+      uses: twisted/python-info-action@v1
+      with:
+        python-path: .tox/${{ env.TOXENV }}/*/python
+
+    - name: Test
+      run: |
+        tox --skip-pkg-install
+
+    - name: Coverage Processing
+      if: matrix.task.coverage
+      run: |
+        mkdir coverage_reports
+        cp .coverage "coverage_reports/.coverage.${{ env.JOB_NAME }}"
+        cp coverage.xml "coverage_reports/coverage.${{ env.JOB_NAME }}.xml"
+
+    - name: Publish Coverage
+      if: matrix.task.coverage
+      uses: actions/upload-artifact@v2
+      with:
+        name: coverage
+        path: coverage_reports/*
+
+  coverage:
+    # Should match JOB_NAME below
+    name: ${{ matrix.task.name }} - ${{ matrix.os.name }} ${{ matrix.python.name }}
+    runs-on: ${{ matrix.os.runs-on }}
+    needs:
+      - test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os:
+              name: Linux
+              runs-on: ubuntu-latest
+            python:
+              name: CPython 3.8
+              action: 3.8
+            task:
+              name: Coverage
+              tox: check-coverage
+              coverage: false
+              download_coverage: true
+
+    env:
+      # Should match name above
+      JOB_NAME: ${{ matrix.task.name }} - ${{ matrix.os.name }} ${{ matrix.python.name }}
+      TOXENV: ${{ matrix.task.tox }}${{ fromJSON('["", "-"]')[matrix.task.tox != null && matrix.python.tox != null] }}${{ matrix.python.tox }}
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Download package files
+      uses: actions/download-artifact@v2
+      with:
+        name: dist
+        path: dist/
+
+    - name: Download Coverage
+      if: matrix.task.download_coverage
+      uses: actions/download-artifact@v2
+      with:
+        name: coverage
+        path: coverage_reports
+
+    - name: Set up ${{ matrix.python.name }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python.action }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        pip install tox
+
+    - name: Prepare tox environment
+      run: |
+        tox --notest --installpkg dist/*.whl
+
+    - name: Runner info
+      uses: twisted/python-info-action@v1
+
+    - name: Tox info
+      uses: twisted/python-info-action@v1
+      with:
+        python-path: .tox/${{ env.TOXENV }}/*/python
+
+    - name: Run tox environment
+      env:
+        BASE_REF: ${{ fromJSON(format('[{0}, {1}]', toJSON(github.event.before), toJSON(format('origin/{0}', github.base_ref))))[github.base_ref != ''] }}
+      run: |
+        tox --skip-pkg-install -- --compare-branch="${BASE_REF}"
+
+    - name: Coverage Processing
+      if: always()
+      run: |
+        mkdir all_coverage_report
+        cp .coverage "all_coverage_report/.coverage.all"
+        cp coverage.xml "all_coverage_report/coverage.all.xml"
+
+    - name: Upload Coverage
+      if: always()
+      uses: actions/upload-artifact@v2
+      with:
+        name: coverage
+        path: all_coverage_report/*
+
+  all:
+    name: All
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - test
+      # TODO: make this required when we have a better testing situation
+      # - coverage
+    steps:
+      - name: This
+        shell: python
+        run: import this
