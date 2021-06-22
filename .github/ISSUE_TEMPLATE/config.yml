@@ -1,8 +1,0 @@
-contact_links:
-  - about: Ask a general question or request support in Discussions
-    name: Ask for Support
-    url: >-
-      https://github.com/ericaltendorf/plotman/discussions/new
-  - about: Get support on the Chia Keybase's dedicated plotman channel.
-    name: Join the Keybase.io plotman channel
-    url: 'https://keybase.io/team/chia_network.public'
