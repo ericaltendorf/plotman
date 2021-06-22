@@ -49,7 +49,7 @@ def get_validated_configs(config_text: str, config_path: str, preset_target_defi
 
     version = config_objects.get('version', (0,))
 
-    expected_major_version = 1
+    expected_major_version = 2
 
     if version[0] != expected_major_version:
         message = textwrap.dedent(f"""\
