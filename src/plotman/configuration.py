@@ -81,12 +81,12 @@ def get_validated_configs(config_text: str, config_path: str, preset_target_defi
 
         if loaded.plotting.farmer_pk is None:
             raise ConfigurationException(
-                "madmax selected as plotter but no plotting: farmer_pk: was specified",
+                "madmax selected as plotter but no plotting: farmer_pk: was specified in the config",
             )
 
         if loaded.plotting.pool_pk is None:
             raise ConfigurationException(
-                "madmax selected as plotter but no plotting: pool_pk: was specified",
+                "madmax selected as plotter but no plotting: pool_pk: was specified in the config",
             )
 
 
@@ -295,7 +295,6 @@ class Scheduling:
     tmpdir_stagger_phase_major: int
     tmpdir_stagger_phase_minor: int
     tmpdir_stagger_phase_limit: int = 1  # If not explicit, "tmpdir_stagger_phase_limit" will default to 1
-
 
 @attr.frozen
 class ChiaPlotterOptions:

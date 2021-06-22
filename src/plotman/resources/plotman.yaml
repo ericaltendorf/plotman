@@ -132,16 +132,18 @@ scheduling:
         polling_time_s: 20
 
 
-# Plotting parameters.  These are pass-through parameters to the selected plotter.
+# Plotting parameters.  These are pass-through parameters to chia plots create.
+# See documentation at
+# https://github.com/Chia-Network/chia-blockchain/wiki/CLI-Commands-Reference#create
 plotting:
+        # Your public keys: farmer and pool - Required for madmax, optional for chia with mnemonic.txt
+        # farmer_pk: ...
+        # pool_pk: ...
+
         # If you enable Chia, plot in *parallel* with higher tmpdir_max_jobs and global_max_jobs
         type: chia
         chia:
                 # The stock plotter: https://github.com/Chia-Network/chia-blockchain
-                # See documentation at
-                # https://github.com/Chia-Network/chia-blockchain/wiki/CLI-Commands-Reference#create
-                # farmer_pk: ...
-                # pool_pk: ...
                 k: 32                # k-size of plot, leave at 32 most of the time
                 e: False             # Use -e plotting option
                 n_threads: 2         # Threads per job
@@ -151,7 +153,5 @@ plotting:
         # If you enable MadMax, plot in *sequence* with very low tmpdir_max_jobs and global_max_jobs
         madmax:
                 # Madmax plotter: https://github.com/madMAx43v3r/chia-plotter
-                farmer_pk: abc123
-                pool_pk: abc123
                 n_threads: 4          # Default is 4, crank up if you have many cores
                 n_buckets: 256        # Default is 256
