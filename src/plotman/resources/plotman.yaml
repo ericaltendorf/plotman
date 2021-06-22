@@ -1,7 +1,7 @@
 # Default/example plotman.yaml configuration file
 
 # https://github.com/ericaltendorf/plotman/wiki/Configuration#versions
-version: [1]
+version: [2]
 
 logging:
         # One directory in which to store all plot job logs (the STDOUT/
