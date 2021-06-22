@@ -133,6 +133,9 @@ def maybe_start_new_plot(dir_cfg: plotman.configuration.Directories, sched_cfg: 
                     '-u', str(plotting_cfg.madmax.n_buckets),
                     '-t', tmpdir if tmpdir.endswith('/') else (tmpdir + '/'),
                     '-d', dstdir if dstdir.endswith('/') else (dstdir + '/') ]
+                if dir_cfg.tmp2 is not None:
+                    plot_args.append('-2')
+                    plot_args.append(dir_cfg.tmp2 if dir_cfg.tmp2.endswith('/') else (dir_cfg.tmp2 + '/'))
             else:
                 if plotting_cfg.chia is None:
                     raise Exception(
@@ -152,15 +155,16 @@ def maybe_start_new_plot(dir_cfg: plotman.configuration.Directories, sched_cfg: 
                     plot_args.append(plotting_cfg.chia.pool_contract_address)
                 if plotting_cfg.chia.x:
                     plot_args.append('-x')  
+                if dir_cfg.tmp2 is not None:
+                    plot_args.append('-2')
+                    plot_args.append(dir_cfg.tmp2)
             if plotting_cfg.farmer_pk is not None:
                 plot_args.append('-f')
                 plot_args.append(plotting_cfg.farmer_pk)
             if plotting_cfg.pool_pk is not None:
                 plot_args.append('-p')
                 plot_args.append(plotting_cfg.pool_pk)
-            if dir_cfg.tmp2 is not None:
-                plot_args.append('-2')
-                plot_args.append(dir_cfg.tmp2)
+            
 
 
             logmsg = ('Starting plot job: %s ; logging to %s' % (' '.join(plot_args), log_file_path))

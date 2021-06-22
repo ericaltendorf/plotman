@@ -267,15 +267,24 @@ class Job:
         #     'nobitfield': False,
         #     'exclude_final_dir': False,
         # }
-
-        self.k = self.args['size']  # type: ignore[assignment]
-        self.r = self.args['num_threads']  # type: ignore[assignment]
-        self.u = self.args['buckets']  # type: ignore[assignment]
-        self.b = self.args['buffer']  # type: ignore[assignment]
-        self.n = self.args['num']  # type: ignore[assignment]
-        self.tmpdir = self.args['tmp_dir']  # type: ignore[assignment]
-        self.tmp2dir = self.args['tmp2_dir']  # type: ignore[assignment]
-        self.dstdir = self.args['final_dir']  # type: ignore[assignment]
+        if proc.name().startswith("chia_plot"): # MADMAX
+            self.k = 32 # type: ignore[assignment]
+            self.r = self.args['threads']  # type: ignore[assignment]
+            self.u = self.args['buckets']  # type: ignore[assignment]
+            self.b = 0  # type: ignore[assignment]
+            self.n = self.args['count']  # type: ignore[assignment]
+            self.tmpdir = self.args['tmpdir']  # type: ignore[assignment]
+            self.tmp2dir = self.args['tmpdir2']  # type: ignore[assignment]
+            self.dstdir = self.args['finaldir']  # type: ignore[assignment]
+        else: # CHIA
+            self.k = self.args['size']  # type: ignore[assignment]
+            self.r = self.args['num_threads']  # type: ignore[assignment]
+            self.u = self.args['buckets']  # type: ignore[assignment]
+            self.b = self.args['buffer']  # type: ignore[assignment]
+            self.n = self.args['num']  # type: ignore[assignment]
+            self.tmpdir = self.args['tmp_dir']  # type: ignore[assignment]
+            self.tmp2dir = self.args['tmp2_dir']  # type: ignore[assignment]
+            self.dstdir = self.args['final_dir']  # type: ignore[assignment]
 
         plot_cwd: str = self.proc.cwd()
         self.tmpdir = os.path.join(plot_cwd, self.tmpdir)
