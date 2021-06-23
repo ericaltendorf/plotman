@@ -1,7 +1,6 @@
 #!/bin/bash
 
-LOCAL_REGISTRY="<local-registry>"
-#DOCKER_REGISTRY="<docker-registry>"
+DOCKER_REGISTRY="<docker-registry>"
 PROJECT="chia-plotman"
 TAG="plotter"
 BASE_CONTAINER="ubuntu:20.04"
@@ -20,8 +19,6 @@ docker build . \
 	--build-arg UID=${UID} \
 	--build-arg GID=${GID} \
 	-f docker/Dockerfile \
-	-t ${LOCAL_REGISTRY}/${PROJECT}:${TAG}
-#        -t ${DOCKER_REGISTRY}/${PROJECT}:${TAG}
+        -t ${DOCKER_REGISTRY}/${PROJECT}:${TAG}
 
-docker push ${LOCAL_REGISTRY}/${PROJECT}:${TAG}
-#docker push ${DOCKER_REGISTRY}/${PROJECT}:${TAG}
+docker push ${DOCKER_REGISTRY}/${PROJECT}:${TAG}
