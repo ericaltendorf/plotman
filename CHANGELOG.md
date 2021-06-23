@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([#430](https://github.com/ericaltendorf/plotman/pull/430))
 - `plotman logs` command to print and tail plot logs by their plot ID.
   ([#509](https://github.com/ericaltendorf/plotman/pull/509))
-- Support the [MadMax plotter](https://github.com/madMAx43v3r/chia-plotter).
+- Support the [madMAx plotter](https://github.com/madMAx43v3r/chia-plotter).
   See the [configuration wiki page](https://github.com/ericaltendorf/plotman/wiki/Configuration#2-v05) for help setting it up.
   ([#797](https://github.com/ericaltendorf/plotman/pull/797))
 
