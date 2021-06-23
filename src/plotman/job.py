@@ -268,10 +268,10 @@ class Job:
         #     'exclude_final_dir': False,
         # }
         if proc.name().startswith("chia_plot"): # MADMAX
-            self.k = 32 # type: ignore[assignment]
+            self.k = 32
             self.r = self.args['threads']  # type: ignore[assignment]
             self.u = self.args['buckets']  # type: ignore[assignment]
-            self.b = 0  # type: ignore[assignment]
+            self.b = 0
             self.n = self.args['count']  # type: ignore[assignment]
             self.tmpdir = self.args['tmpdir']  # type: ignore[assignment]
             self.tmp2dir = self.args['tmpdir2']  # type: ignore[assignment]
