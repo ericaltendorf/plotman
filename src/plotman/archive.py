@@ -96,7 +96,7 @@ def spawn_archive_process(dir_cfg: configuration.Directories, arch_cfg: configur
 
 def compute_priority(phase: job.Phase, gb_free: float, n_plots: int) -> int:
     # All these values are designed around dst buffer dirs of about
-    # ~2TB size and containing k32 plots.  TODO: Generalize, and
+    # ~2TB size and containing k plots.  TODO: Generalize, and
     # rewrite as a sort function.
 
     priority = 50
@@ -210,7 +210,7 @@ def archive(dir_cfg: configuration.Directories, arch_cfg: configuration.Archivin
     dst_dir = dir_cfg.get_dst_directories()
     for d in dst_dir:
         ph = dir2ph.get(d, job.Phase(0, 0))
-        dir_plots = plot_util.list_k32_plots(d)
+        dir_plots = plot_util.list_k_plots(d)
         gb_free = plot_util.df_b(d) / plot_util.GB
         n_plots = len(dir_plots)
         priority = compute_priority(ph, gb_free, n_plots)
