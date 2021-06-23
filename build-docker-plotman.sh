@@ -6,6 +6,8 @@ PROJECT="chia-plotman"
 TAG="plotter"
 BASE_CONTAINER="ubuntu:20.04"
 CHIA_GIT_REFERENCE="1.1.7"
+
+# The UID/GID should match the 'chia' owner of the directories on the host system
 UID=10001
 GID=10001
 
@@ -17,9 +19,9 @@ docker build . \
 	--build-arg CHIA_GIT_REFERENCE=${CHIA_GIT_REFERENCE} \
 	--build-arg UID=${UID} \
 	--build-arg GID=${GID} \
-	-f Dockerfile \
+	-f docker/Dockerfile \
 	-t ${LOCAL_REGISTRY}/${PROJECT}:${TAG}
-#     -t ${DOCKER_REGISTRY}/${PROJECT}:${TAG}
+#        -t ${DOCKER_REGISTRY}/${PROJECT}:${TAG}
 
 docker push ${LOCAL_REGISTRY}/${PROJECT}:${TAG}
 #docker push ${DOCKER_REGISTRY}/${PROJECT}:${TAG}

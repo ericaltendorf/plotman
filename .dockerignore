@@ -2,3 +2,4 @@
 .github
 .coveragerc
 .gitignore
+docker
