@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support the [madMAx plotter](https://github.com/madMAx43v3r/chia-plotter).
   See the [configuration wiki page](https://github.com/ericaltendorf/plotman/wiki/Configuration#2-v05) for help setting it up.
   ([#797](https://github.com/ericaltendorf/plotman/pull/797))
+- Docker container support.
+  See the [docker configuration wiki page](https://github.com/ericaltendorf/plotman/wiki/Docker-Configuration) for help setting it up.
+  ([#783](https://github.com/ericaltendorf/plotman/pull/783))
+
 
 ## [0.4.1] - 2021-06-11
 ### Fixed
