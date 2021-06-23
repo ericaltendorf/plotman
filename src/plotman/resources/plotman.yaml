@@ -136,7 +136,7 @@ scheduling:
 # See documentation at
 # https://github.com/Chia-Network/chia-blockchain/wiki/CLI-Commands-Reference#create
 plotting:
-        # Your public keys: farmer and pool - Required for madmax, optional for chia with mnemonic.txt
+        # Your public keys: farmer and pool - Required for madMAx, optional for chia with mnemonic.txt
         # farmer_pk: ...
         # pool_pk: ...
 
@@ -150,8 +150,8 @@ plotting:
                 n_buckets: 128       # Number of buckets to split data into
                 job_buffer: 3389     # Per job memory
 
-        # If you enable MadMax, plot in *sequence* with very low tmpdir_max_jobs and global_max_jobs
-        madmax:
-                # Madmax plotter: https://github.com/madMAx43v3r/chia-plotter
+        # If you enable madMAx, plot in *sequence* with very low tmpdir_max_jobs and global_max_jobs
+        madMAx:
+                # madMAx plotter: https://github.com/madMAx43v3r/chia-plotter
                 n_threads: 4          # Default is 4, crank up if you have many cores
                 n_buckets: 256        # Default is 256
