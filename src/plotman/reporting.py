@@ -75,7 +75,7 @@ def status_report(jobs: typing.List[job.Job], width: int, height: typing.Optiona
         n_end_rows = n_rows - n_begin_rows
 
     tab = tt.Texttable()
-    headings = ['plot id', 'k', 'tmp', 'dst', 'wall', 'phase', 'tmp',
+    headings = ['plot id', 'plotter', 'k', 'tmp', 'dst', 'wall', 'phase', 'tmp',
             'pid', 'stat', 'mem', 'user', 'sys', 'io']
     if height:
         headings.insert(0, '#')
@@ -97,6 +97,7 @@ def status_report(jobs: typing.List[job.Job], width: int, height: typing.Optiona
             try:
                 with j.proc.oneshot():
                     row = [j.plot_id[:8], # Plot ID
+                        str(j.plotter), # chia or madmax
                         str(j.k), # k size
                         abbr_path(j.tmpdir, tmp_prefix), # Temp directory
                         abbr_path(j.dstdir, dst_prefix), # Destination directory
