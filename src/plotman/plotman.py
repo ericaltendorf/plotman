@@ -311,6 +311,9 @@ def main() -> None:
 
                         temp_files = job.get_temp_files()
                         
+                        print('Will kill pid %d, plot id %s' % (job.proc.pid, job.plot_id))
+                        print('Will delete %d temp files' % len(temp_files))
+
                         if args.force:
                             conf = 'y'
                         else:
@@ -319,8 +322,6 @@ def main() -> None:
                         if (conf != 'y'):
                             print('Canceled.  If you wish to resume the job, do so manually.')
                         else:
-                            print('Will kill pid %d, plot id %s' % (job.proc.pid, job.plot_id))
-                            print('Will delete %d temp files' % len(temp_files))
                             print('killing...')
 
                             job.cancel()
