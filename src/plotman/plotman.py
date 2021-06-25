@@ -73,6 +73,7 @@ class PlotmanArgParser:
         self.add_idprefix_arg(p_files)
 
         p_kill = sp.add_parser('kill', help='kill job (and cleanup temp files)')
+        p_kill.add_argument('-f', '--force', action='store_true', default=False, help="Don't ask for confirmation before killing the plot job")
         self.add_idprefix_arg(p_kill)
 
         p_suspend = sp.add_parser('suspend', help='suspend job')
@@ -309,15 +310,24 @@ def main() -> None:
                         job.suspend()
 
                         temp_files = job.get_temp_files()
+                        
                         print('Will kill pid %d, plot id %s' % (job.proc.pid, job.plot_id))
                         print('Will delete %d temp files' % len(temp_files))
-                        conf = input('Are you sure? ("y" to confirm): ')
+
+                        if args.force:
+                            conf = 'y'
+                        else:
+                            conf = input('Are you sure? ("y" to confirm): ')
+
                         if (conf != 'y'):
-                            print('canceled.  If you wish to resume the job, do so manually.')
+                            print('Canceled.  If you wish to resume the job, do so manually.')
                         else:
                             print('killing...')
+
                             job.cancel()
+
                             print('cleaning up temp files...')
+
                             for f in temp_files:
                                 os.remove(f)
 
