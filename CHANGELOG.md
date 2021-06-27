@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
+### Fixed
+- `plotman kill` doesn't leave any temporary files behind anymore.
+  ([#801](https://github.com/ericaltendorf/plotman/pull/801))
 ### Added
 - optional tmpdir_overrides added for each specified tmpdir
   ([#758](https://github.com/ericaltendorf/plotman/pull/758))
@@ -17,6 +20,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([#643](https://github.com/ericaltendorf/plotman/pull/643))
 - `plotman prometheus` command to output status for consumption by [Prometheus](https://prometheus.io/).
   ([#430](https://github.com/ericaltendorf/plotman/pull/430))
+- `plotman logs` command to print and tail plot logs by their plot ID.
+  ([#509](https://github.com/ericaltendorf/plotman/pull/509))
+- Support the [madMAx plotter](https://github.com/madMAx43v3r/chia-plotter).
+  See the [configuration wiki page](https://github.com/ericaltendorf/plotman/wiki/Configuration#2-v05) for help setting it up.
+  ([#797](https://github.com/ericaltendorf/plotman/pull/797))
+- Added argument `-f`/`--force` to `plotman kill` to skip confirmation before killing the job.
+  ([#801](https://github.com/ericaltendorf/plotman/pull/801))
+- Docker container support.
+  See the [docker configuration wiki page](https://github.com/ericaltendorf/plotman/wiki/Docker-Configuration) for help setting it up.
+  ([#783](https://github.com/ericaltendorf/plotman/pull/783))
 
 ## [0.4.1] - 2021-06-11
 ### Fixed

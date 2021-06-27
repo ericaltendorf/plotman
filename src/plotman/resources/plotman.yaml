@@ -1,7 +1,7 @@
 # Default/example plotman.yaml configuration file
 
 # https://github.com/ericaltendorf/plotman/wiki/Configuration#versions
-version: [1]
+version: [2]
 
 logging:
         # One directory in which to store all plot job logs (the STDOUT/
@@ -150,15 +150,22 @@ scheduling:
 # See documentation at
 # https://github.com/Chia-Network/chia-blockchain/wiki/CLI-Commands-Reference#create
 plotting:
-        k: 32
-        e: False             # Use -e plotting option
-        n_threads: 2         # Threads per job
-        n_buckets: 128       # Number of buckets to split data into
-        job_buffer: 3389     # Per job memory
-        # If specified, pass through to the -f and -p options.  See CLI reference.
-        #   farmer_pk: ...
-        #   pool_pk: ...
-        # If true, Skips adding [final dir] / dst to harvester for farming. 
-        # Especially useful if you have harvesters that are running somewhere else
-        # and you are just plotting on the machine where plotman is running.
-        #   x: True
+        # Your public keys: farmer and pool - Required for madMAx, optional for chia with mnemonic.txt
+        # farmer_pk: ...
+        # pool_pk: ...
+
+        # If you enable Chia, plot in *parallel* with higher tmpdir_max_jobs and global_max_jobs
+        type: chia
+        chia:
+                # The stock plotter: https://github.com/Chia-Network/chia-blockchain
+                k: 32                # k-size of plot, leave at 32 most of the time
+                e: False             # Use -e plotting option
+                n_threads: 2         # Threads per job
+                n_buckets: 128       # Number of buckets to split data into
+                job_buffer: 3389     # Per job memory
+
+        # If you enable madMAx, plot in *sequence* with very low tmpdir_max_jobs and global_max_jobs
+        madmax:
+                # madMAx plotter: https://github.com/madMAx43v3r/chia-plotter
+                n_threads: 4          # Default is 4, crank up if you have many cores
+                n_buckets: 256        # Default is 256
