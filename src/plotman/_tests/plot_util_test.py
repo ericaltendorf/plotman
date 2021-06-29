@@ -45,7 +45,7 @@ def test_columns() -> None:
               [ 1 ],
               [ 2 ] ] )
 
-def test_list_k_plots(fs: pyfakefs.fake_filesystem.FakeFilesystem) -> None:
+def test_list_plots(fs: pyfakefs.fake_filesystem.FakeFilesystem) -> None:
     fs.create_file('/t/plot-k32-0.plot', st_size=108 * GB)
     fs.create_file('/t/plot-k32-1.plot', st_size=108 * GB)
     fs.create_file('/t/.plot-k32-2.plot', st_size=108 * GB)
@@ -53,7 +53,7 @@ def test_list_k_plots(fs: pyfakefs.fake_filesystem.FakeFilesystem) -> None:
     fs.create_file('/t/plot-k32-4.plot', st_size=100 * GB)
     fs.create_file('/t/plot-k32-5.plot', st_size=108 * GB)
 
-    assert (plot_util.list_k_plots('/t/') ==
+    assert (plot_util.list_plots('/t/') ==
             [ '/t/plot-k32-0.plot',
               '/t/plot-k32-1.plot',
               '/t/plot-k32-5.plot' ] )

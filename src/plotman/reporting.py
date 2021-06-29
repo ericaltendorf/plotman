@@ -216,7 +216,7 @@ def dst_dir_report(jobs: typing.List[job.Job], dstdirs: typing.List[str], width:
         eldest_ph = dir2oldphase.get(d, job.Phase(0, 0))
         phases = job.job_phases_for_dstdir(d, jobs)
 
-        dir_plots = plot_util.list_k_plots(d)
+        dir_plots = plot_util.list_plots(d)
         gb_free = int(plot_util.df_b(d) / plot_util.GB)
         n_plots = len(dir_plots)
         priority = archive.compute_priority(eldest_ph, gb_free, n_plots)
