@@ -53,10 +53,14 @@ def test_list_plots(fs: pyfakefs.fake_filesystem.FakeFilesystem) -> None:
     fs.create_file('/t/plot-k32-4.plot', st_size=100 * GB)
     fs.create_file('/t/plot-k32-5.plot', st_size=108 * GB)
 
+    fs.create_file('/t/plot-k33-6.plot', st_size=108 * GB)
+    fs.create_file('/t/plot-k33-7.plot', st_size=216 * GB)
+
     assert (plot_util.list_plots('/t/') ==
             [ '/t/plot-k32-0.plot',
               '/t/plot-k32-1.plot',
-              '/t/plot-k32-5.plot' ] )
+              '/t/plot-k32-5.plot',
+              '/t/plot-k33-7.plot' ] )
 
 
 def test_get_plotsize() -> None:
