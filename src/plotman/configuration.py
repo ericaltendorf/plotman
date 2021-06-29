@@ -233,6 +233,9 @@ class Archiving:
 
 @attr.frozen
 class TmpOverrides:
+    tmpdir_stagger_phase_major: Optional[int] = None
+    tmpdir_stagger_phase_minor: Optional[int] = None
+    tmpdir_stagger_phase_limit: Optional[int] = None
     tmpdir_max_jobs: Optional[int] = None
 
 @attr.frozen
@@ -269,7 +272,6 @@ class Directories:
     tmp: List[str]
     dst: Optional[List[str]] = None
     tmp2: Optional[str] = None
-    tmp_overrides: Optional[Dict[str, TmpOverrides]] = None
 
     def dst_is_tmp(self) -> bool:
         return self.dst is None and self.tmp2 is None
@@ -297,6 +299,7 @@ class Scheduling:
     tmpdir_stagger_phase_major: int
     tmpdir_stagger_phase_minor: int
     tmpdir_stagger_phase_limit: int = 1  # If not explicit, "tmpdir_stagger_phase_limit" will default to 1
+    tmp_overrides: Optional[Dict[str, TmpOverrides]] = None
 
 @attr.frozen
 class ChiaPlotterOptions:
