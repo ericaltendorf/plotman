@@ -2,6 +2,7 @@ import contextlib
 import importlib
 import os
 import stat
+import subprocess
 import tempfile
 import textwrap
 from typing import Dict, Generator, List, Mapping, Optional
@@ -14,6 +15,7 @@ import desert._make
 import marshmallow
 import marshmallow.fields
 import marshmallow.validate
+import packaging.version
 import pendulum
 import yaml
 
@@ -357,6 +359,22 @@ class PlotmanConfig:
 
     @contextlib.contextmanager
     def setup(self) -> Generator[None, None, None]:
+        if self.plotting.type == 'chia' and self.plotting.chia is not None:
+            if self.plotting.chia.pool_contract_address is not None:
+                completed_process = subprocess.run(
+                    args=['chia', 'version'],
+                    capture_output=True,
+                    check=True,
+                    encoding='utf-8',
+                )
+                version = packaging.version.Version(completed_process.stdout)
+                required_version = packaging.version.Version('1.2')
+                if version < required_version:
+                    raise Exception(
+                        f'Chia version {required_version} required for creating pool'
+                        f' plots but found: {version}'
+                    )
+
         prefix = f'plotman-pid_{os.getpid()}-'
 
         self.logging.setup()
