@@ -75,7 +75,7 @@ def status_report(jobs: typing.List[job.Job], width: int, height: typing.Optiona
         n_end_rows = n_rows - n_begin_rows
 
     tab = tt.Texttable()
-    headings = ['plot id', 'k', 'tmp', 'dst', 'wall', 'phase', 'tmp',
+    headings = ['plot id', 'plotter', 'k', 'tmp', 'dst', 'wall', 'phase', 'tmp',
             'pid', 'stat', 'mem', 'user', 'sys', 'io']
     if height:
         headings.insert(0, '#')
@@ -97,6 +97,7 @@ def status_report(jobs: typing.List[job.Job], width: int, height: typing.Optiona
             try:
                 with j.proc.oneshot():
                     row = [j.plot_id[:8], # Plot ID
+                        str(j.plotter), # chia or madmax
                         str(j.k), # k size
                         abbr_path(j.tmpdir, tmp_prefix), # Temp directory
                         abbr_path(j.dstdir, dst_prefix), # Destination directory
@@ -215,7 +216,7 @@ def dst_dir_report(jobs: typing.List[job.Job], dstdirs: typing.List[str], width:
         eldest_ph = dir2oldphase.get(d, job.Phase(0, 0))
         phases = job.job_phases_for_dstdir(d, jobs)
 
-        dir_plots = plot_util.list_k32_plots(d)
+        dir_plots = plot_util.list_plots(d)
         gb_free = int(plot_util.df_b(d) / plot_util.GB)
         n_plots = len(dir_plots)
         priority = archive.compute_priority(eldest_ph, gb_free, n_plots)

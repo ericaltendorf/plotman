@@ -64,10 +64,16 @@ class PlotmanArgParser:
         p_details = sp.add_parser('details', help='show details for job')
         self.add_idprefix_arg(p_details)
 
+        p_logs = sp.add_parser('logs', help='fetch the logs for job')
+
+        p_logs.add_argument('-f', '--follow', action='store_true', help='Follow log output')
+        self.add_idprefix_arg(p_logs)
+
         p_files = sp.add_parser('files', help='show temp files associated with job')
         self.add_idprefix_arg(p_files)
 
         p_kill = sp.add_parser('kill', help='kill job (and cleanup temp files)')
+        p_kill.add_argument('-f', '--force', action='store_true', default=False, help="Don't ask for confirmation before killing the plot job")
         self.add_idprefix_arg(p_kill)
 
         p_suspend = sp.add_parser('suspend', help='suspend job')
@@ -267,7 +273,7 @@ def main() -> None:
             #
             # Job control commands
             #
-            elif args.cmd in [ 'details', 'files', 'kill', 'suspend', 'resume' ]:
+            elif args.cmd in [ 'details', 'logs', 'files', 'kill', 'suspend', 'resume' ]:
                 print(args)
 
                 selected = []
@@ -290,6 +296,9 @@ def main() -> None:
                     if args.cmd == 'details':
                         print(job.status_str_long())
 
+                    elif args.cmd == 'logs':
+                        job.print_logs(args.follow)
+
                     elif args.cmd == 'files':
                         temp_files = job.get_temp_files()
                         for f in temp_files:
@@ -301,15 +310,24 @@ def main() -> None:
                         job.suspend()
 
                         temp_files = job.get_temp_files()
+                        
                         print('Will kill pid %d, plot id %s' % (job.proc.pid, job.plot_id))
                         print('Will delete %d temp files' % len(temp_files))
-                        conf = input('Are you sure? ("y" to confirm): ')
+
+                        if args.force:
+                            conf = 'y'
+                        else:
+                            conf = input('Are you sure? ("y" to confirm): ')
+
                         if (conf != 'y'):
-                            print('canceled.  If you wish to resume the job, do so manually.')
+                            print('Canceled.  If you wish to resume the job, do so manually.')
                         else:
                             print('killing...')
+
                             job.cancel()
+
                             print('cleaning up temp files...')
+
                             for f in temp_files:
                                 os.remove(f)
 

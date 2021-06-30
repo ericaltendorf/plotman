@@ -9,3 +9,6 @@ include .coveragerc
 recursive-include src *.py
 recursive-include src/plotman/_tests/resources *
 recursive-include src/plotman/resources *
+recursive-exclude docker *
+exclude .dockerignore
+exclude build-docker-plotman.sh

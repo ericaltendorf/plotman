@@ -6,7 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
+### Fixed
+- `plotman kill` doesn't leave any temporary files behind anymore.
+  ([#801](https://github.com/ericaltendorf/plotman/pull/801))
 ### Added
+- tmp directory overrides moved to `scheduling:` `tmp_overrides:`.
+  ([#758](https://github.com/ericaltendorf/plotman/pull/758))
+- Per tmp directory phase limit control added to `scheduling:` `tmp_overrides:`.
+  ([#758](https://github.com/ericaltendorf/plotman/pull/758))
 - `plotman export` command to output summaries from plot logs in `.csv` format.
   ([#557](https://github.com/ericaltendorf/plotman/pull/557))
 - `--json` option for `plotman status`.
@@ -15,6 +22,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([#643](https://github.com/ericaltendorf/plotman/pull/643))
 - `plotman prometheus` command to output status for consumption by [Prometheus](https://prometheus.io/).
   ([#430](https://github.com/ericaltendorf/plotman/pull/430))
+- `plotman logs` command to print and tail plot logs by their plot ID.
+  ([#509](https://github.com/ericaltendorf/plotman/pull/509))
+- Support the [madMAx plotter](https://github.com/madMAx43v3r/chia-plotter).
+  See the [configuration wiki page](https://github.com/ericaltendorf/plotman/wiki/Configuration#2-v05) for help setting it up.
+  ([#797](https://github.com/ericaltendorf/plotman/pull/797))
+- Added argument `-f`/`--force` to `plotman kill` to skip confirmation before killing the job.
+  ([#801](https://github.com/ericaltendorf/plotman/pull/801))
+- Docker container support.
+  See the [docker configuration wiki page](https://github.com/ericaltendorf/plotman/wiki/Docker-Configuration) for help setting it up.
+  ([#783](https://github.com/ericaltendorf/plotman/pull/783))
+- Plot sizes other than k32 are handled.
+  ([#803](https://github.com/ericaltendorf/plotman/pull/803))
 - `path_suffix` option for rsync and rsyncd archive targets.
   Allows adding suffixes to the destination path such as to separate original vs. pool plots.
   ([#800](https://github.com/ericaltendorf/plotman/pull/800))
