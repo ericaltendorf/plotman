@@ -113,7 +113,8 @@ def status_report(jobs: typing.List[job.Job], width: int, height: typing.Optiona
                         ]
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 # In case the job has disappeared
-                row = [j.plot_id[:8]] + (['--'] * 12)
+                row = ['--' for _ in headings]
+                row[0] = j.plot_id[:8]
 
             if height:
                 row.insert(0, '%3d' % i)
