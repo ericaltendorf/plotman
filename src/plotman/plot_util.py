@@ -14,9 +14,6 @@ def df_b(d: str) -> int:
     usage = shutil.disk_usage(d)
     return usage.free
 
-def get_k32_plotsize() -> int:
-    return get_plotsize(32)
-
 def get_plotsize(k: int) -> int:
     return (int)(_get_plotsize_scaler(k) * k * pow(2, k))
 
@@ -54,18 +51,20 @@ def split_path_prefix(items: typing.List[str]) -> typing.Tuple[str, typing.List[
         remainders = [ os.path.relpath(i, prefix) for i in items ]
         return (prefix, remainders)
 
-def list_k32_plots(d: str) -> typing.List[str]:
-    'List completed k32 plots in a directory (not recursive)'
+def list_plots(d: str) -> typing.List[str]:
+    'List completed plots in a directory (not recursive)'
     plots = []
     for plot in os.listdir(d):
-        if re.match(r'^plot-k32-.*plot$', plot):
+        matches = re.search(r"^plot-k(\d*)-.*plot$", plot)
+        if matches is not None:
+            grps = matches.groups()
+            plot_k = int(grps[0])
             plot = os.path.join(d, plot)
             try:
-                if os.stat(plot).st_size > (0.95 * get_k32_plotsize()):
+                if os.stat(plot).st_size > (0.95 * get_plotsize(plot_k)):
                     plots.append(plot)
             except FileNotFoundError:
                 continue
-
     return plots
 
 def column_wrap(

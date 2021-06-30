@@ -32,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Docker container support.
   See the [docker configuration wiki page](https://github.com/ericaltendorf/plotman/wiki/Docker-Configuration) for help setting it up.
   ([#783](https://github.com/ericaltendorf/plotman/pull/783))
+- Plot sizes other than k32 are handled.
+  ([#803](https://github.com/ericaltendorf/plotman/pull/803))
 
 ## [0.4.1] - 2021-06-11
 ### Fixed
