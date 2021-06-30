@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `plotman kill` doesn't leave any temporary files behind anymore.
   ([#801](https://github.com/ericaltendorf/plotman/pull/801))
 ### Added
+- tmp directory overrides moved to `scheduling:` `tmp_overrides:`.
+  ([#758](https://github.com/ericaltendorf/plotman/pull/758))
+- Per tmp directory phase limit control added to `scheduling:` `tmp_overrides:`.
+  ([#758](https://github.com/ericaltendorf/plotman/pull/758))
 - `plotman export` command to output summaries from plot logs in `.csv` format.
   ([#557](https://github.com/ericaltendorf/plotman/pull/557))
 - `--json` option for `plotman status`.
