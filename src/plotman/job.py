@@ -333,7 +333,7 @@ class Job:
                             self.plotter = 'chia'
                             found_id = True
                         else: 
-                            m = re.match("^Plot Name: plot-k(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\w+)$", line)
+                            m = re.match(r"^Plot Name: plot-k(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\w+)$", line)
                             if m: # MADMAX
                                 self.plot_id = m.group(7)
                                 self.plotter = 'madmax'
