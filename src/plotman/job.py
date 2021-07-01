@@ -19,7 +19,7 @@ import click
 import pendulum
 import psutil
 
-from plotman import configuration, chia, madmax
+from plotman import chia, madmax
 
 
 def job_phases_for_tmpdir(d: str, all_jobs: typing.List["Job"]) -> typing.List["Phase"]:
@@ -378,30 +378,41 @@ class Job:
         with open(self.logfile, 'r') as f:
             with contextlib.suppress(UnicodeDecodeError):
                 for line in f:
-                    if configuration.Plotting.type == "madmax":
-                        # MADMAX: "[P1]" or "[P2]" or "[P3]" or "[P4]"
+                    if self.plotter == "madmax":
+
+                        # MADMAX reports after completion of phases so increment the reported subphases
+                        # and assume that phase 1 has already started
+
+                        # MADMAX: "[P1]" or "[P2]" or "[P4]"
                         m = re.match(r'^\[P(\d)\].*', line)
                         if m:
                             phase = int(m.group(1))
-                            phase_subphases[phase] = 0
+                            phase_subphases[phase] = 1
 
-                        # MADMAX: Phase 1: "[P1] Table 2"
-                        m = re.match(r'^\[P1\] Table (\d).*', line)
+                        # MADMAX: "[P1] or [P2] Table 7"
+                        m = re.match(r'^\[P(\d)\] Table (\d).*', line)
                         if m:
-                            phase_subphases[1] = max(phase_subphases[1], int(m.group(1)))
+                            phase = int(m.group(1))
+                            if phase == 1:
+                                phase_subphases[1] = max(phase_subphases[1], (int(m.group(2))+1))
 
-                        # MADMAX: Phase 2: "[P2] Table 2"
-                        m = re.match(r'^\[P2\] Table (\d).*', line)
-                        if m:
-                            phase_subphases[2] = max(phase_subphases[2], 7 - int(m.group(1)))
+                            elif phase == 2:
+                                if line.find('rewrite') > 0:
+                                    phase_subphases[2] = max(phase_subphases[2], (9 - int(m.group(2))))
+                                else:
+                                    phase_subphases[2] = max(phase_subphases[2], (8 - int(m.group(2))))
 
                         # MADMAX: Phase 3: "[P3-1] Table 4"
-                        m = re.match(r'^\[P3\-\d\] Table (\d).*', line)
+                        m = re.match(r'^\[P3\-(\d)\] Table (\d).*', line)
                         if m:
                             if 3 in phase_subphases:
-                                phase_subphases[3] = max(phase_subphases[3], int(m.group(1)))
-                            else:
-                                phase_subphases[3] = int(m.group(1))
+                                if int(m.group(1)) == 2:
+                                    phase_subphases[3] = max(phase_subphases[3], int(m.group(2)))
+                                else:
+                                    phase_subphases[3] = max(phase_subphases[3], int(m.group(2))-1)
+                            else: 
+                                phase_subphases[3] = 1
+
                     else:                    
                         # CHIA: "Starting phase 1/4: Forward Propagation into tmp files... Sat Oct 31 11:27:04 2020"
                         m = re.match(r'^Starting phase (\d).*', line)
