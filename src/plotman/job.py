@@ -24,11 +24,11 @@ from plotman import chia, madmax
 
 def job_phases_for_tmpdir(d: str, all_jobs: typing.List["Job"]) -> typing.List["Phase"]:
     '''Return phase 2-tuples for jobs running on tmpdir d'''
-    return sorted([j.progress() for j in all_jobs if j.tmpdir == d])
+    return sorted([j.progress() for j in all_jobs if os.path.normpath(j.tmpdir) == os.path.normpath(d)])
 
 def job_phases_for_dstdir(d: str, all_jobs: typing.List["Job"]) -> typing.List["Phase"]:
     '''Return phase 2-tuples for jobs outputting to dstdir d'''
-    return sorted([j.progress() for j in all_jobs if j.dstdir == d])
+    return sorted([j.progress() for j in all_jobs if os.path.normpath(j.dstdir) == os.path.normpath(d)])
 
 def is_plotting_cmdline(cmdline: typing.List[str]) -> bool:
     if cmdline and 'python' in cmdline[0].lower():  # Stock Chia plotter
