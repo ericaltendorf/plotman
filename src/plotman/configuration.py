@@ -71,26 +71,35 @@ def get_validated_configs(config_text: str, config_path: str, preset_target_defi
             f"Config file at: '{config_path}' is malformed"
         ) from e
 
-    if loaded.plotting.type == "chia" and loaded.plotting.chia is None:
-        raise ConfigurationException(
-            "chia selected as plotter but plotting: chia: was not specified in the config",
-        )
+    if loaded.plotting.type == "chia":
+        if loaded.plotting.chia is None:
+            raise ConfigurationException(
+                "chia selected as plotter but plotting: chia: was not specified in the config",
+            )
+
+        if loaded.plotting.pool_pk is not None and loaded.plotting.pool_contract_address is not None:
+            raise ConfigurationException(
+                "Chia Network plotter accepts up to one of plotting: pool_pk: and pool_contract_address: but both are specified",
+            )
     elif loaded.plotting.type == "madmax":
         if loaded.plotting.madmax is None:
             raise ConfigurationException(
-                "madmax selected as plotter but plotting: madmax: was not specified in the config",
+                "madMAx selected as plotter but plotting: madmax: was not specified in the config",
             )
 
         if loaded.plotting.farmer_pk is None:
             raise ConfigurationException(
-                "madmax selected as plotter but no plotting: farmer_pk: was specified in the config",
+                "madMAx selected as plotter but no plotting: farmer_pk: was specified in the config",
             )
 
-        if loaded.plotting.pool_pk is None:
+        if loaded.plotting.pool_pk is None and loaded.plotting.pool_contract_address is None:
             raise ConfigurationException(
-                "madmax selected as plotter but no plotting: pool_pk: was specified in the config",
+                "madMAx plotter requires one of plotting: pool_pk: or pool_contract_address: to be specified but neither is",
             )
-
+        elif loaded.plotting.pool_pk is not None and loaded.plotting.pool_contract_address is not None:
+            raise ConfigurationException(
+                "madMAx plotter accepts only one of plotting: pool_pk: and pool_contract_address: but both are specified",
+            )
 
     if loaded.archiving is not None:
         preset_target_objects = yaml.safe_load(preset_target_definitions_text)
@@ -309,7 +318,6 @@ class ChiaPlotterOptions:
     e: Optional[bool] = False
     job_buffer: Optional[int] = 3389
     x: bool = False
-    pool_contract_address: Optional[str] = None
 
 @attr.frozen
 class MadmaxPlotterOptions:
@@ -320,6 +328,7 @@ class MadmaxPlotterOptions:
 class Plotting:
     farmer_pk: Optional[str] = None
     pool_pk: Optional[str] = None
+    pool_contract_address: Optional[str] = None
     type: str = attr.ib(
         default="chia",
         metadata={
@@ -359,8 +368,8 @@ class PlotmanConfig:
 
     @contextlib.contextmanager
     def setup(self) -> Generator[None, None, None]:
-        if self.plotting.type == 'chia' and self.plotting.chia is not None:
-            if self.plotting.chia.pool_contract_address is not None:
+        if self.plotting.type == 'chia':
+            if self.plotting.pool_contract_address is not None:
                 completed_process = subprocess.run(
                     args=['chia', 'version'],
                     capture_output=True,
@@ -373,6 +382,19 @@ class PlotmanConfig:
                     raise Exception(
                         f'Chia version {required_version} required for creating pool'
                         f' plots but found: {version}'
+                    )
+        elif self.plotting.type == 'madmax':
+            if self.plotting.pool_contract_address is not None:
+                completed_process = subprocess.run(
+                    args=['chia_plot', '--help'],
+                    capture_output=True,
+                    check=True,
+                    encoding='utf-8',
+                )
+                if '--contract' not in completed_process.stdout:
+                    raise Exception(
+                        f'found madMAx version does not support the `--contract`'
+                        f' option for pools.'
                     )
 
         prefix = f'plotman-pid_{os.getpid()}-'
