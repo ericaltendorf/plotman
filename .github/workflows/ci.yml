@@ -193,18 +193,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os:
-              name: Linux
-              runs-on: ubuntu-latest
-            python:
-              name: CPython 3.8
-              action: 3.8
-            task:
-              name: Coverage
-              tox: check-coverage
-              coverage: false
-              download_coverage: true
+        os:
+          - name: Linux
+            runs-on: ubuntu-latest
+        python:
+          - name: CPython 3.8
+            action: 3.8
+        taks:
+          - name: Coverage
+            tox: check-coverage
+            coverage: true
+          - name: Format
+            tox: check-format
 
     env:
       # Should match name above
@@ -224,7 +224,7 @@ jobs:
         path: dist/
 
     - name: Download Coverage
-      if: matrix.task.download_coverage
+      if: matrix.task.coverage
       uses: actions/download-artifact@v2
       with:
         name: coverage
@@ -259,14 +259,14 @@ jobs:
         tox --skip-pkg-install -- --compare-branch="${BASE_REF}"
 
     - name: Coverage Processing
-      if: always()
+      if: always() && matrix.task.coverage
       run: |
         mkdir all_coverage_report
         cp .coverage "all_coverage_report/.coverage.all"
         cp coverage.xml "all_coverage_report/coverage.all.xml"
 
     - name: Upload Coverage
-      if: always()
+      if: always() && matrix.task.coverage
       uses: actions/upload-artifact@v2
       with:
         name: coverage
