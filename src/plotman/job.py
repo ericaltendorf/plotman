@@ -397,7 +397,7 @@ class Job:
                                 phase_subphases[1] = max(phase_subphases[1], (int(m.group(2))+1))
 
                             elif phase == 2:
-                                if line.find('rewrite') > 0:
+                                if 'rewrite' in line:
                                     phase_subphases[2] = max(phase_subphases[2], (9 - int(m.group(2))))
                                 else:
                                     phase_subphases[2] = max(phase_subphases[2], (8 - int(m.group(2))))
