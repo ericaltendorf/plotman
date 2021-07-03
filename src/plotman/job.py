@@ -378,51 +378,63 @@ class Job:
         with open(self.logfile, 'r') as f:
             with contextlib.suppress(UnicodeDecodeError):
                 for line in f:
-                    # CHIA: "Starting phase 1/4: Forward Propagation into tmp files... Sat Oct 31 11:27:04 2020"
-                    m = re.match(r'^Starting phase (\d).*', line)
-                    if m:
-                        phase = int(m.group(1))
-                        phase_subphases[phase] = 0
-                    
-                    # MADMAX: "[P1]" or "[P2]" or "[P3]" or "[P4]"
-                    m = re.match(r'^\[P(\d)\].*', line)
-                    if m:
-                        phase = int(m.group(1))
-                        phase_subphases[phase] = 0
+                    if self.plotter == "madmax":
 
-                    # CHIA: Phase 1: "Computing table 2"
-                    m = re.match(r'^Computing table (\d).*', line)
-                    if m:
-                        phase_subphases[1] = max(phase_subphases[1], int(m.group(1)))
-                    
-                    # MADMAX: Phase 1: "[P1] Table 2"
-                    m = re.match(r'^\[P1\] Table (\d).*', line)
-                    if m:
-                        phase_subphases[1] = max(phase_subphases[1], int(m.group(1)))
+                        # MADMAX reports after completion of phases so increment the reported subphases
+                        # and assume that phase 1 has already started
 
-                    # CHIA: Phase 2: "Backpropagating on table 2"
-                    m = re.match(r'^Backpropagating on table (\d).*', line)
-                    if m:
-                        phase_subphases[2] = max(phase_subphases[2], 7 - int(m.group(1)))
+                        # MADMAX: "[P1]" or "[P2]" or "[P4]"
+                        m = re.match(r'^\[P(\d)\].*', line)
+                        if m:
+                            phase = int(m.group(1))
+                            phase_subphases[phase] = 1
 
-                    # MADMAX: Phase 2: "[P2] Table 2"
-                    m = re.match(r'^\[P2\] Table (\d).*', line)
-                    if m:
-                        phase_subphases[2] = max(phase_subphases[2], 7 - int(m.group(1)))
+                        # MADMAX: "[P1] or [P2] Table 7"
+                        m = re.match(r'^\[P(\d)\] Table (\d).*', line)
+                        if m:
+                            phase = int(m.group(1))
+                            if phase == 1:
+                                phase_subphases[1] = max(phase_subphases[1], (int(m.group(2))+1))
 
-                    # CHIA: Phase 3: "Compressing tables 4 and 5"
-                    m = re.match(r'^Compressing tables (\d) and (\d).*', line)
-                    if m:
-                        phase_subphases[3] = max(phase_subphases[3], int(m.group(1)))
-                    
-                    # MADMAX: Phase 3: "[P3-1] Table 4"
-                    m = re.match(r'^\[P3\-\d\] Table (\d).*', line)
-                    if m:
-                        if 3 in phase_subphases:
+                            elif phase == 2:
+                                if 'rewrite' in line:
+                                    phase_subphases[2] = max(phase_subphases[2], (9 - int(m.group(2))))
+                                else:
+                                    phase_subphases[2] = max(phase_subphases[2], (8 - int(m.group(2))))
+
+                        # MADMAX: Phase 3: "[P3-1] Table 4"
+                        m = re.match(r'^\[P3\-(\d)\] Table (\d).*', line)
+                        if m:
+                            if 3 in phase_subphases:
+                                if int(m.group(1)) == 2:
+                                    phase_subphases[3] = max(phase_subphases[3], int(m.group(2)))
+                                else:
+                                    phase_subphases[3] = max(phase_subphases[3], int(m.group(2))-1)
+                            else: 
+                                phase_subphases[3] = 1
+
+                    else:                    
+                        # CHIA: "Starting phase 1/4: Forward Propagation into tmp files... Sat Oct 31 11:27:04 2020"
+                        m = re.match(r'^Starting phase (\d).*', line)
+                        if m:
+                            phase = int(m.group(1))
+                            phase_subphases[phase] = 0
+                        
+                        # CHIA: Phase 1: "Computing table 2"
+                        m = re.match(r'^Computing table (\d).*', line)
+                        if m:
+                            phase_subphases[1] = max(phase_subphases[1], int(m.group(1)))
+                        
+                        # CHIA: Phase 2: "Backpropagating on table 2"
+                        m = re.match(r'^Backpropagating on table (\d).*', line)
+                        if m:
+                            phase_subphases[2] = max(phase_subphases[2], 7 - int(m.group(1)))
+
+                        # CHIA: Phase 3: "Compressing tables 4 and 5"
+                        m = re.match(r'^Compressing tables (\d) and (\d).*', line)
+                        if m:
                             phase_subphases[3] = max(phase_subphases[3], int(m.group(1)))
-                        else:
-                            phase_subphases[3] = int(m.group(1))
-
+                    
                     # TODO also collect timing info:
 
                     # "Time for phase 1 = 22796.7 seconds. CPU (98%) Tue Sep 29 17:57:19 2020"
