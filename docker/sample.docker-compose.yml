@@ -1,0 +1,19 @@
+version: "3"
+
+services:
+  chia_plotman:
+    restart: always
+    container_name: chia-plotman
+    image: ${DOCKER_IMAGE}
+    volumes:
+      - ${HOME}/.ssh:/home/chia/.ssh
+      - ${HOME}/.chia:/home/chia/.chia
+      - ${HOME}/.config:/home/chia/.config
+      - ${LOGS_DIR}:/data/chia/logs
+      - ${PLOTS_DIR}:/data/chia/plots
+      - ${PLOTS_TMP_DIR}:/data/chia/tmp
+      - /tmp:/tmp
+    logging:
+      options:
+        max-size: ${DOCKER_LOG_MAX_SIZE}
+        max-file: ${DOCKER_LOG_MAX_FILE}

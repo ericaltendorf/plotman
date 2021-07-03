@@ -107,10 +107,12 @@ jobs:
           - name: Test
             tox: test
             coverage: true
+          - name: Check hints
+            tox: check-hints
         include:
           - task:
-              name: Check
-              tox: check
+              name: Check manifest
+              tox: check-manifest
             os:
               name: Linux
               runs-on: ubuntu-latest
