@@ -15,7 +15,7 @@ import psutil
 # Plotman libraries
 from plotman import \
     archive  # for get_archdir_freebytes(). TODO: move to avoid import loop
-from plotman import job, plot_util
+from plotman import job, plot_util, hooks
 import plotman.configuration
 
 # Constants
@@ -92,6 +92,8 @@ def phases_permit_new_job(phases: typing.List[job.Phase], d: str, sched_cfg: plo
 
 def maybe_start_new_plot(dir_cfg: plotman.configuration.Directories, sched_cfg: plotman.configuration.Scheduling, plotting_cfg: plotman.configuration.Plotting, log_cfg: plotman.configuration.Logging) -> typing.Tuple[bool, str]:
     jobs = job.Job.get_running_jobs(log_cfg.plots)
+
+    hooks.try_run(jobs)
 
     wait_reason = None  # If we don't start a job this iteration, this says why.
 

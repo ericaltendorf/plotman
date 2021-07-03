@@ -1,0 +1,34 @@
+#!/bin/sh
+
+. ${PLOTMAN_HOOKS}/.lib.include
+
+[ "${PLOTMAN_TRIGGER}" = "PHASE" ] || exit 0
+
+logInfo "processing plot id ${PLOTMAN_PLOTID} (ph: ${PLOTMAN_PHASE})"
+
+### if jobs phase is below 3:6, do nothing
+[ x"${PLOTMAN_PHASE}" = x3:6 -o x"${PLOTMAN_PHASE}" = x3:7 ] || {
+    logInfo "plot not at phase 3:6/7, hook done"
+    exit 0
+}
+
+
+### get available space on DSTDIR in bytes, check result.
+### exit 1 if something went wrong
+AVAIL=$(df -B1 --output=avail ${PLOTMAN_DSTDIR} | grep -oE '[0-9]+')
+[ -n "${AVAIL}" -a $? -eq 0 ] || {
+    logError "something went wrong while checking available space at ${PLOTMAN_DSTDIR}, suspending job and exiting."
+    kill -STOP ${PLOTMAN_PID}
+    exit 1
+}
+
+
+### continue only if available space is less then plot size
+[ "${AVAIL}" -lt "${k32PLOTSIZE}" ] || {
+    logInfo "there is ${AVAIL} available space at ${PLOTMAN_DSTDIR}, which is > k32plot ${k32PLOTSIZE}. job can continue."
+    exit 0
+}
+
+logError "not enough available space at ${PLOTMAN_DSTDIR}. suspending job."
+kill -STOP ${PLOTMAN_PID}
+

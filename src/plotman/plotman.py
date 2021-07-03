@@ -15,7 +15,7 @@ import typing
 import pendulum
 
 # Plotman libraries
-from plotman import analyzer, archive, configuration, interactive, manager, plot_util, reporting, csv_exporter
+from plotman import analyzer, archive, configuration, interactive, manager, plot_util, reporting, csv_exporter, hooks
 from plotman import resources as plotman_resources
 from plotman.job import Job
 
@@ -330,6 +330,8 @@ def main() -> None:
 
                             for f in temp_files:
                                 os.remove(f)
+
+                            hooks.run(job, "KILL")
 
                     elif args.cmd == 'suspend':
                         print('Suspending ' + job.plot_id)

@@ -1,0 +1,23 @@
+#!/bin/sh
+
+log() {
+    local dd=$(date --iso-8601=seconds)
+    local logee="$(basename $0)$(printf "(%0.8s)" ${PLOTMAN_PLOTID})"
+    local severity="$1"
+    shift
+
+    printf "%s [%-10s] %s: %s\n" "${dd%+*}" "$logee" "$severity" "$*"
+}
+
+logInfo() {
+    log INFO $*
+}
+
+logError() {
+    log ERROR  $* >&2
+}
+
+### plot k32 size in bytes 101.5 * GiB === 108984795136 bytes
+k32PLOTSIZE=$((1015 *1024 *1024 *1024 /10))
+
+exec >>/tmp/plotman-hooks.log 2>&1

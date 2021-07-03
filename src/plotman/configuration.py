@@ -26,10 +26,10 @@ class ConfigurationException(Exception):
     """Raised when plotman.yaml configuration is missing or malformed."""
 
 
-def get_path() -> str:
-    """Return path to where plotman.yaml configuration file should exist."""
+def get_path(subject="plotman.yaml") -> str:
+    """Return location of configuration files (e.g. plotman.yaml)."""
     config_dir: str = appdirs.user_config_dir("plotman")
-    return config_dir + "/plotman.yaml"
+    return config_dir + "/" + subject
 
 
 def read_configuration_text(config_path: str) -> str:
