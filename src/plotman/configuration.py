@@ -81,6 +81,12 @@ def get_validated_configs(config_text: str, config_path: str, preset_target_defi
             raise ConfigurationException(
                 "Chia Network plotter accepts up to one of plotting: pool_pk: and pool_contract_address: but both are specified",
             )
+
+        executable_name = os.path.basename(loaded.plotting.chia.executable)
+        if executable_name != "chia":
+            raise ConfigurationException(
+                "plotting: chia: executable: must refer to an executable named chia"
+            )
     elif loaded.plotting.type == "madmax":
         if loaded.plotting.madmax is None:
             raise ConfigurationException(
@@ -99,6 +105,12 @@ def get_validated_configs(config_text: str, config_path: str, preset_target_defi
         elif loaded.plotting.pool_pk is not None and loaded.plotting.pool_contract_address is not None:
             raise ConfigurationException(
                 "madMAx plotter accepts only one of plotting: pool_pk: and pool_contract_address: but both are specified",
+            )
+
+        executable_name = os.path.basename(loaded.plotting.madmax.executable)
+        if executable_name != "chia":
+            raise ConfigurationException(
+                "plotting: madmax: executable: must refer to an executable named chia_plot"
             )
 
     if loaded.archiving is not None:
@@ -312,6 +324,7 @@ class Scheduling:
 
 @attr.frozen
 class ChiaPlotterOptions:
+    executable: str = "chia"
     n_threads: int = 2
     n_buckets: int = 128
     k: Optional[int] = 32
@@ -321,6 +334,7 @@ class ChiaPlotterOptions:
 
 @attr.frozen
 class MadmaxPlotterOptions:
+    executable: str = "chia_plot"
     n_threads: int = 4
     n_buckets: int = 256
 
@@ -371,7 +385,7 @@ class PlotmanConfig:
         if self.plotting.type == 'chia':
             if self.plotting.pool_contract_address is not None:
                 completed_process = subprocess.run(
-                    args=['chia', 'version'],
+                    args=[self.plotting.chia.executable, 'version'],
                     capture_output=True,
                     check=True,
                     encoding='utf-8',
@@ -386,7 +400,7 @@ class PlotmanConfig:
         elif self.plotting.type == 'madmax':
             if self.plotting.pool_contract_address is not None:
                 completed_process = subprocess.run(
-                    args=['chia_plot', '--help'],
+                    args=[self.plotting.madmax.executable, '--help'],
                     capture_output=True,
                     check=True,
                     encoding='utf-8',
