@@ -64,9 +64,11 @@ def prepare_env(job, hooks_path):
     environment['PLOTMAN_HOOKS'] = hooks_path
     environment['PLOTMAN_PLOTID'] = job.plot_id
     environment['PLOTMAN_PID'] = str(job.proc.pid)
-    environment['PLOTMAN_TMPDIR'] = job.tmpdir
-    environment['PLOTMAN_TMP2DIR'] = job.tmp2dir
-    environment['PLOTMAN_DSTDIR'] = job.dstdir
+    environment['PLOTMAN_TMPDIR'] = environment['PLOTMAN_TMP2DIR'] = environment['PLOTMAN_DSTDIR'] = job.tmpdir
+    if job.tmp2dir is not None and job.tmp2dir != '':
+        environment['PLOTMAN_TMP2DIR'] = job.tmp2dir
+    if job.dstdir is not None and job.dstdir != '':
+        environment['PLOTMAN_DSTDIR'] = job.dstdir
     environment['PLOTMAN_LOGFILE'] = job.logfile
     environment['PLOTMAN_STATUS'] = job.get_run_status()
     environment['PLOTMAN_PHASE'] = str(job.progress().major) + ':' + str(job.progress().minor)

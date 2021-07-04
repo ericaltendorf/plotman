@@ -17,7 +17,26 @@ logError() {
     log ERROR  $* >&2
 }
 
+sanityChecks() {
+    for p in PLOTID PID TMPDIR TMP2DIR DSTDIR LOGFILE STATUS PHASE; do
+        eval [ -n "\${PLOTMAN_$p}" ] || {
+            logError "PLOTMAN_$p variable missing or empty. Is $(basename $0) being started by Plotman?"
+            exit 1
+        }
+    done
+
+    export PLOTMAN_DSTDIR=${PLOTMAN_DSTDIR%/}
+    export PLOTMAN_TMPDIR=${PLOTMAN_TMPDIR%/}
+    export PLOTMAN_TMP2DIR=${PLOTMAN_TMP2DIR%/}
+}
+
 ### plot k32 size in bytes 101.5 * GiB === 108984795136 bytes
 k32PLOTSIZE=$((1015 *1024 *1024 *1024 /10))
 
+for incl in $(ls ${PLOTMAN_HOOKS}/.lib.include.* 2>/dev/null); do
+    . $incl
+done
+
 exec >>/tmp/plotman-hooks.log 2>&1
+
+sanityChecks
