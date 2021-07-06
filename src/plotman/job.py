@@ -39,7 +39,7 @@ def is_plotting_cmdline(cmdline: typing.List[str]) -> bool:
             and 'plots' == cmdline[1]
             and 'create' == cmdline[2]
         )
-    elif cmdline and 'chia_plot' == cmdline[0].lower():  # Madmax plotter
+    elif cmdline and 'chia_plot' == os.path.basename(cmdline[0].lower()):  # Madmax plotter
         return True
     return False
 
