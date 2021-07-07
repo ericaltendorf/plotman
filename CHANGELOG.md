@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 ### Fixed
+### Added
+
+## [0.5] - 2021-07-07
+### Fixed
 - `plotman kill` doesn't leave any temporary files behind anymore.
   ([#801](https://github.com/ericaltendorf/plotman/pull/801))
 ### Added
