@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [unreleased]
 ### Fixed
 ### Added
+- `path_suffix` option for rsync and rsyncd archive targets.
+  Allows adding suffixes to the destination path such as to separate original vs. pool plots.
+  ([#800](https://github.com/ericaltendorf/plotman/pull/800))
 
 ## [0.5] - 2021-07-07
 ### Fixed
@@ -38,9 +41,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([#783](https://github.com/ericaltendorf/plotman/pull/783))
 - Plot sizes other than k32 are handled.
   ([#803](https://github.com/ericaltendorf/plotman/pull/803))
-- `path_suffix` option for rsync and rsyncd archive targets.
-  Allows adding suffixes to the destination path such as to separate original vs. pool plots.
-  ([#800](https://github.com/ericaltendorf/plotman/pull/800))
 
 ## [0.4.1] - 2021-06-11
 ### Fixed
