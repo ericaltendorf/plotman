@@ -60,7 +60,7 @@ kStubMinusBits = 3;
 # https://github.com/Chia-Network/chiapos/blob/1.0.2/LICENSE
 # https://github.com/Chia-Network/chiapos/blob/1.0.2/src/util.hpp
 # start ported code
-def ByteAlign(num_bits):
+def ByteAlign(num_bits: float) -> float:
     return (num_bits + (8 - ((num_bits) % 8)) % 8)
 # end ported code
 
@@ -68,20 +68,20 @@ def ByteAlign(num_bits):
 # https://github.com/Chia-Network/chiapos/blob/1.0.2/LICENSE
 # https://github.com/Chia-Network/chiapos/blob/1.0.2/src/entry_sizes.hpp
 # start ported code
-def CalculateLinePointSize(k):
+def CalculateLinePointSize(k: int) -> float:
     return ByteAlign(2 * k) / 8
 
 # This is the full size of the deltas section in a park. However, it will not be fully filled
-def CalculateMaxDeltasSize(k, table_index):
+def CalculateMaxDeltasSize(k: int, table_index: int) -> float:
     if (table_index == 1):
         return ByteAlign((kEntriesPerPark - 1) * kMaxAverageDeltaTable1) / 8
         
     return ByteAlign((kEntriesPerPark - 1) * kMaxAverageDelta) / 8
     
-def CalculateStubsSize(k):
+def CalculateStubsSize(k: int) -> float:
     return ByteAlign((kEntriesPerPark - 1) * (k - kStubMinusBits)) / 8
     
-def CalculateParkSize(k, table_index):
+def CalculateParkSize(k: int, table_index: int) -> float:
     return CalculateLinePointSize(k) + CalculateStubsSize(k) + CalculateMaxDeltasSize(k, table_index);
     
 # end ported code

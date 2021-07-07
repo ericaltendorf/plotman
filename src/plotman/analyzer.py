@@ -2,19 +2,20 @@ import os
 import re
 import statistics
 import sys
+import typing
 
 import texttable as tt
 
 from plotman import plot_util
 
 
-def analyze(logfilenames, clipterminals, bytmp, bybitfield):
-    data = {}
+def analyze(logfilenames: typing.List[str], clipterminals: bool, bytmp: bool, bybitfield: bool) -> None:
+    data: typing.Dict[str, typing.Dict[str, typing.List[float]]] = {}
     for logfilename in logfilenames:
         with open(logfilename, 'r') as f:
             # Record of slicing and data associated with the slice
             sl = 'x'         # Slice key
-            phase_time = {}  # Map from phase index to time
+            phase_time: typing.Dict[str, float] = {}  # Map from phase index to time
             n_sorts = 0
             n_uniform = 0
             is_first_last = False
@@ -57,10 +58,16 @@ def analyze(logfilenames, clipterminals, bytmp, bybitfield):
                     else:
                         sl += '-bitfield'
 
-                # Phase timing.  Sample log line:
+                # CHIA: Phase timing.  Sample log line:
                 # Time for phase 1 = 22796.7 seconds. CPU (98%) Tue Sep 29 17:57:19 2020
                 for phase in ['1', '2', '3', '4']:
                     m = re.search(r'^Time for phase ' + phase + ' = (\d+.\d+) seconds..*', line)
+                    if m:
+                        phase_time[phase] = float(m.group(1))
+                
+                # MADMAX: Phase timing.  Sample log line: "Phase 2 took 2193.37 sec"
+                for phase in ['1', '2', '3', '4']:
+                    m = re.search(r'^Phase ' + phase + ' took (\d+.\d+) sec.*', line)
                     if m:
                         phase_time[phase] = float(m.group(1))
 
@@ -81,7 +88,7 @@ def analyze(logfilenames, clipterminals, bytmp, bybitfield):
                     else:
                         print ('Warning: unrecognized sort ' + sorter)
 
-                # Job completion.  Record total time in sliced data store.
+                # CHIA: Job completion.  Record total time in sliced data store.
                 # Sample log line:
                 # Total time = 49487.1 seconds. CPU (97.26%) Wed Sep 30 01:22:10 2020
                 m = re.search(r'^Total time = (\d+.\d+) seconds.*', line)
@@ -93,13 +100,22 @@ def analyze(logfilenames, clipterminals, bytmp, bybitfield):
                         for phase in ['1', '2', '3', '4']:
                             data.setdefault(sl, {}).setdefault('phase ' + phase, []).append(phase_time[phase])
                         data.setdefault(sl, {}).setdefault('%usort', []).append(100 * n_uniform // n_sorts)
+                
+                # MADMAX: Job completion.  Record total time in sliced data store.
+                # Sample log line: "Total plot creation time was 2530.76 sec"
+                m = re.search(r'^Total plot creation time was (\d+.\d+) sec.*', line)
+                if m:
+                    data.setdefault(sl, {}).setdefault('total time', []).append(float(m.group(1)))
+                    for phase in ['1', '2', '3', '4']:
+                        data.setdefault(sl, {}).setdefault('phase ' + phase, []).append(phase_time[phase])
+                    data.setdefault(sl, {}).setdefault('%usort', []).append(0)  # Not available for MADMAX
 
     # Prepare report
     tab = tt.Texttable()
     all_measures = ['%usort', 'phase 1', 'phase 2', 'phase 3', 'phase 4', 'total time']
     headings = ['Slice', 'n'] + all_measures
     tab.header(headings)
-
+    
     for sl in data.keys():
         row = [sl]
 
