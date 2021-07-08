@@ -40,7 +40,7 @@ def is_plotting_cmdline(cmdline: typing.List[str]) -> bool:
             and 'plots' == cmdline[1]
             and 'create' == cmdline[2]
         )
-    elif cmdline and 'chia_plot' == cmdline[0].lower():  # Madmax plotter
+    elif cmdline and 'chia_plot' == os.path.basename(cmdline[0].lower()):  # Madmax plotter
         # TODO: use the configured executable
         return True
     return False
@@ -342,15 +342,17 @@ class Job:
                             if m: # MADMAX
                                 self.plot_id = m.group(7)
                                 self.plotter = 'madmax'
+                                self.start_time = pendulum.from_timestamp(os.path.getctime(self.logfile))
                                 found_id = True
+                                found_log = True
+                                break
+
                         m = re.match(r'^Starting phase 1/4:.*\.\.\. (.*)', line)
                         if m: # CHIA
                             # Mon Nov  2 08:39:53 2020
                             self.start_time = parse_chia_plot_time(m.group(1))
                             found_log = True
                             break  # Stop reading lines in file
-                        else: # MADMAX
-                            self.start_time = pendulum.from_timestamp(os.path.getctime(self.logfile))
 
             if found_id and found_log:
                 break  # Stop trying

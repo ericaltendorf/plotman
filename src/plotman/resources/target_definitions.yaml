@@ -4,6 +4,7 @@ target_definitions:
       command: rsync
       options: --preallocate --remove-source-files --skip-compress plot --whole-file
       site_root: null
+      path_suffix: ""
 
     # The disk space script must return a line for each directory
     # to consider archiving to with the following form.
@@ -24,7 +25,8 @@ target_definitions:
     transfer_script: |
       #!/bin/bash
       set -evx
-      "${command}" ${options} "${source}" "${destination}"
+      full_destination=$(realpath --canonicalize-missing "${destination}/${path_suffix}")
+      "${command}" ${options} "${source}" "${full_destination}/"
     transfer_process_name: "{command}"
     transfer_process_argument_prefix: "{site_root}"
   rsyncd:
@@ -38,6 +40,7 @@ target_definitions:
       host: null
       site_root: null
       site: null
+      path_suffix: ""
     disk_space_script: |
       #!/bin/bash
       set -evx
@@ -49,9 +52,10 @@ target_definitions:
       #!/bin/bash
       set -evx
       echo Launching transfer activity
-      relative_path=$(realpath --canonicalize-missing --relative-to="${site_root}" "${destination}")
+      full_destination=$(realpath --canonicalize-missing "${destination}/${path_suffix}")
+      relative_path=$(realpath --canonicalize-missing --relative-to="${site_root}" "${full_destination}")
       url_root="rsync://${user}@${host}:${rsync_port}/${site}"
-      "${command}" ${options} "${source}" "${url_root}/${relative_path}"
+      "${command}" ${options} "${source}" "${url_root}/${relative_path}/"
     transfer_process_name: "{command}"
     transfer_process_argument_prefix: "rsync://{user}@{host}:{rsync_port}/{site}"
 #  external_script:
