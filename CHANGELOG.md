@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [unreleased]
+### Fixed
+### Added
+- `path_suffix` option for rsync and rsyncd archive targets.
+  Allows adding suffixes to the destination path such as to separate original vs. pool plots.
+  ([#800](https://github.com/ericaltendorf/plotman/pull/800))
+
 ## [0.5] - 2021-07-07
 ### Fixed
 - `plotman kill` doesn't leave any temporary files behind anymore.
