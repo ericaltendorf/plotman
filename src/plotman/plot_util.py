@@ -26,7 +26,7 @@ def is_valid_plot_dst(d, sched_cfg, plotting_cfg, all_jobs):
         #       once phase 4 is complete a new plot will eventually kick off
         jobs_to_dstdir = plotman.job.job_phases_for_dstdir(d, all_jobs)
         space -= len(jobs_to_dstdir) * get_plotsize(plotting_cfg.chia.k)
-        return space > 1.2 * get_plotsize(plotting_cfg.chia.k)
+        return space > get_plotsize(plotting_cfg.chia.k)
     return True
 
 def human_format(num: float, precision: int, powerOfTwo: bool = False) -> str:
