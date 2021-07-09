@@ -237,7 +237,8 @@ def archive(dir_cfg: configuration.Directories, arch_cfg: configuration.Archivin
     # 10MB is big enough to outsize filesystem block sizes hopefully, but small
     # enough to make this a pretty tight corner for people to get stuck in.
     free_space_margin = 10_000_000
-    available = [(d, space) for (d, space) in archdir_freebytes.items() if plot_util.enough_space_for_k32(space)]
+    available = [(d, space) for (d, space) in archdir_freebytes.items() if
+                 space > (chosen_plot_size + free_space_margin)]
     if len(available) > 0:
         index = min(arch_cfg.index, len(available) - 1)
         (archdir, freespace) = sorted(available)[index]
