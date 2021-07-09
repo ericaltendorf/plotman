@@ -150,7 +150,10 @@ scheduling:
 # See documentation at
 # https://github.com/Chia-Network/chia-blockchain/wiki/CLI-Commands-Reference#create
 plotting:
-        # Your public keys: farmer and pool - Required for madMAx, optional for chia with mnemonic.txt
+        # Your public keys.  Be sure to use the pool contract address for
+        # portable pool plots.  The pool public key is only for original
+        # non-portable plots that can not be used with the official pooling
+        # protocol.
         # farmer_pk: ...
         # pool_pk: ...
         # pool_contract_address: ...
