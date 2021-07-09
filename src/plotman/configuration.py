@@ -309,6 +309,7 @@ class Scheduling:
     tmpdir_stagger_phase_minor: int
     tmpdir_stagger_phase_limit: int = 1  # If not explicit, "tmpdir_stagger_phase_limit" will default to 1
     tmp_overrides: Optional[Dict[str, TmpOverrides]] = None
+    stop_when_dst_full: bool = False
 
 @attr.frozen
 class ChiaPlotterOptions:
