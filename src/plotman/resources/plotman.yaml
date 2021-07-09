@@ -120,7 +120,7 @@ scheduling:
 
         # Stop initiating new plots when a dst is full, default to False since
         # archiving job should move other plots before plotting is completed
-        stop_when_dst_full: True
+        stop_when_dst_full: False
 
         # Optional: Allows the overriding of some scheduling characteristics of the
         # tmp directories specified here.
