@@ -17,6 +17,7 @@ def sched_cfg() -> configuration.Scheduling:
         tmpdir_stagger_phase_minor=0,
         tmpdir_max_jobs=3,
         tmp_overrides={"/mnt/tmp/04": configuration.TmpOverrides(tmpdir_max_jobs=4)}
+        stop_when_dst_full=False
     )
 
 @pytest.fixture
