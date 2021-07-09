@@ -17,10 +17,7 @@ def df_b(d: str) -> int:
 def get_plotsize(k: int) -> int:
     return (int)(_get_plotsize_scaler(k) * k * pow(2, k))
 
-def get_k32_plotsize():
-    return 108 * GB
-
-def is_valid_plot_dst(d, sched_cfg, all_jobs):
+def is_valid_plot_dst(d, sched_cfg, plotting_cfg, all_jobs):
     if sched_cfg.stop_when_dst_full:
         space = df_b(d)
         # Subtract space for current jobs which will be moved to the dir
@@ -28,13 +25,9 @@ def is_valid_plot_dst(d, sched_cfg, all_jobs):
         #       job is in phase 4 since the plot is partially moved to dst,
         #       once phase 4 is complete a new plot will eventually kick off
         jobs_to_dstdir = plotman.job.job_phases_for_dstdir(d, all_jobs)
-        space -= len(jobs_to_dstdir) * get_k32_plotsize()
-        return enough_space_for_k32(space)
+        space -= len(jobs_to_dstdir) * get_plotsize(plotting_cfg.chia.k)
+        return space > 1.2 * get_plotsize(plotting_cfg.chia.k)
     return True
-
-def enough_space_for_k32(b):
-    'Determine if there is enough space for a k32 given a number of free bytes'
-    return b > 1.2 * get_k32_plotsize()
 
 def human_format(num: float, precision: int, powerOfTwo: bool = False) -> str:
     divisor = 1024 if powerOfTwo else 1000
