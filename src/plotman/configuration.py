@@ -383,6 +383,12 @@ class PlotmanConfig:
     @contextlib.contextmanager
     def setup(self) -> Generator[None, None, None]:
         if self.plotting.type == 'chia':
+            if self.plotting.chia is None:
+                message = (
+                    "internal plotman error, please report the full traceback and your"
+                    + " full configuration file"
+                )
+                raise Exception(message)
             if self.plotting.pool_contract_address is not None:
                 completed_process = subprocess.run(
                     args=[self.plotting.chia.executable, 'version'],
@@ -398,6 +404,13 @@ class PlotmanConfig:
                         f' plots but found: {version}'
                     )
         elif self.plotting.type == 'madmax':
+            if self.plotting.madmax is None:
+                message = (
+                    "internal plotman error, please report the full traceback and your"
+                    + " full configuration file"
+                )
+                raise Exception(message)
+
             if self.plotting.pool_contract_address is not None:
                 completed_process = subprocess.run(
                     args=[self.plotting.madmax.executable, '--help'],
