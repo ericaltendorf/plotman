@@ -1,6 +1,8 @@
 import codecs
+import collections
 import functools
 import pathlib
+import re
 import typing
 
 import attr
@@ -20,7 +22,7 @@ class LineDecoder:
     )
     buffer: str = ""
 
-    def update(self, chunk: bytes, final=False) -> typing.List[str]:
+    def update(self, chunk: bytes, final: bool = False) -> typing.List[str]:
         self.buffer += self.decoder.decode(input=chunk, final=final)
 
         if final:
@@ -76,6 +78,25 @@ class SpecificInfo(typing_extensions.Protocol):
 
 
 # check_specific_info_protocol = ProtocolChecker[SpecificInfo]()
+
+
+class LineHandler(typing_extensions.Protocol):
+    def __call__(self, match: typing.Match[str], info: SpecificInfo) -> typing.Optional[SpecificInfo]:
+        ...
+
+
+@attr.mutable
+class RegexLineHandlers:
+    mapping: typing.Dict[typing.Pattern[str], typing.List[LineHandler]] = attr.ib(
+        factory=lambda: collections.defaultdict(list),
+    )
+
+    def register(self, expression: str) -> typing.Callable[[LineHandler], LineHandler]:
+        return functools.partial(self._decorator, expression=expression)
+
+    def _decorator(self, handler: LineHandler, expression: str) -> LineHandler:
+        self.mapping[re.compile(expression)].append(handler)
+        return handler
 
 
 class Parser(typing_extensions.Protocol):
