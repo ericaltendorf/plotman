@@ -73,6 +73,8 @@ def get_validated_configs(config_text: str, config_path: str, preset_target_defi
 
     if loaded.plotting.type == "chia":
         if loaded.plotting.chia is None:
+            # TODO: fix all the `TODO: use the configured executable` so this is not
+            #       needed.
             raise ConfigurationException(
                 "chia selected as plotter but plotting: chia: was not specified in the config",
             )
@@ -109,6 +111,8 @@ def get_validated_configs(config_text: str, config_path: str, preset_target_defi
 
         executable_name = os.path.basename(loaded.plotting.madmax.executable)
         if executable_name != "chia_plot":
+            # TODO: fix all the `TODO: use the configured executable` so this is not
+            #       needed.
             raise ConfigurationException(
                 "plotting: madmax: executable: must refer to an executable named chia_plot"
             )
