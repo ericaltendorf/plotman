@@ -35,11 +35,13 @@ def is_plotting_cmdline(cmdline: typing.List[str]) -> bool:
         cmdline = cmdline[1:]
         return (
             len(cmdline) >= 3
+            # TODO: use the configured executable
             and 'chia' in cmdline[0]
             and 'plots' == cmdline[1]
             and 'create' == cmdline[2]
         )
     elif cmdline and 'chia_plot' == os.path.basename(cmdline[0].lower()):  # Madmax plotter
+        # TODO: use the configured executable
         return True
     return False
 
@@ -57,6 +59,7 @@ def parse_chia_plots_create_command_line(
     if 'python' in command_line[0].lower():  # Stock Chia plotter
         command_line = command_line[1:]
         assert len(command_line) >= 3
+        # TODO: use the configured executable
         assert 'chia' in command_line[0]
         assert 'plots' == command_line[1]
         assert 'create' == command_line[2]
@@ -66,6 +69,7 @@ def parse_chia_plots_create_command_line(
         #       copied.
         command = chia.commands.latest_command()
     elif 'chia_plot' in command_line[0].lower():  # Madmax plotter
+        # TODO: use the configured executable
         command_line = command_line[1:]
         all_command_arguments = command_line[2:]
         command = madmax._cli_c8121b9
@@ -268,6 +272,7 @@ class Job:
         #     'nobitfield': False,
         #     'exclude_final_dir': False,
         # }
+        # TODO: use the configured executable
         if proc.name().startswith("chia_plot"): # MADMAX
             self.k = 32
             self.r = self.args['threads']  # type: ignore[assignment]

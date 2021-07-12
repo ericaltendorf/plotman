@@ -144,7 +144,8 @@ def maybe_start_new_plot(dir_cfg: plotman.configuration.Directories, sched_cfg: 
                     raise Exception(
                         "madmax plotter selected but not configured, report this as a plotman bug",
                     )
-                plot_args = ['chia_plot',
+                plot_args = [
+                    plotting_cfg.madmax.executable,
                     '-n', str(1),
                     '-r', str(plotting_cfg.madmax.n_threads),
                     '-u', str(plotting_cfg.madmax.n_buckets),
@@ -158,7 +159,7 @@ def maybe_start_new_plot(dir_cfg: plotman.configuration.Directories, sched_cfg: 
                     raise Exception(
                         "chia plotter selected but not configured, report this as a plotman bug",
                     )
-                plot_args = ['chia', 'plots', 'create',
+                plot_args = [plotting_cfg.chia.executable, 'plots', 'create',
                     '-k', str(plotting_cfg.chia.k),
                     '-r', str(plotting_cfg.chia.n_threads),
                     '-u', str(plotting_cfg.chia.n_buckets),
