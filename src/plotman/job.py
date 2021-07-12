@@ -35,11 +35,13 @@ def is_plotting_cmdline(cmdline: typing.List[str]) -> bool:
         cmdline = cmdline[1:]
         return (
             len(cmdline) >= 3
+            # TODO: use the configured executable
             and 'chia' in cmdline[0]
             and 'plots' == cmdline[1]
             and 'create' == cmdline[2]
         )
-    elif cmdline and 'chia_plot' == cmdline[0].lower():  # Madmax plotter
+    elif cmdline and 'chia_plot' == os.path.basename(cmdline[0].lower()):  # Madmax plotter
+        # TODO: use the configured executable
         return True
     return False
 
@@ -57,6 +59,7 @@ def parse_chia_plots_create_command_line(
     if 'python' in command_line[0].lower():  # Stock Chia plotter
         command_line = command_line[1:]
         assert len(command_line) >= 3
+        # TODO: use the configured executable
         assert 'chia' in command_line[0]
         assert 'plots' == command_line[1]
         assert 'create' == command_line[2]
@@ -66,6 +69,7 @@ def parse_chia_plots_create_command_line(
         #       copied.
         command = chia.commands.latest_command()
     elif 'chia_plot' in command_line[0].lower():  # Madmax plotter
+        # TODO: use the configured executable
         command_line = command_line[1:]
         all_command_arguments = command_line[2:]
         command = madmax._cli_c8121b9
@@ -268,6 +272,7 @@ class Job:
         #     'nobitfield': False,
         #     'exclude_final_dir': False,
         # }
+        # TODO: use the configured executable
         if proc.name().startswith("chia_plot"): # MADMAX
             self.k = 32
             self.r = self.args['threads']  # type: ignore[assignment]
@@ -337,15 +342,17 @@ class Job:
                             if m: # MADMAX
                                 self.plot_id = m.group(7)
                                 self.plotter = 'madmax'
+                                self.start_time = pendulum.from_timestamp(os.path.getctime(self.logfile))
                                 found_id = True
+                                found_log = True
+                                break
+
                         m = re.match(r'^Starting phase 1/4:.*\.\.\. (.*)', line)
                         if m: # CHIA
                             # Mon Nov  2 08:39:53 2020
                             self.start_time = parse_chia_plot_time(m.group(1))
                             found_log = True
                             break  # Stop reading lines in file
-                        else: # MADMAX
-                            self.start_time = pendulum.from_timestamp(os.path.getctime(self.logfile))
 
             if found_id and found_log:
                 break  # Stop trying
@@ -378,51 +385,63 @@ class Job:
         with open(self.logfile, 'r') as f:
             with contextlib.suppress(UnicodeDecodeError):
                 for line in f:
-                    # CHIA: "Starting phase 1/4: Forward Propagation into tmp files... Sat Oct 31 11:27:04 2020"
-                    m = re.match(r'^Starting phase (\d).*', line)
-                    if m:
-                        phase = int(m.group(1))
-                        phase_subphases[phase] = 0
-                    
-                    # MADMAX: "[P1]" or "[P2]" or "[P3]" or "[P4]"
-                    m = re.match(r'^\[P(\d)\].*', line)
-                    if m:
-                        phase = int(m.group(1))
-                        phase_subphases[phase] = 0
+                    if self.plotter == "madmax":
 
-                    # CHIA: Phase 1: "Computing table 2"
-                    m = re.match(r'^Computing table (\d).*', line)
-                    if m:
-                        phase_subphases[1] = max(phase_subphases[1], int(m.group(1)))
-                    
-                    # MADMAX: Phase 1: "[P1] Table 2"
-                    m = re.match(r'^\[P1\] Table (\d).*', line)
-                    if m:
-                        phase_subphases[1] = max(phase_subphases[1], int(m.group(1)))
+                        # MADMAX reports after completion of phases so increment the reported subphases
+                        # and assume that phase 1 has already started
 
-                    # CHIA: Phase 2: "Backpropagating on table 2"
-                    m = re.match(r'^Backpropagating on table (\d).*', line)
-                    if m:
-                        phase_subphases[2] = max(phase_subphases[2], 7 - int(m.group(1)))
+                        # MADMAX: "[P1]" or "[P2]" or "[P4]"
+                        m = re.match(r'^\[P(\d)\].*', line)
+                        if m:
+                            phase = int(m.group(1))
+                            phase_subphases[phase] = 1
 
-                    # MADMAX: Phase 2: "[P2] Table 2"
-                    m = re.match(r'^\[P2\] Table (\d).*', line)
-                    if m:
-                        phase_subphases[2] = max(phase_subphases[2], 7 - int(m.group(1)))
+                        # MADMAX: "[P1] or [P2] Table 7"
+                        m = re.match(r'^\[P(\d)\] Table (\d).*', line)
+                        if m:
+                            phase = int(m.group(1))
+                            if phase == 1:
+                                phase_subphases[1] = max(phase_subphases[1], (int(m.group(2))+1))
 
-                    # CHIA: Phase 3: "Compressing tables 4 and 5"
-                    m = re.match(r'^Compressing tables (\d) and (\d).*', line)
-                    if m:
-                        phase_subphases[3] = max(phase_subphases[3], int(m.group(1)))
-                    
-                    # MADMAX: Phase 3: "[P3-1] Table 4"
-                    m = re.match(r'^\[P3\-\d\] Table (\d).*', line)
-                    if m:
-                        if 3 in phase_subphases:
+                            elif phase == 2:
+                                if 'rewrite' in line:
+                                    phase_subphases[2] = max(phase_subphases[2], (9 - int(m.group(2))))
+                                else:
+                                    phase_subphases[2] = max(phase_subphases[2], (8 - int(m.group(2))))
+
+                        # MADMAX: Phase 3: "[P3-1] Table 4"
+                        m = re.match(r'^\[P3\-(\d)\] Table (\d).*', line)
+                        if m:
+                            if 3 in phase_subphases:
+                                if int(m.group(1)) == 2:
+                                    phase_subphases[3] = max(phase_subphases[3], int(m.group(2)))
+                                else:
+                                    phase_subphases[3] = max(phase_subphases[3], int(m.group(2))-1)
+                            else: 
+                                phase_subphases[3] = 1
+
+                    else:                    
+                        # CHIA: "Starting phase 1/4: Forward Propagation into tmp files... Sat Oct 31 11:27:04 2020"
+                        m = re.match(r'^Starting phase (\d).*', line)
+                        if m:
+                            phase = int(m.group(1))
+                            phase_subphases[phase] = 0
+                        
+                        # CHIA: Phase 1: "Computing table 2"
+                        m = re.match(r'^Computing table (\d).*', line)
+                        if m:
+                            phase_subphases[1] = max(phase_subphases[1], int(m.group(1)))
+                        
+                        # CHIA: Phase 2: "Backpropagating on table 2"
+                        m = re.match(r'^Backpropagating on table (\d).*', line)
+                        if m:
+                            phase_subphases[2] = max(phase_subphases[2], 7 - int(m.group(1)))
+
+                        # CHIA: Phase 3: "Compressing tables 4 and 5"
+                        m = re.match(r'^Compressing tables (\d) and (\d).*', line)
+                        if m:
                             phase_subphases[3] = max(phase_subphases[3], int(m.group(1)))
-                        else:
-                            phase_subphases[3] = int(m.group(1))
-
+                    
                     # TODO also collect timing info:
 
                     # "Time for phase 1 = 22796.7 seconds. CPU (98%) Tue Sep 29 17:57:19 2020"

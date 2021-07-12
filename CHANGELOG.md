@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 ### Fixed
+### Added
+- `path_suffix` option for rsync and rsyncd archive targets.
+  Allows adding suffixes to the destination path such as to separate original vs. pool plots.
+  ([#800](https://github.com/ericaltendorf/plotman/pull/800))
+- `executable` option for each configurable plotter.
+  Allows explicit specification of the plotter executable path if this is preferred over setting the `PATH` environment variable to find the program.
+  Presently does not support executables other than the expected names (`chia`, and `chia_plot`).
+  ([#823](https://github.com/ericaltendorf/plotman/pull/823))
+
+## [0.5] - 2021-07-07
+### Fixed
 - `plotman kill` doesn't leave any temporary files behind anymore.
   ([#801](https://github.com/ericaltendorf/plotman/pull/801))
 ### Added
