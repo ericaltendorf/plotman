@@ -80,26 +80,34 @@ class SpecificInfo(typing_extensions.Protocol):
 # check_specific_info_protocol = ProtocolChecker[SpecificInfo]()
 
 
-class LineHandler(typing_extensions.Protocol):
-    def __call__(self, match: typing.Match[str], info: SpecificInfo) -> typing.Optional[SpecificInfo]:
+class LineHandler(typing_extensions.Protocol, typing.Generic[T]):
+    def __call__(self, match: typing.Match[str], info: T) -> T:
         ...
 
 
 @attr.mutable
-class RegexLineHandlers:
-    mapping: typing.Dict[typing.Pattern[str], typing.List[LineHandler]] = attr.ib(
+class RegexLineHandlers(typing.Generic[T]):
+    mapping: typing.Dict[typing.Pattern[str], typing.List[LineHandler[T]]] = attr.ib(
         factory=lambda: collections.defaultdict(list),
     )
 
-    def register(self, expression: str) -> typing.Callable[[LineHandler], LineHandler]:
+    def register(self, expression: str) -> typing.Callable[[LineHandler[T]], LineHandler[T]]:
         return functools.partial(self._decorator, expression=expression)
 
-    def _decorator(self, handler: LineHandler, expression: str) -> LineHandler:
+    def _decorator(self, handler: LineHandler[T], expression: str) -> LineHandler[T]:
         self.mapping[re.compile(expression)].append(handler)
         return handler
 
 
-class Parser(typing_extensions.Protocol):
+class Plotter(typing_extensions.Protocol):
+    @classmethod
+    def identify_log(cls, line: str) -> bool:
+        ...
+
+    # @classmethod
+    # def identify_process(cls, command_line: typing.List[str]) -> bool:
+    #     ...
+
     def update(self, chunk: bytes) -> SpecificInfo:
         ...
 
@@ -107,8 +115,18 @@ class Parser(typing_extensions.Protocol):
 # check_parser_protocol = ProtocolChecker[Parser]()
 
 
-class Plotter(typing_extensions.Protocol):
-    parser: Parser
+def get_plotter_from_log(lines: typing.Iterable[str]) -> typing.Type[Plotter]:
+    import plotman.plotters.chianetwork
+    import plotman.plotters.madmax
 
+    plotters: typing.List[typing.Type[Plotter]] = [
+        plotman.plotters.chianetwork.Plotter,
+        plotman.plotters.madmax.Plotter,
+    ]
 
-# check_plotter_protocol = ProtocolChecker[Plotter]()
+    for line in lines:
+        for plotter in plotters:
+            if plotter.identify_log(line=line):
+                return plotter
+
+    raise Exception("Failed to choose plotter definition for parsing log")

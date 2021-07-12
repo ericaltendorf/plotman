@@ -3,6 +3,7 @@ import typing
 
 import attr
 import pendulum
+import typing_extensions
 
 import plotman.job
 import plotman.plotters
@@ -37,11 +38,15 @@ class SpecificInfo:
         return plotman.plotters.CommonInfo(phase=self.phase)
 
 
-@plotman.plotters.ProtocolChecker[plotman.plotters.Parser]()
+@plotman.plotters.ProtocolChecker[plotman.plotters.Plotter]()
 @attr.mutable
-class Parser:
+class Plotter:
     decoder: plotman.plotters.LineDecoder = attr.ib(factory=plotman.plotters.LineDecoder)
     info: SpecificInfo = attr.ib(factory=SpecificInfo)
+
+    @classmethod
+    def identify_log(cls, line: str) -> bool:
+        return 'Multi-threaded pipelined Chia' in line
 
     def update(self, chunk: bytes) -> SpecificInfo:
         new_lines = self.decoder.update(chunk=chunk)
@@ -61,7 +66,7 @@ class Parser:
         return self.info
 
 
-handlers = plotman.plotters.RegexLineHandlers()
+handlers = plotman.plotters.RegexLineHandlers[SpecificInfo]()
 
 
 @handlers.register(expression=r'^\[P1\] Table ([1-6])')
@@ -128,7 +133,7 @@ def phase_4_1(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
 
 
 @handlers.register(expression=r'^\[P4\] Writing C2 table')
-def phase_4_1(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+def phase_4(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # [P4] Writing C2 table
     return attr.evolve(info, phase=plotman.job.Phase(major=4, minor=2))
 

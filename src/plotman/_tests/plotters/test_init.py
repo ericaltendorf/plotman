@@ -1,9 +1,14 @@
+import importlib.resources
 import typing
 
 import attr
 import pytest
 
 import plotman.plotters
+import plotman.plotters.chianetwork
+import plotman.plotters.madmax
+import plotman._tests.resources
+
 
 
 # @attr.frozen
@@ -91,3 +96,21 @@ def test_decoder_partial_line_without_final(line_decoder: plotman.plotters.LineD
     lines.extend(line_decoder.update(b'\xc3\xaf'))
 
     assert lines == ["abc", "123"]
+
+
+@pytest.mark.parametrize(
+    argnames=["resource_name", "correct_plotter"],
+    argvalues=[
+        ["2021-04-04T19_00_47.681088-0400.log", plotman.plotters.chianetwork.Plotter],
+        ["2021-07-11T16_52_48.637488+00_00.plot.log", plotman.plotters.madmax.Plotter],
+    ],
+)
+def test_plotter_identifies_log(resource_name, correct_plotter):
+    with importlib.resources.open_text(
+        package=plotman._tests.resources,
+        resource=resource_name,
+        encoding='utf-8',
+    ) as f:
+        plotter = plotman.plotters.get_plotter_from_log(lines=f)
+
+    assert plotter == correct_plotter

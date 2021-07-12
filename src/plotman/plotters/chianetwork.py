@@ -3,6 +3,7 @@ import typing
 
 import attr
 import pendulum
+import typing_extensions
 
 import plotman.job
 import plotman.plotters
@@ -34,11 +35,29 @@ class SpecificInfo:
         return plotman.plotters.CommonInfo(phase=self.phase)
 
 
-@plotman.plotters.ProtocolChecker[plotman.plotters.Parser]()
+@plotman.plotters.ProtocolChecker[plotman.plotters.Plotter]()
 @attr.mutable
-class Parser:
+class Plotter:
     decoder: plotman.plotters.LineDecoder = attr.ib(factory=plotman.plotters.LineDecoder)
     info: SpecificInfo = attr.ib(factory=SpecificInfo)
+
+    @classmethod
+    def identify_log(cls, line: str) -> bool:
+        return 'src.plotting.create_plots' in line
+
+    # @classmethod
+    # def identify_process(cls, command_line: typing.list[str]) -> bool:
+    #     if 'python' not in command_line[0].lower():
+    #         return False
+    #
+    #     command_line = command_line[1:]
+    #
+    #     return (
+    #         len(command_line) >= 3
+    #         and 'chia' in command_line[0]
+    #         and 'plots' == command_line[1]
+    #         and 'create' == command_line[2]
+    #     )
 
     def update(self, chunk: bytes) -> SpecificInfo:
         new_lines = self.decoder.update(chunk=chunk)
@@ -58,7 +77,7 @@ class Parser:
         return self.info
 
 
-handlers = plotman.plotters.RegexLineHandlers()
+handlers = plotman.plotters.RegexLineHandlers[SpecificInfo]()
 
 
 @handlers.register(expression=r'^\tBucket')

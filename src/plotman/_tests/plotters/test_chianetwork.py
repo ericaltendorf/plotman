@@ -52,7 +52,7 @@ def test_byte_by_byte_full_load():
         resource="2021-04-04T19_00_47.681088-0400.log",
     )
 
-    parser = plotman.plotters.chianetwork.Parser()
+    parser = plotman.plotters.chianetwork.Plotter()
 
     for byte in (bytes([byte]) for byte in read_bytes):
         parser.update(chunk=byte)
