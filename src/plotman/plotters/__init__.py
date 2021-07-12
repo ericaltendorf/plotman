@@ -104,9 +104,9 @@ class Plotter(typing_extensions.Protocol):
     def identify_log(cls, line: str) -> bool:
         ...
 
-    # @classmethod
-    # def identify_process(cls, command_line: typing.List[str]) -> bool:
-    #     ...
+    @classmethod
+    def identify_process(cls, command_line: typing.List[str]) -> bool:
+        ...
 
     def update(self, chunk: bytes) -> SpecificInfo:
         ...
@@ -115,18 +115,35 @@ class Plotter(typing_extensions.Protocol):
 # check_parser_protocol = ProtocolChecker[Parser]()
 
 
+def all_plotters() -> typing.List[typing.Type[Plotter]]:
+    # TODO: maybe avoid the import loop some other way
+    return [
+        plotman.plotters.chianetwork.Plotter,
+        plotman.plotters.madmax.Plotter,
+    ]
+
+
 def get_plotter_from_log(lines: typing.Iterable[str]) -> typing.Type[Plotter]:
     import plotman.plotters.chianetwork
     import plotman.plotters.madmax
 
-    plotters: typing.List[typing.Type[Plotter]] = [
-        plotman.plotters.chianetwork.Plotter,
-        plotman.plotters.madmax.Plotter,
-    ]
+    plotters = all_plotters()
 
     for line in lines:
         for plotter in plotters:
             if plotter.identify_log(line=line):
                 return plotter
 
-    raise Exception("Failed to choose plotter definition for parsing log")
+    raise Exception("Failed to identify the plotter definition for parsing log")
+
+
+def get_plotter_from_command_line(
+    command_line: typing.List[str],
+) -> typing.Type[Plotter]:
+    for plotter in all_plotters():
+        if plotter.identify_process(command_line=command_line):
+            return plotter
+
+    raise Exception(
+        "Failed to identify the plotter definition for parsing the command line",
+    )

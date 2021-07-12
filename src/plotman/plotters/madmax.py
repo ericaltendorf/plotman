@@ -1,9 +1,9 @@
 import collections
+import os.path
 import typing
 
 import attr
 import pendulum
-import typing_extensions
 
 import plotman.job
 import plotman.plotters
@@ -47,6 +47,13 @@ class Plotter:
     @classmethod
     def identify_log(cls, line: str) -> bool:
         return 'Multi-threaded pipelined Chia' in line
+
+    @classmethod
+    def identify_process(cls, command_line: typing.List[str]) -> bool:
+        if len(command_line) == 0:
+            return False
+
+        return 'chia_plot' == os.path.basename(command_line[0]).lower()
 
     def update(self, chunk: bytes) -> SpecificInfo:
         new_lines = self.decoder.update(chunk=chunk)

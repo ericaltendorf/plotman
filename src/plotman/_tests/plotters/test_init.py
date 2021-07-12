@@ -105,12 +105,33 @@ def test_decoder_partial_line_without_final(line_decoder: plotman.plotters.LineD
         ["2021-07-11T16_52_48.637488+00_00.plot.log", plotman.plotters.madmax.Plotter],
     ],
 )
-def test_plotter_identifies_log(resource_name, correct_plotter):
+def test_plotter_identifies_log(
+        resource_name: str,
+        correct_plotter: plotman.plotters.Plotter,
+) -> None:
     with importlib.resources.open_text(
         package=plotman._tests.resources,
         resource=resource_name,
         encoding='utf-8',
     ) as f:
         plotter = plotman.plotters.get_plotter_from_log(lines=f)
+
+    assert plotter == correct_plotter
+
+
+@pytest.mark.parametrize(
+    argnames=["command_line", "correct_plotter"],
+    argvalues=[
+        [["python", "chia", "plots", "create"], plotman.plotters.chianetwork.Plotter],
+        [["Python", "chia", "plots", "create"], plotman.plotters.chianetwork.Plotter],
+        [["chia_plot"], plotman.plotters.madmax.Plotter],
+        [["here/there/chia_plot"], plotman.plotters.madmax.Plotter],
+    ],
+)
+def test_plotter_identifies_log(
+        command_line: typing.List[str],
+        correct_plotter: plotman.plotters.Plotter,
+) -> None:
+    plotter = plotman.plotters.get_plotter_from_command_line(command_line=command_line)
 
     assert plotter == correct_plotter

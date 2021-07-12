@@ -3,7 +3,6 @@ import typing
 
 import attr
 import pendulum
-import typing_extensions
 
 import plotman.job
 import plotman.plotters
@@ -45,19 +44,19 @@ class Plotter:
     def identify_log(cls, line: str) -> bool:
         return 'src.plotting.create_plots' in line
 
-    # @classmethod
-    # def identify_process(cls, command_line: typing.list[str]) -> bool:
-    #     if 'python' not in command_line[0].lower():
-    #         return False
-    #
-    #     command_line = command_line[1:]
-    #
-    #     return (
-    #         len(command_line) >= 3
-    #         and 'chia' in command_line[0]
-    #         and 'plots' == command_line[1]
-    #         and 'create' == command_line[2]
-    #     )
+    @classmethod
+    def identify_process(cls, command_line: typing.List[str]) -> bool:
+        if len(command_line) == 0 or 'python' not in command_line[0].lower():
+            return False
+
+        command_line = command_line[1:]
+
+        return (
+            len(command_line) >= 3
+            and 'chia' in command_line[0]
+            and 'plots' == command_line[1]
+            and 'create' == command_line[2]
+        )
 
     def update(self, chunk: bytes) -> SpecificInfo:
         new_lines = self.decoder.update(chunk=chunk)
