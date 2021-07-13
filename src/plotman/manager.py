@@ -156,10 +156,10 @@ def maybe_start_new_plot(dir_cfg: plotman.configuration.Directories, sched_cfg: 
                     plot_args.append(dir_cfg.tmp2 if dir_cfg.tmp2.endswith('/') else (dir_cfg.tmp2 + '/'))
                 if plotting_cfg.madmax.n_buckets3 is not None:
                     plot_args.append('-v')
-                    plot_args.append(plotting_cfg.madmax.n_buckets3)
+                    plot_args.append(str(plotting_cfg.madmax.n_buckets3))
                 if plotting_cfg.madmax.n_rmulti2 is not None:
                     plot_args.append('-K')
-                    plot_args.append(plotting_cfg.madmax.n_rmulti2)
+                    plot_args.append(str(plotting_cfg.madmax.n_rmulti2))
             else:
                 if plotting_cfg.chia is None:
                     raise Exception(
