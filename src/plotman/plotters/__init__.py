@@ -79,7 +79,7 @@ class SpecificInfo(typing_extensions.Protocol):
         ...
 
 
-# check_specific_info_protocol = ProtocolChecker[SpecificInfo]()
+check_SpecificInfo = ProtocolChecker[SpecificInfo]()
 
 
 class LineHandler(typing_extensions.Protocol, typing.Generic[T]):
@@ -110,17 +110,14 @@ class Plotter(typing_extensions.Protocol):
     def identify_process(cls, command_line: typing.List[str]) -> bool:
         ...
 
-    def parse_command_line(
-        self,
-        command_line: typing.List[str],
-    ) -> plotman.job.ParsedChiaPlotsCreateCommand:
+    def parse_command_line(self, command_line: typing.List[str]) -> None:
         ...
 
     def update(self, chunk: bytes) -> SpecificInfo:
         ...
 
 
-# check_parser_protocol = ProtocolChecker[Parser]()
+check_Plotter = ProtocolChecker[Plotter]()
 
 
 def all_plotters() -> typing.List[typing.Type[Plotter]]:

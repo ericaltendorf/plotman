@@ -10,7 +10,8 @@ import plotman.madmax
 import plotman.plotters
 
 
-@plotman.plotters.ProtocolChecker[plotman.plotters.SpecificInfo]()
+# @plotman.plotters.ProtocolChecker[plotman.plotters.SpecificInfo]()
+@plotman.plotters.check_SpecificInfo
 @attr.frozen
 class SpecificInfo:
     process_id: typing.Optional[int] = None
@@ -39,7 +40,7 @@ class SpecificInfo:
         return plotman.plotters.CommonInfo(phase=self.phase)
 
 
-@plotman.plotters.ProtocolChecker[plotman.plotters.Plotter]()
+@plotman.plotters.check_Plotter
 @attr.mutable
 class Plotter:
     decoder: plotman.plotters.LineDecoder = attr.ib(factory=plotman.plotters.LineDecoder)
