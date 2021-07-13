@@ -72,7 +72,10 @@ def test_plotter_identifies_log(
     argnames=["command_line", "correct_plotter"],
     argvalues=[
         [["python", "chia", "plots", "create"], plotman.plotters.chianetwork.Plotter],
+        # macOS system python
         [["Python", "chia", "plots", "create"], plotman.plotters.chianetwork.Plotter],
+        # binary installer
+        [["chia", "plots", "create"], plotman.plotters.chianetwork.Plotter],
         [["chia_plot"], plotman.plotters.madmax.Plotter],
         [["here/there/chia_plot"], plotman.plotters.madmax.Plotter],
     ],

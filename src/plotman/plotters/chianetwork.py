@@ -1,4 +1,5 @@
 import collections
+import os
 import typing
 
 import attr
@@ -48,10 +49,11 @@ class Plotter:
 
     @classmethod
     def identify_process(cls, command_line: typing.List[str]) -> bool:
-        if len(command_line) == 0 or 'python' not in command_line[0].lower():
+        if len(command_line) == 0:
             return False
 
-        command_line = command_line[1:]
+        if 'python' == os.path.basename(command_line[0]).lower():
+            command_line = command_line[1:]
 
         return (
             len(command_line) >= 3

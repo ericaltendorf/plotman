@@ -79,6 +79,24 @@ default_arguments = {
             ),
         ],
         [
+            # macOS system python
+            ["Python", "chia", "plots", "create"],
+            plotman.job.ParsedChiaPlotsCreateCommand(
+                error=None,
+                help=False,
+                parameters={**default_arguments},
+            ),
+        ],
+        [
+            # binary installer
+            ["chia", "plots", "create"],
+            plotman.job.ParsedChiaPlotsCreateCommand(
+                error=None,
+                help=False,
+                parameters={**default_arguments},
+            ),
+        ],
+        [
             ["python", "chia", "plots", "create", "-h"],
             plotman.job.ParsedChiaPlotsCreateCommand(
                 error=None,
