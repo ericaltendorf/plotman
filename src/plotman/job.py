@@ -31,8 +31,15 @@ def job_phases_for_dstdir(d: str, all_jobs: typing.List["Job"]) -> typing.List["
     return sorted([j.progress() for j in all_jobs if os.path.normpath(j.dstdir) == os.path.normpath(d)])
 
 def is_plotting_cmdline(cmdline: typing.List[str]) -> bool:
-    if cmdline and 'python' in cmdline[0].lower():  # Stock Chia plotter
-        cmdline = cmdline[1:]
+    if len(cmdline) == 0:
+        return False
+
+    if 'chia_plot' == os.path.basename(cmdline[0].lower()):  # Madmax plotter
+        # TODO: use the configured executable
+        return True
+    else:
+        if 'python' in cmdline[0].lower():  # Stock Chia plotter
+            cmdline = cmdline[1:]
         return (
             len(cmdline) >= 3
             # TODO: use the configured executable
@@ -40,10 +47,6 @@ def is_plotting_cmdline(cmdline: typing.List[str]) -> bool:
             and 'plots' == cmdline[1]
             and 'create' == cmdline[2]
         )
-    elif cmdline and 'chia_plot' == os.path.basename(cmdline[0].lower()):  # Madmax plotter
-        # TODO: use the configured executable
-        return True
-    return False
 
 def parse_chia_plot_time(s: str) -> pendulum.DateTime:
     # This will grow to try ISO8601 as well for when Chia logs that way
