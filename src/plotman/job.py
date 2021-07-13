@@ -277,6 +277,8 @@ class Job:
             self.k = 32
             self.r = self.args['threads']  # type: ignore[assignment]
             self.u = self.args['buckets']  # type: ignore[assignment]
+            self.v = self.args['buckets3']  # type: ignore[assignment]
+            self.rmulti2 = self.args['rmulti2']  # type: ignore[assignment]
             self.b = 0
             self.n = self.args['count']  # type: ignore[assignment]
             self.tmpdir = self.args['tmpdir']  # type: ignore[assignment]
