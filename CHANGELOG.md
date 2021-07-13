@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 ### Fixed
+- Detects binary-installed Chia plotting processes again after being broken in v0.5.
+  ([#865](https://github.com/ericaltendorf/plotman/pull/865))
 ### Added
 - `path_suffix` option for rsync and rsyncd archive targets.
   Allows adding suffixes to the destination path such as to separate original vs. pool plots.
