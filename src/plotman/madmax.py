@@ -38,7 +38,8 @@ class Commands:
         return self.by_version[item]
 
     def latest_command(self) -> CommandProtocol:
-        return max(self.by_version.items())[1]
+        return _cli_c8121b9
+        # return max(self.by_version.items())[1]
 
 
 commands = Commands()

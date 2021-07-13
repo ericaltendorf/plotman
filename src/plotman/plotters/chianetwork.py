@@ -4,6 +4,7 @@ import typing
 import attr
 import pendulum
 
+import plotman.chia
 import plotman.job
 import plotman.plotters
 
@@ -39,6 +40,7 @@ class SpecificInfo:
 class Plotter:
     decoder: plotman.plotters.LineDecoder = attr.ib(factory=plotman.plotters.LineDecoder)
     info: SpecificInfo = attr.ib(factory=SpecificInfo)
+    parsed_command_line: typing.Optional[plotman.job.ParsedChiaPlotsCreateCommand] = None
 
     @classmethod
     def identify_log(cls, line: str) -> bool:
@@ -56,6 +58,20 @@ class Plotter:
             and 'chia' in command_line[0]
             and 'plots' == command_line[1]
             and 'create' == command_line[2]
+        )
+
+    def parse_command_line(self, command_line: typing.List[str]) -> None:
+        # drop the python chia plots create
+        arguments = command_line[4:]
+
+        # TODO: We could at some point do chia version detection and pick the
+        #       associated command.  For now we'll just use the latest one we have
+        #       copied.
+        command = plotman.chia.commands.latest_command()
+
+        self.parsed_command_line = plotman.plotters.parse_command_line_with_click(
+            command=command,
+            arguments=arguments,
         )
 
     def update(self, chunk: bytes) -> SpecificInfo:

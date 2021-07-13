@@ -128,7 +128,7 @@ def test_plotter_identifies_log(
         [["here/there/chia_plot"], plotman.plotters.madmax.Plotter],
     ],
 )
-def test_plotter_identifies_log(
+def test_plotter_identifies_command_line(
         command_line: typing.List[str],
         correct_plotter: plotman.plotters.Plotter,
 ) -> None:

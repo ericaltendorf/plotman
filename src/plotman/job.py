@@ -95,16 +95,24 @@ def parse_chia_plots_create_command_line(
         parameters=params,
     )
 
+
+@attr.frozen
 class ParsedChiaPlotsCreateCommand:
-    def __init__(
-        self,
-        error: click.ClickException,
-        help: bool,
-        parameters: typing.Dict[str, object],
-    ) -> None:
-        self.error = error
-        self.help = help
-        self.parameters = parameters
+    error: typing.Optional[click.ClickException]
+    help: bool
+    parameters: typing.Dict[str, object]
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, type(self)):
+            return False
+
+        return (
+            type(self.error) == type(other.error)
+            and str(self.error) == str(other.error)
+            and self.help == other.help
+            and self.parameters == other.parameters
+        )
+
 
 @functools.total_ordering
 @attr.frozen(order=False)

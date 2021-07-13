@@ -6,8 +6,10 @@ import re
 import typing
 
 import attr
+import click
 import typing_extensions
 
+import plotman.chia
 import plotman.job
 import plotman.plotinfo
 
@@ -108,6 +110,12 @@ class Plotter(typing_extensions.Protocol):
     def identify_process(cls, command_line: typing.List[str]) -> bool:
         ...
 
+    def parse_command_line(
+        self,
+        command_line: typing.List[str],
+    ) -> plotman.job.ParsedChiaPlotsCreateCommand:
+        ...
+
     def update(self, chunk: bytes) -> SpecificInfo:
         ...
 
@@ -146,4 +154,34 @@ def get_plotter_from_command_line(
 
     raise Exception(
         "Failed to identify the plotter definition for parsing the command line",
+    )
+
+
+def parse_command_line_with_click(
+    command: plotman.chia.CommandProtocol,
+    arguments: typing.List[str],
+) -> plotman.job.ParsedChiaPlotsCreateCommand:
+    # nice idea, but this doesn't include -h
+    # help_option_names = command.get_help_option_names(ctx=context)
+    help_option_names = {'--help', '-h'}
+
+    command_arguments = [
+        argument
+        for argument in arguments
+        if argument not in help_option_names
+    ]
+
+    try:
+        context = command.make_context(info_name='', args=list(command_arguments))
+    except click.ClickException as e:
+        error = e
+        params = {}
+    else:
+        error = None
+        params = context.params
+
+    return plotman.job.ParsedChiaPlotsCreateCommand(
+        error=error,
+        help=len(arguments) > len(command_arguments),
+        parameters=params,
     )

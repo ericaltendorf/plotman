@@ -6,6 +6,7 @@ import attr
 import pendulum
 
 import plotman.job
+import plotman.madmax
 import plotman.plotters
 
 
@@ -43,6 +44,7 @@ class SpecificInfo:
 class Plotter:
     decoder: plotman.plotters.LineDecoder = attr.ib(factory=plotman.plotters.LineDecoder)
     info: SpecificInfo = attr.ib(factory=SpecificInfo)
+    parsed_command_line: typing.Optional[plotman.job.ParsedChiaPlotsCreateCommand] = None
 
     @classmethod
     def identify_log(cls, line: str) -> bool:
@@ -54,6 +56,20 @@ class Plotter:
             return False
 
         return 'chia_plot' == os.path.basename(command_line[0]).lower()
+
+    def parse_command_line(self, command_line: typing.List[str]) -> None:
+        # drop the chia_plot
+        arguments = command_line[1:]
+
+        # TODO: We could at some point do chia version detection and pick the
+        #       associated command.  For now we'll just use the latest one we have
+        #       copied.
+        command = plotman.madmax.commands.latest_command()
+
+        self.parsed_command_line = plotman.plotters.parse_command_line_with_click(
+            command=command,
+            arguments=arguments,
+        )
 
     def update(self, chunk: bytes) -> SpecificInfo:
         new_lines = self.decoder.update(chunk=chunk)
