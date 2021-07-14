@@ -216,14 +216,17 @@ class Job:
                             if len(command_line) == 0:
                                 # https://github.com/ericaltendorf/plotman/issues/610
                                 continue
-                            parsed_command = parse_chia_plots_create_command_line(
+                            plotter_type = plotman.plotters.get_plotter_from_command_line(
                                 command_line=command_line,
                             )
-                            if parsed_command.error is not None:
+                            plotter = plotter_type()
+                            plotter.parse_command_line(command_line=command_line)
+
+                            if plotter.parsed_command_line.error is not None:
                                 continue
                             job = cls(
                                 proc=proc,
-                                parsed_command=parsed_command,
+                                parsed_command=plotter.parsed_command_line,
                                 logroot=logroot,
                             )
                             if job.help:

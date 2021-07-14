@@ -64,6 +64,7 @@ class Plotter:
 
     def parse_command_line(self, command_line: typing.List[str]) -> None:
         # drop the python chia plots create
+        # TODO: not always 4 since python isn't always there...
         arguments = command_line[4:]
 
         # TODO: We could at some point do chia version detection and pick the
