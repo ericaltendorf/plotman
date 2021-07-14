@@ -106,6 +106,8 @@ class RegexLineHandlers(typing.Generic[T]):
 
 
 class Plotter(typing_extensions.Protocol):
+    parsed_command_line: typing.Optional[plotman.job.ParsedChiaPlotsCreateCommand]
+
     @classmethod
     def identify_log(cls, line: str) -> bool:
         ...
