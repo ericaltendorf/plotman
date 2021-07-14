@@ -30,21 +30,6 @@ def job_phases_for_dstdir(d: str, all_jobs: typing.List["Job"]) -> typing.List["
     '''Return phase 2-tuples for jobs outputting to dstdir d'''
     return sorted([j.progress() for j in all_jobs if os.path.normpath(j.dstdir) == os.path.normpath(d)])
 
-def is_plotting_cmdline(cmdline: typing.List[str]) -> bool:
-    if cmdline and 'python' in cmdline[0].lower():  # Stock Chia plotter
-        cmdline = cmdline[1:]
-        return (
-            len(cmdline) >= 3
-            # TODO: use the configured executable
-            and 'chia' in cmdline[0]
-            and 'plots' == cmdline[1]
-            and 'create' == cmdline[2]
-        )
-    elif cmdline and 'chia_plot' == os.path.basename(cmdline[0].lower()):  # Madmax plotter
-        # TODO: use the configured executable
-        return True
-    return False
-
 def parse_chia_plot_time(s: str) -> pendulum.DateTime:
     # This will grow to try ISO8601 as well for when Chia logs that way
     # TODO: unignore once fixed upstream
@@ -199,7 +184,9 @@ class Job:
                 # iteration and data access.
                 with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied):
                     exit_stack.enter_context(process.oneshot())
-                    if is_plotting_cmdline(process.cmdline()):
+                    # TODO: handle import loop
+                    import plotman.plotters
+                    if plotman.plotters.is_plotting_command_line(process.cmdline()):
                         ppids.add(process.ppid())
                         pids.add(process.pid)
                         processes.append(process)

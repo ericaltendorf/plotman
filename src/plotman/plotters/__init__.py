@@ -17,6 +17,10 @@ import plotman.plotinfo
 T = typing.TypeVar("T")
 
 
+class UnableToIdentifyCommandLineError(Exception):
+    pass
+
+
 @attr.mutable
 class LineDecoder:
     decoder: codecs.IncrementalDecoder = attr.ib(
@@ -149,7 +153,7 @@ def get_plotter_from_command_line(
         if plotter.identify_process(command_line=command_line):
             return plotter
 
-    raise Exception(
+    raise UnableToIdentifyCommandLineError(
         "Failed to identify the plotter definition for parsing the command line",
     )
 
@@ -182,3 +186,12 @@ def parse_command_line_with_click(
         help=len(arguments) > len(command_arguments),
         parameters=params,
     )
+
+
+def is_plotting_command_line(command_line: typing.List[str]) -> bool:
+    try:
+        get_plotter_from_command_line(command_line=command_line)
+    except UnableToIdentifyCommandLineError:
+        return False
+
+    return True

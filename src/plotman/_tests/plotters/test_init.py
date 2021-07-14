@@ -68,22 +68,77 @@ def test_plotter_identifies_log(
     assert plotter == correct_plotter
 
 
-@pytest.mark.parametrize(
-    argnames=["command_line", "correct_plotter"],
-    argvalues=[
-        [["python", "chia", "plots", "create"], plotman.plotters.chianetwork.Plotter],
-        # macOS system python
-        [["Python", "chia", "plots", "create"], plotman.plotters.chianetwork.Plotter],
-        # binary installer
-        [["chia", "plots", "create"], plotman.plotters.chianetwork.Plotter],
-        [["chia_plot"], plotman.plotters.madmax.Plotter],
-        [["here/there/chia_plot"], plotman.plotters.madmax.Plotter],
-    ],
-)
-def test_plotter_identifies_command_line(
-        command_line: typing.List[str],
-        correct_plotter: plotman.plotters.Plotter,
-) -> None:
-    plotter = plotman.plotters.get_plotter_from_command_line(command_line=command_line)
 
-    assert plotter == correct_plotter
+@attr.frozen
+class CommandLineExample:
+    line: typing.List[str]
+    plotter: typing.Optional[plotman.plotters.Plotter]
+
+
+command_line_examples: typing.List[CommandLineExample] = [
+    CommandLineExample(
+        line=["python", "chia", "plots", "create"],
+        plotter=plotman.plotters.chianetwork.Plotter,
+    ),
+    # macOS system python
+    CommandLineExample(
+        line=["Python", "chia", "plots", "create"],
+        plotter=plotman.plotters.chianetwork.Plotter,
+    ),
+    # binary installer
+    CommandLineExample(
+        line=["chia", "plots", "create"],
+        plotter=plotman.plotters.chianetwork.Plotter,
+    ),
+    CommandLineExample(
+        line=["chia_plot"],
+        plotter=plotman.plotters.madmax.Plotter,
+    ),
+    CommandLineExample(
+        line=["here/there/chia_plot"],
+        plotter=plotman.plotters.madmax.Plotter,
+    ),
+]
+
+not_command_line_examples: typing.List[CommandLineExample] = [
+    CommandLineExample(line=["something/else"], plotter=None),
+    CommandLineExample(line=["another"], plotter=None),
+    CommandLineExample(line=["some/chia/not"], plotter=None),
+    CommandLineExample(line=["chia", "other"], plotter=None),
+    CommandLineExample(line=["chia_plot/blue"], plotter=None),
+]
+
+
+@pytest.mark.parametrize(
+    argnames=["example"],
+    argvalues=[[example] for example in command_line_examples],
+)
+def test_plotter_identifies_command_line(example: CommandLineExample) -> None:
+    plotter = plotman.plotters.get_plotter_from_command_line(command_line=example.line)
+
+    assert plotter == example.plotter
+
+
+@pytest.mark.parametrize(
+    argnames=["example"],
+    argvalues=[[example] for example in not_command_line_examples],
+)
+def test_plotter_fails_to_identify_command_line(example: CommandLineExample) -> None:
+    with pytest.raises(plotman.plotters.UnableToIdentifyCommandLineError):
+        plotman.plotters.get_plotter_from_command_line(command_line=example.line)
+
+
+@pytest.mark.parametrize(
+    argnames=["example"],
+    argvalues=[[example] for example in command_line_examples],
+)
+def test_is_plotting_command_line(example: CommandLineExample) -> None:
+    assert plotman.plotters.is_plotting_command_line(command_line=example.line)
+
+
+@pytest.mark.parametrize(
+    argnames=["example"],
+    argvalues=[[example] for example in not_command_line_examples],
+)
+def test_is_not_plotting_command_line(example: CommandLineExample) -> None:
+    assert not plotman.plotters.is_plotting_command_line(command_line=example.line)
