@@ -59,8 +59,14 @@ def parse_chia_plots_create_command_line(
 ) -> "ParsedChiaPlotsCreateCommand":
     command_line = list(command_line)
     # Parse command line args
-    if 'python' in command_line[0].lower():  # Stock Chia plotter
-        command_line = command_line[1:]
+
+    if 'chia_plot' == os.path.basename(command_line[0].lower()):  # Madmax plotter
+        # TODO: use the configured executable
+        all_command_arguments = command_line[1:]
+        command = madmax._cli_c8121b9
+    else:
+        if 'python' in command_line[0].lower():  # Stock Chia plotter
+            command_line = command_line[1:]
         assert len(command_line) >= 3
         # TODO: use the configured executable
         assert 'chia' in command_line[0]
@@ -71,11 +77,6 @@ def parse_chia_plots_create_command_line(
         #       associated command.  For now we'll just use the latest one we have
         #       copied.
         command = chia.commands.latest_command()
-    elif 'chia_plot' in command_line[0].lower():  # Madmax plotter
-        # TODO: use the configured executable
-        command_line = command_line[1:]
-        all_command_arguments = command_line[2:]
-        command = madmax._cli_c8121b9
 
     # nice idea, but this doesn't include -h
     # help_option_names = command.get_help_option_names(ctx=context)
