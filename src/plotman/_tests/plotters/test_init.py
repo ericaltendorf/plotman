@@ -126,6 +126,51 @@ command_line_examples: typing.List[CommandLineExample] = [
         ),
     ),
     CommandLineExample(
+        line=["python", "chia", "plots", "create", "-k", "32"],
+        plotter=plotman.plotters.chianetwork.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=False,
+            parameters={**default_chia_network_arguments, "size": 32},
+        ),
+    ),
+    CommandLineExample(
+        line=["python", "chia", "plots", "create", "-k32"],
+        plotter=plotman.plotters.chianetwork.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=False,
+            parameters={**default_chia_network_arguments, "size": 32},
+        ),
+    ),
+    CommandLineExample(
+        line=["python", "chia", "plots", "create", "--size", "32"],
+        plotter=plotman.plotters.chianetwork.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=False,
+            parameters={**default_chia_network_arguments, "size": 32},
+        ),
+    ),
+    CommandLineExample(
+        line=["python", "chia", "plots", "create", "--size=32"],
+        plotter=plotman.plotters.chianetwork.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=False,
+            parameters={**default_chia_network_arguments, "size": 32},
+        ),
+    ),
+    CommandLineExample(
+        line=["python", "chia", "plots", "create", "--size32"],
+        plotter=plotman.plotters.chianetwork.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=click.NoSuchOption("--size32"),
+            help=False,
+            parameters={},
+        ),
+    ),
+    CommandLineExample(
         line=["python", "chia", "plots", "create", "-h"],
         plotter=plotman.plotters.chianetwork.Plotter,
         parsed=plotman.job.ParsedChiaPlotsCreateCommand(
@@ -136,6 +181,15 @@ command_line_examples: typing.List[CommandLineExample] = [
     ),
     CommandLineExample(
         line=["python", "chia", "plots", "create", "--help"],
+        plotter=plotman.plotters.chianetwork.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=True,
+            parameters={**default_chia_network_arguments},
+        ),
+    ),
+    CommandLineExample(
+        line=["python", "chia", "plots", "create", "-k", "32", "--help"],
         plotter=plotman.plotters.chianetwork.Plotter,
         parsed=plotman.job.ParsedChiaPlotsCreateCommand(
             error=None,
