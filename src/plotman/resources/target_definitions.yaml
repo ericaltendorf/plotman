@@ -87,7 +87,7 @@ target_definitions:
       relative_path=$(realpath --canonicalize-missing --relative-to="${site_root}" "${full_destination}")
       url_root="rsync://${user}@${host}:${rsync_port}/${site}"
       "${command}" ${options} "${source}" "${url_root}/${relative_path}/"
-      ssh -p "${ssh_port}" "${user}@${host}" ""ls -1U ${replot_glob}.plot | head -n 1 | xargs rm -fv""
+      ssh -p "${ssh_port}" "${user}@${host}" "ls -1U ${replot_glob}.plot | head -n 1 | xargs rm -fv"
     transfer_process_name: "{command}"
     transfer_process_argument_prefix: "rsync://{user}@{host}:{rsync_port}/{site}"
 #  external_script:
