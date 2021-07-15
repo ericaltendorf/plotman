@@ -70,7 +70,7 @@ target_definitions:
       site_root: null
       site: null
       path_suffix: ""
-      # Provide the file glob to determine the next file to be deleted i.e. "${site_root}/*/plot-k32-2021-0[3-6]-*"
+      # Provide the file glob to determine the next file to be deleted e.g. "*/plot-k32-2021-0[3-6]-*"
       replot_glob: null
     disk_space_script: |
       #!/bin/bash
@@ -87,7 +87,7 @@ target_definitions:
       relative_path=$(realpath --canonicalize-missing --relative-to="${site_root}" "${full_destination}")
       url_root="rsync://${user}@${host}:${rsync_port}/${site}"
       "${command}" ${options} "${source}" "${url_root}/${relative_path}/"
-      ssh -p "${ssh_port}" "${user}@${host}" "ls -1U ${replot_glob}.plot | head -n 1 | xargs rm -fv"
+      ssh -p "${ssh_port}" "${user}@${host}" "ls -1U ${site_root}/${replot_glob}.plot | head -n 1 | xargs rm -fv"
     transfer_process_name: "{command}"
     transfer_process_argument_prefix: "rsync://{user}@{host}:{rsync_port}/{site}"
 #  external_script:
