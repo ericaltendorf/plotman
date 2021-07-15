@@ -240,7 +240,7 @@ def archive(dir_cfg: configuration.Directories, arch_cfg: configuration.Archivin
     available = [(d, space) for (d, space) in archdir_freebytes.items() if
                  space > (chosen_plot_size + free_space_margin)]
     if len(available) > 0:
-        index = min(arch_cfg.index, len(available) - 1)
+        index = arch_cfg.index % len(available)
         (archdir, freespace) = sorted(available)[index]
 
     if not archdir:
