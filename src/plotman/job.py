@@ -36,55 +36,6 @@ def parse_chia_plot_time(s: str) -> pendulum.DateTime:
     #       https://github.com/sdispater/pendulum/pull/548
     return pendulum.from_format(s, 'ddd MMM DD HH:mm:ss YYYY', locale='en', tz=None)  # type: ignore[arg-type]
 
-def parse_chia_plots_create_command_line(
-    command_line: typing.List[str],
-) -> "ParsedChiaPlotsCreateCommand":
-    command_line = list(command_line)
-    # Parse command line args
-
-    if 'chia_plot' == os.path.basename(command_line[0].lower()):  # Madmax plotter
-        # TODO: use the configured executable
-        all_command_arguments = command_line[1:]
-        command = madmax._cli_c8121b9
-    else:
-        if 'python' in command_line[0].lower():  # Stock Chia plotter
-            command_line = command_line[1:]
-        assert len(command_line) >= 3
-        # TODO: use the configured executable
-        assert 'chia' in command_line[0]
-        assert 'plots' == command_line[1]
-        assert 'create' == command_line[2]
-        all_command_arguments = command_line[3:]
-        # TODO: We could at some point do chia version detection and pick the
-        #       associated command.  For now we'll just use the latest one we have
-        #       copied.
-        command = chia.commands.latest_command()
-
-    # nice idea, but this doesn't include -h
-    # help_option_names = command.get_help_option_names(ctx=context)
-    help_option_names = {'--help', '-h'}
-
-    command_arguments = [
-        argument
-        for argument in all_command_arguments
-        if argument not in help_option_names
-    ]
-
-    try:
-        context = command.make_context(info_name='', args=list(command_arguments))
-    except click.ClickException as e:
-        error = e
-        params = {}
-    else:
-        error = None
-        params = context.params
-
-    return ParsedChiaPlotsCreateCommand(
-        error=error,
-        help=len(all_command_arguments) > len(command_arguments),
-        parameters=params,
-    )
-
 
 @attr.frozen
 class ParsedChiaPlotsCreateCommand:
