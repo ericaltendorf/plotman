@@ -31,17 +31,22 @@ def job_phases_for_dstdir(d: str, all_jobs: typing.List["Job"]) -> typing.List["
     return sorted([j.progress() for j in all_jobs if os.path.normpath(j.dstdir) == os.path.normpath(d)])
 
 def is_plotting_cmdline(cmdline: typing.List[str]) -> bool:
-    if cmdline and 'python' in cmdline[0].lower():  # Stock Chia plotter
-        cmdline = cmdline[1:]
+    if len(cmdline) == 0:
+        return False
+
+    if 'chia_plot' == os.path.basename(cmdline[0].lower()):  # Madmax plotter
+        # TODO: use the configured executable
+        return True
+    else:
+        if 'python' in cmdline[0].lower():  # Stock Chia plotter
+            cmdline = cmdline[1:]
         return (
             len(cmdline) >= 3
+            # TODO: use the configured executable
             and 'chia' in cmdline[0]
             and 'plots' == cmdline[1]
             and 'create' == cmdline[2]
         )
-    elif cmdline and 'chia_plot' == os.path.basename(cmdline[0].lower()):  # Madmax plotter
-        return True
-    return False
 
 def parse_chia_plot_time(s: str) -> pendulum.DateTime:
     # This will grow to try ISO8601 as well for when Chia logs that way
@@ -54,9 +59,16 @@ def parse_chia_plots_create_command_line(
 ) -> "ParsedChiaPlotsCreateCommand":
     command_line = list(command_line)
     # Parse command line args
-    if 'python' in command_line[0].lower():  # Stock Chia plotter
-        command_line = command_line[1:]
+
+    if 'chia_plot' == os.path.basename(command_line[0].lower()):  # Madmax plotter
+        # TODO: use the configured executable
+        all_command_arguments = command_line[1:]
+        command = madmax._cli_c8121b9
+    else:
+        if 'python' in command_line[0].lower():  # Stock Chia plotter
+            command_line = command_line[1:]
         assert len(command_line) >= 3
+        # TODO: use the configured executable
         assert 'chia' in command_line[0]
         assert 'plots' == command_line[1]
         assert 'create' == command_line[2]
@@ -65,10 +77,6 @@ def parse_chia_plots_create_command_line(
         #       associated command.  For now we'll just use the latest one we have
         #       copied.
         command = chia.commands.latest_command()
-    elif 'chia_plot' in command_line[0].lower():  # Madmax plotter
-        command_line = command_line[1:]
-        all_command_arguments = command_line[2:]
-        command = madmax._cli_c8121b9
 
     # nice idea, but this doesn't include -h
     # help_option_names = command.get_help_option_names(ctx=context)
@@ -268,6 +276,7 @@ class Job:
         #     'nobitfield': False,
         #     'exclude_final_dir': False,
         # }
+        # TODO: use the configured executable
         if proc.name().startswith("chia_plot"): # MADMAX
             self.k = 32
             self.r = self.args['threads']  # type: ignore[assignment]
