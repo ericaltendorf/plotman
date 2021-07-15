@@ -105,13 +105,15 @@ default_madmax_arguments = {
     "threads": 4,
     "buckets": 256,
     "buckets3": 256,
-    "tmpdir": pathlib.Path("."),
+    "tmpdir": pathlib.PosixPath("."),
     "tmpdir2": None,
-    "finaldir": pathlib.Path("."),
+    "finaldir": pathlib.PosixPath("."),
+    "waitforcopy": False,
     "poolkey": None,
-    "farmerkey": None,
     "contract": None,
+    "farmerkey": None,
     "tmptoggle": None,
+    "rmulti2": 1,
 }
 
 
@@ -317,12 +319,20 @@ not_command_line_examples: typing.List[CommandLineExample] = [
 ]
 
 
-@pytest.fixture(name="command_line_example", params=command_line_examples)
+@pytest.fixture(
+    name="command_line_example",
+    params=command_line_examples,
+    ids=lambda param: repr(param.line),
+)
 def command_line_example_fixture(request: _pytest.fixtures.SubRequest):
     return request.param
 
 
-@pytest.fixture(name="not_command_line_example", params=not_command_line_examples)
+@pytest.fixture(
+    name="not_command_line_example",
+    params=not_command_line_examples,
+    ids=lambda param: repr(param.line),
+)
 def not_command_line_example_fixture(request: _pytest.fixtures.SubRequest):
     return request.param
 
@@ -360,7 +370,9 @@ def test_is_not_plotting_command_line(
     )
 
 
-def test_command_line_parsed_correctly(command_line_example: CommandLineExample) -> None:
+def test_command_line_parsed_correctly(
+    command_line_example: CommandLineExample,
+) -> None:
     assert command_line_example.plotter is not None
 
     plotter = command_line_example.plotter()
