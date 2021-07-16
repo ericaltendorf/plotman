@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2021-07-15
+### Fixed
+- Detects binary-installed Chia plotting processes again after being broken in v0.5.
+  ([#865](https://github.com/ericaltendorf/plotman/pull/865))
+- Wrap archival indexes around when there are fewer disks, rather than just pointing all the "extra" indexes at the last disk.
+  This will distribute the plot transfers better when you have fewer disks than plotters.
+  ([#855](https://github.com/ericaltendorf/plotman/pull/855))
+### Added
+- `path_suffix` option for rsync and rsyncd archive targets.
+  Allows adding suffixes to the destination path such as to separate original vs. pool plots.
+  ([#800](https://github.com/ericaltendorf/plotman/pull/800))
+- `executable` option for each configurable plotter.
+  Allows explicit specification of the plotter executable path if this is preferred over setting the `PATH` environment variable to find the program.
+  Presently does not support executables other than the expected names (`chia`, and `chia_plot`).
+  ([#823](https://github.com/ericaltendorf/plotman/pull/823))
+
 ## [0.5] - 2021-07-07
 ### Fixed
 - `plotman kill` doesn't leave any temporary files behind anymore.

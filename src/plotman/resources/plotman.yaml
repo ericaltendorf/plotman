@@ -150,14 +150,19 @@ scheduling:
 # See documentation at
 # https://github.com/Chia-Network/chia-blockchain/wiki/CLI-Commands-Reference#create
 plotting:
-        # Your public keys: farmer and pool - Required for madMAx, optional for chia with mnemonic.txt
+        # Your public keys.  Be sure to use the pool contract address for
+        # portable pool plots.  The pool public key is only for original
+        # non-portable plots that can not be used with the official pooling
+        # protocol.
         # farmer_pk: ...
         # pool_pk: ...
-
+        # pool_contract_address: ...
+        
         # If you enable Chia, plot in *parallel* with higher tmpdir_max_jobs and global_max_jobs
         type: chia
         chia:
                 # The stock plotter: https://github.com/Chia-Network/chia-blockchain
+                # executable: /path/to/chia
                 k: 32                # k-size of plot, leave at 32 most of the time
                 e: False             # Use -e plotting option
                 n_threads: 2         # Threads per job
@@ -167,5 +172,6 @@ plotting:
         # If you enable madMAx, plot in *sequence* with very low tmpdir_max_jobs and global_max_jobs
         madmax:
                 # madMAx plotter: https://github.com/madMAx43v3r/chia-plotter
+                # executable: /path/to/chia_plot
                 n_threads: 4          # Default is 4, crank up if you have many cores
                 n_buckets: 256        # Default is 256
