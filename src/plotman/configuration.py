@@ -1,11 +1,13 @@
 import contextlib
 import importlib
+import itertools
 import os
 import stat
 import subprocess
 import tempfile
 import textwrap
-from typing import Dict, Generator, List, Mapping, Optional
+from collections.abc import Iterator
+from typing import cast, Dict, Generator, Iterable, List, Mapping, Optional
 
 import appdirs
 import attr
@@ -292,11 +294,24 @@ class Logging:
         timestamp = time.isoformat(timespec='microseconds').replace(':', '_')
         return os.path.join(directory, f'{timestamp}.{group}.log')
 
-@attr.frozen
+@attr.mutable
 class Directories:
     tmp: List[str]
     dst: Optional[List[str]] = None
-    tmp2: Optional[str] = None
+    tmp2: Optional[List[str]] = None
+    x: Optional[Iterator[str]] = None
+    y: str = ''
+
+    def next_tmp2(self) -> None:
+        assert self.tmp2 is not None
+        if self.x is None:
+            self.x = itertools.cycle(self.tmp2)
+
+        assert self.x is not None
+        self.y = next(self.x)
+
+    def get_tmp2(self) -> str:
+        return self.y
 
     def dst_is_tmp(self) -> bool:
         return self.dst is None and self.tmp2 is None
