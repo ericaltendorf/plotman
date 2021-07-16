@@ -299,7 +299,7 @@ class Directories:
     tmp: List[str]
     dst: Optional[List[str]] = None
     tmp2: Optional[List[str]] = None
-    x: Optional[Iterator[str]] = None
+    x: "Optional[Iterator[str]]" = None
     y: str = ''
 
     def next_tmp2(self) -> None:
