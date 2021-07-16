@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 ### Fixed
+### Added
+
+## [0.5.1] - 2021-07-15
+### Fixed
 - Detects binary-installed Chia plotting processes again after being broken in v0.5.
   ([#865](https://github.com/ericaltendorf/plotman/pull/865))
 - Wrap archival indexes around when there are fewer disks, rather than just pointing all the "extra" indexes at the last disk.
