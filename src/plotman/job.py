@@ -174,8 +174,11 @@ class Job:
                             plotter = plotter_type()
                             plotter.parse_command_line(command_line=command_line)
 
+                            if plotter.parsed_command_line is None:
+                                continue
                             if plotter.parsed_command_line.error is not None:
                                 continue
+
                             job = cls(
                                 proc=proc,
                                 parsed_command=plotter.parsed_command_line,
