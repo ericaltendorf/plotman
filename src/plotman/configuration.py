@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 import textwrap
 from collections.abc import Iterator
-from typing import cast, Dict, Generator, Iterable, List, Mapping, Optional
+from typing import Any, cast, Dict, Generator, Iterable, List, Mapping, Optional
 
 import appdirs
 import attr
@@ -299,8 +299,8 @@ class Directories:
     tmp: List[str]
     dst: Optional[List[str]] = None
     tmp2: Optional[List[str]] = None
-    x: Optional[Iterator] = None
-    y: str = ''
+    x: Any = None
+    y: Any = ''
 
     def next_tmp2(self) -> None:
         assert self.tmp2 is not None

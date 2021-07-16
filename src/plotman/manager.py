@@ -226,7 +226,7 @@ def maybe_start_new_plot(dir_cfg: plotman.configuration.Directories, sched_cfg: 
 
             node = dir_cfg.get_tmp2().rstrip('/')[-1]
 
-            plot_args = ['numactl', f'--membind={node}', f'--cpunodebind={node}', *plot_args]
+            plot_args = ['numactl', f'--membind={node}', f'--cpunodebind={node}', '--', *plot_args]
 
             with open_log_file:
                 # start_new_sessions to make the job independent of this controlling tty (POSIX only).
