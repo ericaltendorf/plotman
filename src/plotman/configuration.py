@@ -268,7 +268,8 @@ class Logging:
     plots: str = os.path.join(appdirs.user_data_dir("plotman"), 'plots')
     transfers: str = os.path.join(appdirs.user_data_dir("plotman"), 'transfers')
     application: str = os.path.join(appdirs.user_log_dir("plotman"), 'plotman.log')
-
+    disk_spaces: str = os.path.join(appdirs.user_log_dir("plotman"), 'plotman-disk_spaces.log')
+    
     def setup(self) -> None:
         os.makedirs(self.plots, exist_ok=True)
         os.makedirs(self.transfers, exist_ok=True)
@@ -286,6 +287,12 @@ class Logging:
             time=time,
             directory=self.transfers,
             group='transfer',
+        )
+    def create_tdisk_space_log_path(self, time: pendulum.DateTime) -> str:
+        return self._create_log_path(
+            time=time,
+            directory=self.disk_spaces,
+            group='disk_space',
         )
 
     def _create_log_path(self, time: pendulum.DateTime, directory: str, group: str) -> str:

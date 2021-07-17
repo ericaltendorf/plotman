@@ -170,17 +170,30 @@ def main() -> None:
 
     with cfg.setup():
         root_logger = logging.getLogger()
-        handler = logging.handlers.RotatingFileHandler(
+        root_handler = logging.handlers.RotatingFileHandler(
             backupCount=10,
             encoding='utf-8',
             filename=cfg.logging.application,
             maxBytes=10_000_000,
         )
-        formatter = Iso8601Formatter(fmt='%(asctime)s: %(message)s')
-        handler.setFormatter(formatter)
-        root_logger.addHandler(handler)
+        root_formatter = Iso8601Formatter(fmt='%(asctime)s: %(message)s')
+        root_handler.setFormatter(root_formatter)
+        root_logger.addHandler(root_handler)
         root_logger.setLevel(logging.INFO)
         root_logger.info('abc')
+
+        disk_space_logger = logging.getLogger("disk_space")
+        disk_space_handler = logging.handlers.RotatingFileHandler(
+            backupCount=10,
+            encoding='utf-8',
+            filename=cfg.logging.disk_spaces,
+            maxBytes=10_000_000,
+        )
+        disk_space_formatter = Iso8601Formatter(fmt='%(asctime)s: %(message)s')
+        disk_space_handler.setFormatter(disk_space_formatter)
+        disk_space_logger.addHandler(disk_space_handler)
+        disk_space_logger.setLevel(logging.INFO)
+        disk_space_logger.info('abc')
 
         #
         # Stay alive, spawning plot jobs
@@ -188,11 +201,13 @@ def main() -> None:
         if args.cmd == 'plot':
             print('...starting plot loop')
             while True:
-                wait_reason = manager.maybe_start_new_plot(cfg.directories, cfg.scheduling, cfg.plotting, cfg.logging)
+                (started, msg) = manager.maybe_start_new_plot(cfg.directories, cfg.scheduling, cfg.plotting, cfg.logging)
 
                 # TODO: report this via a channel that can be polled on demand, so we don't spam the console
-                if wait_reason:
-                    print('...sleeping %d s: %s' % (cfg.scheduling.polling_time_s, wait_reason))
+                if started:
+                    print('%s' % (msg))
+                else:
+                    print('...sleeping %d s: %s' % (cfg.scheduling.polling_time_s, msg))
 
                 time.sleep(cfg.scheduling.polling_time_s)
 

@@ -18,7 +18,7 @@ import texttable as tt
 from plotman import configuration, job, manager, plot_util
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("disk_space")
 
 _WINDOWS = sys.platform == 'win32'
 
