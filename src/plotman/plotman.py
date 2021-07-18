@@ -209,7 +209,7 @@ def main() -> None:
                     root_logger.info(msg)
                 else:
                     print('...sleeping %d s: %s' % (cfg.scheduling.polling_time_s, msg))
-                    root_logger.info('...sleeping' + cfg.scheduling.polling_time_s + 's: ' + msg)
+                    root_logger.info('...sleeping' + str(cfg.scheduling.polling_time_s) + 's: ' + msg)
 
                 time.sleep(cfg.scheduling.polling_time_s)
 
