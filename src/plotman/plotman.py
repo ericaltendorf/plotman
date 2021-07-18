@@ -180,7 +180,7 @@ def main() -> None:
         root_handler.setFormatter(root_formatter)
         root_logger.addHandler(root_handler)
         root_logger.setLevel(logging.INFO)
-        root_logger.info('abc')
+        root_logger.info('Start root logger')
 
         disk_space_logger = logging.getLogger("disk_space")
         disk_space_handler = logging.handlers.RotatingFileHandler(
@@ -193,7 +193,7 @@ def main() -> None:
         disk_space_handler.setFormatter(disk_space_formatter)
         disk_space_logger.addHandler(disk_space_handler)
         disk_space_logger.setLevel(logging.INFO)
-        disk_space_logger.info('abc')
+        disk_space_logger.info('Start disk space logger')
 
         #
         # Stay alive, spawning plot jobs
@@ -206,8 +206,10 @@ def main() -> None:
                 # TODO: report this via a channel that can be polled on demand, so we don't spam the console
                 if started:
                     print('%s' % (msg))
+                    root_logger.info(msg)
                 else:
                     print('...sleeping %d s: %s' % (cfg.scheduling.polling_time_s, msg))
+                    root_logger.info('...sleeping' + cfg.scheduling.polling_time_s + 's: ' + msg)
 
                 time.sleep(cfg.scheduling.polling_time_s)
 
@@ -266,11 +268,15 @@ def main() -> None:
                 if cfg.archiving is None:
                     print('archiving not configured but is required for this command')
                 else:
-                    print('...starting archive loop')
+                    start_msg = '...starting archive loop'
+                    print(start_msg)
+                    root_logger.info(start_msg)
                     firstit = True
                     while True:
                         if not firstit:
-                            print('Sleeping 60s until next iteration...')
+                            sleeping_msg = 'Sleeping 60s until next iteration...'
+                            print(sleeping_msg)
+                            root_logger.info(sleeping_msg)
                             time.sleep(60)
                             jobs = Job.get_running_jobs(cfg.logging.plots)
                         firstit = False
@@ -278,6 +284,7 @@ def main() -> None:
                         archiving_status, log_messages = archive.spawn_archive_process(cfg.directories, cfg.archiving, cfg.logging, jobs)
                         for log_message in log_messages:
                             print(log_message)
+                            root_logger.info(log_message)
 
 
             # Debugging: show the destination drive usage schedule
