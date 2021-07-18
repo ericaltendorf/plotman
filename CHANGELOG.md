@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [unreleased]
 ### Fixed
 ### Added
+- Output same entries to plotman.log from 'plotman interactive' and ' plotman plot/archive' "daemons"
 
 ## [0.5.1] - 2021-07-15
 ### Fixed
