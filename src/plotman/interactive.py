@@ -6,11 +6,12 @@ import os
 import subprocess
 import sys
 import typing
+import logging
 
 from plotman import archive, configuration, manager, reporting
 from plotman.job import Job
 
-
+root_logger = logging.getLogger()
 class TerminalTooSmallError(Exception):
     pass
 
@@ -141,6 +142,7 @@ def curses_main(stdscr: typing.Any, cmd_autostart_plotting: typing.Optional[bool
                     if msg.find("stagger") < 0:
                         aging_reason = msg
                     plotting_status = msg
+                root_logger.info(plotting_status)
 
             if cfg.archiving is not None:
                 if archiving_active:
