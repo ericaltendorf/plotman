@@ -183,6 +183,7 @@ def main() -> None:
         root_logger.info('Start root logger')
 
         disk_space_logger = logging.getLogger("disk_space")
+        disk_space_logger.propagate = False
         disk_space_handler = logging.handlers.RotatingFileHandler(
             backupCount=10,
             encoding='utf-8',
@@ -209,7 +210,7 @@ def main() -> None:
                     root_logger.info(msg)
                 else:
                     print('...sleeping %d s: %s' % (cfg.scheduling.polling_time_s, msg))
-                    root_logger.info('...sleeping' + str(cfg.scheduling.polling_time_s) + 's: ' + msg)
+                    root_logger.info('...sleeping %d s: %s', cfg.scheduling.polling_time_s, msg)
 
                 time.sleep(cfg.scheduling.polling_time_s)
 
