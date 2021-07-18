@@ -147,9 +147,12 @@ def curses_main(stdscr: typing.Any, cmd_autostart_plotting: typing.Optional[bool
             if cfg.archiving is not None:
                 if archiving_active:
                     archiving_status, log_messages = archive.spawn_archive_process(cfg.directories, cfg.archiving, cfg.logging, jobs)
-                    for log_message in log_messages:
-                        log.log(log_message)
-                    root_logger.info('[archive] %s', archiving_status)
+                    if log_messages:
+                        for log_message in log_messages:
+                            log.log(log_message)
+                            root_logger.info('[archive] %s', log_message)
+                    else:
+                        root_logger.info('[archive] %s', archiving_status)
 
                 archdir_freebytes, log_messages = archive.get_archdir_freebytes(cfg.archiving)
                 for log_message in log_messages:

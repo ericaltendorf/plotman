@@ -283,9 +283,12 @@ def main() -> None:
                         firstit = False
 
                         archiving_status, log_messages = archive.spawn_archive_process(cfg.directories, cfg.archiving, cfg.logging, jobs)
-                        for log_message in log_messages:
-                            print(log_message)
-                        root_logger.info('[archive] %s', archiving_status)
+                        if log_messages:
+                            for log_message in log_messages:
+                                log.log(log_message)
+                                root_logger.info('[archive] %s', log_message)
+                        else:
+                            root_logger.info('[archive] %s', archiving_status)
 
             # Debugging: show the destination drive usage schedule
             elif args.cmd == 'dsched':
