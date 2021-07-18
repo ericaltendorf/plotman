@@ -142,13 +142,14 @@ def curses_main(stdscr: typing.Any, cmd_autostart_plotting: typing.Optional[bool
                     if msg.find("stagger") < 0:
                         aging_reason = msg
                     plotting_status = msg
-                root_logger.info(plotting_status)
+                root_logger.info('[plot] %s', msg)
 
             if cfg.archiving is not None:
                 if archiving_active:
                     archiving_status, log_messages = archive.spawn_archive_process(cfg.directories, cfg.archiving, cfg.logging, jobs)
                     for log_message in log_messages:
                         log.log(log_message)
+                    root_logger.info('[archive] %s', archiving_status)
 
                 archdir_freebytes, log_messages = archive.get_archdir_freebytes(cfg.archiving)
                 for log_message in log_messages:

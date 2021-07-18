@@ -207,10 +207,9 @@ def main() -> None:
                 # TODO: report this via a channel that can be polled on demand, so we don't spam the console
                 if started:
                     print('%s' % (msg))
-                    root_logger.info(msg)
                 else:
                     print('...sleeping %d s: %s' % (cfg.scheduling.polling_time_s, msg))
-                    root_logger.info('...sleeping %d s: %s', cfg.scheduling.polling_time_s, msg)
+                root_logger.info('[plot] %s', msg)
 
                 time.sleep(cfg.scheduling.polling_time_s)
 
@@ -267,17 +266,18 @@ def main() -> None:
             # Start running archival
             elif args.cmd == 'archive':
                 if cfg.archiving is None:
-                    print('archiving not configured but is required for this command')
+                    start_msg = 'archiving not configured but is required for this command'
+                    print(start_msg)
+                    root_logger.info('[archive] %s', start_msg)
                 else:
                     start_msg = '...starting archive loop'
                     print(start_msg)
-                    root_logger.info(start_msg)
+                    root_logger.info('[archive] %s', start_msg)
                     firstit = True
                     while True:
                         if not firstit:
                             sleeping_msg = 'Sleeping 60s until next iteration...'
                             print(sleeping_msg)
-                            root_logger.info(sleeping_msg)
                             time.sleep(60)
                             jobs = Job.get_running_jobs(cfg.logging.plots)
                         firstit = False
@@ -285,8 +285,7 @@ def main() -> None:
                         archiving_status, log_messages = archive.spawn_archive_process(cfg.directories, cfg.archiving, cfg.logging, jobs)
                         for log_message in log_messages:
                             print(log_message)
-                            root_logger.info(log_message)
-
+                        root_logger.info('[archive] %s', archiving_status)
 
             # Debugging: show the destination drive usage schedule
             elif args.cmd == 'dsched':
