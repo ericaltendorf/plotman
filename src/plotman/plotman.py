@@ -276,9 +276,8 @@ def main() -> None:
                     firstit = True
                     while True:
                         if not firstit:
-                            sleeping_msg = 'Sleeping 60s until next iteration...'
-                            print(sleeping_msg)
-                            time.sleep(60)
+                            print('Sleeping %d s until next iteration...' % (cfg.scheduling.polling_time_s))
+                            time.sleep(cfg.scheduling.polling_time_s)
                             jobs = Job.get_running_jobs(cfg.logging.plots)
                         firstit = False
 
