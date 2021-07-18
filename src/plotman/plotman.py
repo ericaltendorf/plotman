@@ -284,7 +284,7 @@ def main() -> None:
                         archiving_status, log_messages = archive.spawn_archive_process(cfg.directories, cfg.archiving, cfg.logging, jobs)
                         if log_messages:
                             for log_message in log_messages:
-                                log.log(log_message)
+                                print(log_message)
                                 root_logger.info('[archive] %s', log_message)
                         else:
                             root_logger.info('[archive] %s', archiving_status)
