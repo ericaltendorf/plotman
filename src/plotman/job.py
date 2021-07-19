@@ -63,7 +63,7 @@ def parse_chia_plots_create_command_line(
     if 'chia_plot' == os.path.basename(command_line[0].lower()):  # Madmax plotter
         # TODO: use the configured executable
         all_command_arguments = command_line[1:]
-        command = madmax._cli_c8121b9
+        command = madmax.commands.latest_command()
     else:
         if 'python' in command_line[0].lower():  # Stock Chia plotter
             command_line = command_line[1:]
