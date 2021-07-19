@@ -22,6 +22,7 @@ class PlotLogParser:
             self.buckets,
             self.threads,
             self.plot_dirs,
+            self.final_dir,
             self.phase1_duration,
             self.phase2_duration,
             self.phase3_duration,
@@ -100,6 +101,13 @@ class PlotLogParser:
         if m:
             entry.tmp_dir1 = m.group(1)
             entry.tmp_dir2 = m.group(2)
+        return m != None
+
+    # Final Directory is: /farm/yards/902/fake_dst
+    def final_dir(self, line: str, entry: PlotInfo) -> bool:
+        m = re.search(r"^Final Directory is: (.+)$", line)
+        if m:
+            entry.final_dir = m.group(1)
         return m != None
 
     # Using 4 threads of stripe size 65536

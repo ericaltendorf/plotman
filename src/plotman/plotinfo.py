@@ -15,6 +15,7 @@ class PlotInfo:
     plot_size: int = 0
     tmp_dir1: str = ""
     tmp_dir2: str = ""
+    final_dir: str = ""
     phase1_duration_raw: float = 0
     phase2_duration_raw: float = 0
     phase3_duration_raw: float = 0

@@ -54,8 +54,8 @@ def test_decoder_partial_line_without_final(line_decoder: plotman.plotters.LineD
 @pytest.mark.parametrize(
     argnames=["resource_name", "correct_plotter"],
     argvalues=[
-        ["2021-04-04T19_00_47.681088-0400.log", plotman.plotters.chianetwork.Plotter],
-        ["2021-07-11T16_52_48.637488+00_00.plot.log", plotman.plotters.madmax.Plotter],
+        ["chianetwork.plot.log", plotman.plotters.chianetwork.Plotter],
+        ["madmax.plot.log", plotman.plotters.madmax.Plotter],
     ],
 )
 def test_plotter_identifies_log(

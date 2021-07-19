@@ -45,7 +45,11 @@ class Plotter:
 
     @classmethod
     def identify_log(cls, line: str) -> bool:
-        return 'src.plotting.create_plots' in line
+        segments = [
+            'chia.plotting.create_plots',
+            'src.plotting.create_plots',
+        ]
+        return any(segment in line for segment in segments)
 
     @classmethod
     def identify_process(cls, command_line: typing.List[str]) -> bool:

@@ -27,7 +27,7 @@ class FauxJobWithLogfile:
 
 @pytest.fixture(name='logfile_path')
 def logfile_fixture(tmp_path: pathlib.Path) -> pathlib.Path:
-    log_name = '2021-04-04T19_00_47.681088-0400.log'
+    log_name = 'chianetwork.plot.log'
     log_contents = importlib.resources.read_binary(resources, log_name)
     log_file_path = tmp_path.joinpath(log_name)
     log_file_path.write_bytes(log_contents)
@@ -47,7 +47,7 @@ def set_locale(name: str) -> typing.Generator[str, None, None]:
         locale.setlocale(locale.LC_ALL, original)
 
 with set_locale('C'):
-    log_file_time = datetime.datetime.strptime('Sun Apr  4 19:00:50 2021', '%a %b  %d %H:%M:%S %Y')
+    log_file_time = datetime.datetime.strptime('Wed Jul 14 22:33:24 2021', '%a %b  %d %H:%M:%S %Y')
 
 @pytest.mark.parametrize(
     argnames=['locale_name'],
