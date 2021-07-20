@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [unreleased]
 ### Fixed
 ### Added
-- Added new plot configuration options to madmax (--bucket3 & --rmulti2 )
+- `-v`/`--buckets3` and `-K`/`--rmulti2` are configurable for madMAx.
+  ([#869](https://github.com/ericaltendorf/plotman/pull/869))
 
 ## [0.5.1] - 2021-07-15
 ### Fixed
