@@ -166,6 +166,8 @@ class Job:
     k: int
     r: int
     u: int
+    v: int
+    rmulti2: int
     b: int
     n: int
     tmpdir: str
