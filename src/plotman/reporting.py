@@ -125,7 +125,7 @@ def status_report(jobs: typing.List[job.Job], width: int, height: typing.Optiona
 
     return tab.draw()  # type: ignore[no-any-return]
 
-def to_prometheus_format(metrics: typing.Dict[str, str], prom_stati: typing.Sequence[typing.Tuple[str, typing.Mapping[str, typing.Optional[int]]]]) -> typing.List[str]:
+def to_prometheus_format(metrics: typing.Dict[str, str], prom_stati: typing.Sequence[typing.Tuple[str, typing.Mapping[str, typing.Union[int, float, None]]]]) -> typing.List[str]:
     prom_str_list = []
     for metric_name, metric_desc in metrics.items():
         prom_str_list.append(f'# HELP {metric_name} {metric_desc}.')
