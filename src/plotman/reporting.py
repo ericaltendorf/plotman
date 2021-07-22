@@ -156,9 +156,9 @@ def prometheus_report(jobs: typing.List[job.Job], tmp_prefix: str = '', dst_pref
         }
         label_str = ','.join([f'{k}="{v}"' for k, v in labels.items()])
         values = {
-            'plotman_plot_phase_major': j.progress().major,
-            'plotman_plot_phase_minor': j.progress().minor,
-            'plotman_plot_phase_major_minor': j.progress().major + (j.progress().minor / 10),
+            'plotman_plot_phase_major': j.progress().major if j.progress().known else 0,
+            'plotman_plot_phase_minor': j.progress().minor if j.progress().known else 0,
+            'plotman_plot_phase_major_minor': j.progress().major + (j.progress().minor / 10) if j.progress().known else 0,
             'plotman_plot_tmp_usage': j.get_tmp_usage(),
             'plotman_plot_mem_usage': j.get_mem_usage(),
             'plotman_plot_user_time': j.get_time_user(),

@@ -148,6 +148,7 @@ def maybe_start_new_plot(dir_cfg: plotman.configuration.Directories, sched_cfg: 
                     )
                 plot_args = [
                     plotting_cfg.madmax.executable,
+                    '-K', str(2),
                     '-n', str(1),
                     '-r', str(plotting_cfg.madmax.n_threads),
                     '-u', str(plotting_cfg.madmax.n_buckets),
