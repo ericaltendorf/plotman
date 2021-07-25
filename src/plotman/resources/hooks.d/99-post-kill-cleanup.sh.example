@@ -1,0 +1,19 @@
+#!/bin/sh
+
+. ${PLOTMAN_HOOKS}/.lib.include
+
+[ "${PLOTMAN_TRIGGER}" = "KILL" ] || exit 0
+
+logInfo "${PLOTMAN_TRIGGER} triggered processing plot id ${PLOTMAN_PLOTID} (ph: ${PLOTMAN_PHASE})"
+
+for d in "${PLOTMAN_DSTDIR}" "${PLOTMAN_TMPDIR}" "${PLOTMAN_TMP2DIR}"; do
+
+    ### avoid using find, grep, xargs - all those can be various implementations
+    ### behaving differently for corner cases like spaces in file name, or can
+    ### implement different set of arguments (POSIX vs BSD variants, busybox, ....)
+    ### so do it the legacy way
+    ls "${d}/"*${PLOTMAN_PLOTID}* | while read f; do
+        rm -v "$f"
+    done
+done
+
