@@ -15,7 +15,7 @@ def test_byte_by_byte_full_load():
         resource="madmax.plot.log",
     )
 
-    parser = plotman.plotters.madmax.Plotter()
+    parser = plotman.plotters.madmax.Plotter(cwd="", tmpdir="", dstdir="")
 
     for byte in (bytes([byte]) for byte in read_bytes):
         parser.update(chunk=byte)

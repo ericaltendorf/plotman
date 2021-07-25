@@ -22,6 +22,7 @@ class SpecificInfo:
     threads: int = 0
     buffer: int = 0
     plot_size: int = 0
+    dst_dir: str = ""
     tmp_dir1: str = ""
     tmp_dir2: str = ""
     phase1_duration_raw: float = 0
@@ -33,12 +34,20 @@ class SpecificInfo:
     filename: str = ""
 
     def common(self) -> plotman.plotters.CommonInfo:
-        return plotman.plotters.CommonInfo(phase=self.phase)
+        return plotman.plotters.CommonInfo(
+            dstdir=self.dst_dir,
+            phase=self.phase,
+            tmpdir=self.tmp_dir1,
+            tmp2dir=self.tmp_dir2,
+        )
 
 
 @plotman.plotters.check_Plotter
 @attr.mutable
 class Plotter:
+    cwd: str
+    tmpdir: str
+    dstdir: str
     decoder: plotman.plotters.LineDecoder = attr.ib(factory=plotman.plotters.LineDecoder)
     info: SpecificInfo = attr.ib(factory=SpecificInfo)
     parsed_command_line: typing.Optional[plotman.job.ParsedChiaPlotsCreateCommand] = None
@@ -66,6 +75,9 @@ class Plotter:
             and 'create' == command_line[2]
         )
 
+    def common_info(self) -> plotman.plotters.CommonInfo:
+        return self.info.common()
+
     def parse_command_line(self, command_line: typing.List[str]) -> None:
         # drop the python chia plots create
         # TODO: not always 4 since python isn't always there...
@@ -80,6 +92,12 @@ class Plotter:
             command=command,
             arguments=arguments,
         )
+
+        if self.parsed_command_line.error is None and not self.parsed_command_line.help:
+            self.info = attr.evolve(
+                self.info,
+                dst_dir=self.parsed_command_line.parameters["final_dir"],
+            )
 
     def update(self, chunk: bytes) -> SpecificInfo:
         new_lines = self.decoder.update(chunk=chunk)

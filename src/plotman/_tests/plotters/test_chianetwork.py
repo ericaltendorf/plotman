@@ -1,10 +1,14 @@
+import contextlib
+import datetime
 import importlib.resources
+import locale
 import pathlib
 import typing
 
 import click
 import pendulum
 import pytest
+import _pytest.fixtures
 
 import plotman.job
 import plotman.plotters.chianetwork
@@ -14,13 +18,19 @@ import plotman._tests.resources
 clean_specific_info = plotman.plotters.chianetwork.SpecificInfo()
 
 
-def test_byte_by_byte_full_load():
+@pytest.fixture(name="with_a_locale", params=['C', 'en_US.UTF-8', 'de_DE.UTF-8'])
+def with_a_locale_fixture(request: _pytest.fixtures.SubRequest):
+    with set_locale(request.param):
+        yield
+
+
+def test_byte_by_byte_full_load(with_a_locale):
     read_bytes = importlib.resources.read_binary(
         package=plotman._tests.resources,
         resource="chianetwork.plot.log",
     )
 
-    parser = plotman.plotters.chianetwork.Plotter()
+    parser = plotman.plotters.chianetwork.Plotter(cwd='/', dstdir='', tmpdir='')
 
     for byte in (bytes([byte]) for byte in read_bytes):
         parser.update(chunk=byte)
@@ -44,3 +54,17 @@ def test_byte_by_byte_full_load():
         copy_time_raw=178.438,
         filename='/farm/yards/902/fake_dst/plot-k32-2021-07-14-22-33-d2540dcfcffddbfbd7e60b4aca4d54fb937db71991298fabc253f020a87ff7d4.plot',
     )
+
+@contextlib.contextmanager
+def set_locale(name: str) -> typing.Generator[str, None, None]:
+    # This is terrible and not thread safe.
+
+    original = locale.setlocale(locale.LC_ALL)
+
+    try:
+        yield locale.setlocale(locale.LC_ALL, name)
+    finally:
+        locale.setlocale(locale.LC_ALL, original)
+
+with set_locale('C'):
+    log_file_time = datetime.datetime.strptime('Wed Jul 14 22:33:24 2021', '%a %b  %d %H:%M:%S %Y')

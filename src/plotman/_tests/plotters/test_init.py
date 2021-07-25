@@ -375,6 +375,6 @@ def test_command_line_parsed_correctly(
 ) -> None:
     assert command_line_example.plotter is not None
 
-    plotter = command_line_example.plotter()
+    plotter = command_line_example.plotter(cwd='/', dstdir='', tmpdir='')
     plotter.parse_command_line(command_line=command_line_example.line)
     assert plotter.parsed_command_line == command_line_example.parsed

@@ -14,6 +14,7 @@ import plotman.job
 import plotman.plotinfo
 
 
+# TODO: should this be bound to SpecificInfo
 T = typing.TypeVar("T")
 
 
@@ -73,6 +74,9 @@ class ProtocolChecker(typing.Generic[T]):
 @attr.frozen
 class CommonInfo:
     phase: plotman.job.Phase
+    tmpdir: str
+    tmp2dir: str
+    dstdir: str
     tmp_files: typing.List[pathlib.Path] = attr.ib(factory=list)
     plot_id: typing.Optional[str] = None
     process_id: typing.Optional[int] = None
@@ -107,6 +111,14 @@ class RegexLineHandlers(typing.Generic[T]):
 
 class Plotter(typing_extensions.Protocol):
     parsed_command_line: typing.Optional[plotman.job.ParsedChiaPlotsCreateCommand]
+    # TODO: actually use this to resolve any relative path arguments
+    cwd: str
+
+    def __init__(self, cwd: str) -> None:
+        ...
+
+    def common_info(self) -> CommonInfo:
+        ...
 
     @classmethod
     def identify_log(cls, line: str) -> bool:
@@ -148,7 +160,7 @@ def get_plotter_from_log(lines: typing.Iterable[str]) -> typing.Type[Plotter]:
             if plotter.identify_log(line=line):
                 return plotter
 
-    raise Exception("Failed to identify the plotter definition for parsing log")
+    raise plotman.errors.UnableToIdentifyPlotterFromLogError()
 
 
 def get_plotter_from_command_line(

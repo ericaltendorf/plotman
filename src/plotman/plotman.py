@@ -289,7 +289,7 @@ def main() -> None:
                     elif len(selected) > 1:
                         print('Error: "%s" matched multiple jobs:' % args.idprefix[0])
                         for j in selected:
-                            print('  %s' % j.plot_id)
+                            print('  %s' % j.plotter.common_info().plot_id)
                         selected = []
 
                 for job in selected:
@@ -305,13 +305,14 @@ def main() -> None:
                             print('  %s' % f)
 
                     elif args.cmd == 'kill':
+                        info = job.plotter.common_info()
                         # First suspend so job doesn't create new files
-                        print('Pausing PID %d, plot id %s' % (job.proc.pid, job.plot_id))
+                        print('Pausing PID %d, plot id %s' % (job.proc.pid, info.plot_id))
                         job.suspend()
 
                         temp_files = job.get_temp_files()
                         
-                        print('Will kill pid %d, plot id %s' % (job.proc.pid, job.plot_id))
+                        print('Will kill pid %d, plot id %s' % (job.proc.pid, info.plot_id))
                         print('Will delete %d temp files' % len(temp_files))
 
                         if args.force:
@@ -332,8 +333,8 @@ def main() -> None:
                                 os.remove(f)
 
                     elif args.cmd == 'suspend':
-                        print('Suspending ' + job.plot_id)
+                        print(f'Suspending {job.plotter.common_info().plot_id}')
                         job.suspend()
                     elif args.cmd == 'resume':
-                        print('Resuming ' + job.plot_id)
+                        print(f'Resuming {job.plotter.common_info().plot_id}')
                         job.resume()

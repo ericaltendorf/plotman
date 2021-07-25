@@ -96,11 +96,14 @@ def status_report(jobs: typing.List[job.Job], width: int, height: typing.Optiona
         else:
             try:
                 with j.proc.oneshot():
-                    row = [j.plot_id[:8], # Plot ID
+                    info = j.plotter.common_info()
+                    row = [j.plot_id_prefix(), # Plot ID
                         str(j.plotter), # chia or madmax
-                        str(j.k), # k size
-                        abbr_path(j.tmpdir, tmp_prefix), # Temp directory
-                        abbr_path(j.dstdir, dst_prefix), # Destination directory
+                        # TODO: fill this out
+                        # str(j.k), # k size
+                        "?",
+                        abbr_path(info.tmpdir, tmp_prefix), # Temp directory
+                        abbr_path(info.dstdir, dst_prefix), # Destination directory
                         plot_util.time_format(j.get_time_wall()), # Time wall
                         str(j.progress()), # Overall progress (major:minor)
                         plot_util.human_format(j.get_tmp_usage(), 0), # Current temp file size
@@ -113,7 +116,7 @@ def status_report(jobs: typing.List[job.Job], width: int, height: typing.Optiona
                         ]
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 # In case the job has disappeared
-                row = [j.plot_id[:8]] + (['--'] * (len(headings) - 2))
+                row = [j.plot_id_prefix()] + (['--'] * (len(headings) - 2))
 
             if height:
                 row.insert(0, '%3d' % i)
@@ -147,10 +150,11 @@ def prometheus_report(jobs: typing.List[job.Job], tmp_prefix: str = '', dst_pref
     }
     prom_stati = []
     for j in jobs:
+        info = j.plotter.common_info()
         labels = {
-            'plot_id': j.plot_id[:8],
-            'tmp_dir': abbr_path(j.tmpdir, tmp_prefix),
-            'dst_dir': abbr_path(j.dstdir, dst_prefix),
+            'plot_id': j.plot_id_prefix(),
+            'tmp_dir': abbr_path(info.tmpdir, tmp_prefix),
+            'dst_dir': abbr_path(info.dstdir, dst_prefix),
             'run_status': j.get_run_status(),
             'phase': str(j.progress()),
         }
@@ -176,7 +180,7 @@ def summary(jobs: typing.List[job.Job], tmp_prefix: str = '') -> str:
     ]
 
     # Number of jobs in each tmp disk
-    tmp_dir_paths = sorted([abbr_path(job.tmpdir, tmp_prefix) for job in jobs])
+    tmp_dir_paths = sorted([abbr_path(job.plotter.common_info().tmpdir, tmp_prefix) for job in jobs])
     for key, group in groupby(tmp_dir_paths, lambda dir: dir):
         summary.append(
             'Jobs in {0}: {1}'.format(key, len(list(group)))

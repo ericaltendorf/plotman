@@ -37,12 +37,20 @@ class SpecificInfo:
     plot_name: str = ""
 
     def common(self) -> plotman.plotters.CommonInfo:
-        return plotman.plotters.CommonInfo(phase=self.phase)
+        return plotman.plotters.CommonInfo(
+            dstdir=self.dst_dir,
+            phase=self.phase,
+            tmpdir=self.tmp_dir,
+            tmp2dir=self.tmp2_dir,
+        )
 
 
 @plotman.plotters.check_Plotter
 @attr.mutable
 class Plotter:
+    cwd: str
+    tmpdir: str
+    dstdir: str
     decoder: plotman.plotters.LineDecoder = attr.ib(factory=plotman.plotters.LineDecoder)
     info: SpecificInfo = attr.ib(factory=SpecificInfo)
     parsed_command_line: typing.Optional[plotman.job.ParsedChiaPlotsCreateCommand] = None
@@ -57,6 +65,9 @@ class Plotter:
             return False
 
         return 'chia_plot' == os.path.basename(command_line[0]).lower()
+
+    def common_info(self) -> plotman.plotters.CommonInfo:
+        return self.info.common()
 
     def parse_command_line(self, command_line: typing.List[str]) -> None:
         # drop the chia_plot
