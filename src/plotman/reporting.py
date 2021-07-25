@@ -125,7 +125,7 @@ def status_report(jobs: typing.List[job.Job], width: int, height: typing.Optiona
 
     return tab.draw()  # type: ignore[no-any-return]
 
-def to_prometheus_format(metrics: typing.Dict[str, str], prom_stati: typing.Sequence[typing.Tuple[str, typing.Mapping[str, typing.Optional[int]]]]) -> typing.List[str]:
+def to_prometheus_format(metrics: typing.Dict[str, str], prom_stati: typing.Sequence[typing.Tuple[str, typing.Mapping[str, typing.Union[int, float, None]]]]) -> typing.List[str]:
     prom_str_list = []
     for metric_name, metric_desc in metrics.items():
         prom_str_list.append(f'# HELP {metric_name} {metric_desc}.')
@@ -138,6 +138,7 @@ def prometheus_report(jobs: typing.List[job.Job], tmp_prefix: str = '', dst_pref
     metrics = {
         'plotman_plot_phase_major': 'The phase the plot is currently in',
         'plotman_plot_phase_minor': 'The part of the phase the plot is currently in',
+        'plotman_plot_phase_major_minor': 'major and minor',
         'plotman_plot_tmp_usage': 'Tmp dir usage in bytes',
         'plotman_plot_mem_usage': 'Memory usage in bytes',
         'plotman_plot_user_time': 'Processor time (user) in s',
@@ -157,6 +158,7 @@ def prometheus_report(jobs: typing.List[job.Job], tmp_prefix: str = '', dst_pref
         values = {
             'plotman_plot_phase_major': j.progress().major,
             'plotman_plot_phase_minor': j.progress().minor,
+            'plotman_plot_phase_major_minor': j.progress().major + (j.progress().minor / 10),
             'plotman_plot_tmp_usage': j.get_tmp_usage(),
             'plotman_plot_mem_usage': j.get_mem_usage(),
             'plotman_plot_user_time': j.get_time_user(),
@@ -273,4 +275,3 @@ def json_report(jobs: typing.List[job.Job]) -> str:
     }
 
     return json.dumps(stuff)
-

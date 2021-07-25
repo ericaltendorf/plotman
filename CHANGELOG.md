@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [unreleased]
 ### Fixed
 ### Added
+- `-v`/`--buckets3` and `-K`/`--rmulti2` are configurable for madMAx.
+  ([#869](https://github.com/ericaltendorf/plotman/pull/869))
+- A combined major/minor value for Prometheus status output.
+  ([#885](https://github.com/ericaltendorf/plotman/pull/885))
 
 ## [0.5.1] - 2021-07-15
 ### Fixed

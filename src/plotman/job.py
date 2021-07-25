@@ -107,6 +107,8 @@ class Job:
     k: int
     r: int
     u: int
+    v: int
+    rmulti2: int
     b: int
     n: int
     tmpdir: str
@@ -230,6 +232,8 @@ class Job:
             self.k = 32
             self.r = self.args['threads']  # type: ignore[assignment]
             self.u = self.args['buckets']  # type: ignore[assignment]
+            self.v = self.args['buckets3']  # type: ignore[assignment]
+            self.rmulti2 = self.args['rmulti2']  # type: ignore[assignment]
             self.b = 0
             self.n = self.args['count']  # type: ignore[assignment]
             self.tmpdir = self.args['tmpdir']  # type: ignore[assignment]
@@ -342,36 +346,25 @@ class Job:
 
                         # MADMAX reports after completion of phases so increment the reported subphases
                         # and assume that phase 1 has already started
-
-                        # MADMAX: "[P1]" or "[P2]" or "[P4]"
-                        m = re.match(r'^\[P(\d)\].*', line)
+                        m = re.match(r'^\[P(\d)-?(1|2)?\] Table (\d) (rewrite)?', line)
                         if m:
                             phase = int(m.group(1))
-                            phase_subphases[phase] = 1
+                            phase_subphases[phase] = int(m.group(3))
 
-                        # MADMAX: "[P1] or [P2] Table 7"
-                        m = re.match(r'^\[P(\d)\] Table (\d).*', line)
-                        if m:
-                            phase = int(m.group(1))
-                            if phase == 1:
-                                phase_subphases[1] = max(phase_subphases[1], (int(m.group(2))+1))
+                            if phase == 2:
+                                phase_subphases[phase] = 9 - phase_subphases[phase] + (m.lastindex == 4)
+                            elif phase != 3 or m.group(2) and m.group(2) == '2':
+                                phase_subphases[phase] += 1
 
-                            elif phase == 2:
-                                if 'rewrite' in line:
-                                    phase_subphases[2] = max(phase_subphases[2], (9 - int(m.group(2))))
-                                else:
-                                    phase_subphases[2] = max(phase_subphases[2], (8 - int(m.group(2))))
+                            if phase_subphases[phase] > 7:
+                                phase += 1
+                                phase_subphases[phase] = 2 * (phase < 4)
 
-                        # MADMAX: Phase 3: "[P3-1] Table 4"
-                        m = re.match(r'^\[P3\-(\d)\] Table (\d).*', line)
-                        if m:
-                            if 3 in phase_subphases:
-                                if int(m.group(1)) == 2:
-                                    phase_subphases[3] = max(phase_subphases[3], int(m.group(2)))
-                                else:
-                                    phase_subphases[3] = max(phase_subphases[3], int(m.group(2))-1)
-                            else: 
-                                phase_subphases[3] = 1
+                        else:
+                            m = re.match(r'^\[P4\] (Starting)?(Finished writing C2)?', line)
+                            if m and m.lastindex:
+                                phase = 3 + int(m.lastindex)
+                                phase_subphases[phase] = 0
 
                     else:                    
                         # CHIA: "Starting phase 1/4: Forward Propagation into tmp files... Sat Oct 31 11:27:04 2020"
