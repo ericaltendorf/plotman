@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [unreleased]
+### Fixed
+### Added
+- `-v`/`--buckets3` and `-K`/`--rmulti2` are configurable for madMAx.
+  ([#869](https://github.com/ericaltendorf/plotman/pull/869))
+- A combined major/minor value for Prometheus status output.
+  ([#885](https://github.com/ericaltendorf/plotman/pull/885))
+
 ## [0.5.1] - 2021-07-15
 ### Fixed
 - Detects binary-installed Chia plotting processes again after being broken in v0.5.
