@@ -33,12 +33,6 @@ def job_phases_for_dstdir(d: str, all_jobs: typing.List["Job"]) -> typing.List["
     '''Return phase 2-tuples for jobs outputting to dstdir d'''
     return sorted([j.progress() for j in all_jobs if os.path.normpath(j.plotter.common_info().dstdir) == os.path.normpath(d)])
 
-def parse_chia_plot_time(s: str) -> pendulum.DateTime:
-    # This will grow to try ISO8601 as well for when Chia logs that way
-    # TODO: unignore once fixed upstream
-    #       https://github.com/sdispater/pendulum/pull/548
-    return pendulum.from_format(s, 'ddd MMM DD HH:mm:ss YYYY', locale='en', tz=None)  # type: ignore[arg-type]
-
 
 @attr.frozen
 class ParsedChiaPlotsCreateCommand:

@@ -4,6 +4,7 @@ import typing
 
 from plotman.plotinfo import PlotInfo
 import plotman.job
+import plotman.plotters.chianetwork
 
 
 class PlotLogParser:
@@ -142,7 +143,7 @@ class PlotLogParser:
     def plot_start_date(self, line: str, entry: PlotInfo) -> bool:
         m = re.search(r'^Starting phase 1/4: Forward Propagation into tmp files\.\.\. (.+)', line)
         if m:
-            entry.started_at = plotman.job.parse_chia_plot_time(s=m.group(1))
+            entry.started_at = plotman.plotters.chianetwork.parse_chia_plot_time(s=m.group(1))
         return m != None
 
 

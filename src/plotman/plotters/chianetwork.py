@@ -10,6 +10,13 @@ import plotman.job
 import plotman.plotters
 
 
+def parse_chia_plot_time(s: str) -> pendulum.DateTime:
+    # This will grow to try ISO8601 as well for when Chia logs that way
+    # TODO: unignore once fixed upstream
+    #       https://github.com/sdispater/pendulum/pull/548
+    return pendulum.from_format(s, 'ddd MMM DD HH:mm:ss YYYY', locale='en', tz=None)  # type: ignore[arg-type]
+
+
 @plotman.plotters.check_SpecificInfo
 @attr.frozen
 class SpecificInfo:
@@ -208,4 +215,4 @@ def plot_size(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
 @handlers.register(expression=r'^Starting phase 1/4: Forward Propagation into tmp files\.\.\. (.+)')
 def plot_start_date(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # Starting phase 1/4: Forward Propagation into tmp files... Sun May  9 17:36:12 2021
-    return attr.evolve(info, started_at=plotman.job.parse_chia_plot_time(s=match.group(1)))
+    return attr.evolve(info, started_at=parse_chia_plot_time(s=match.group(1)))

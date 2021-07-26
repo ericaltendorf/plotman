@@ -2,11 +2,12 @@ import importlib.resources
 
 from plotman._tests import resources
 from plotman.log_parser import PlotLogParser
-import plotman.job
 import plotman.plotinfo
+import plotman.plotters.chianetwork
+
 
 example_info = plotman.plotinfo.PlotInfo(
-    started_at=plotman.job.parse_chia_plot_time(s="Wed Jul 14 22:33:24 2021"),
+    started_at=plotman.plotters.chianetwork.parse_chia_plot_time(s="Wed Jul 14 22:33:24 2021"),
     plot_id="d2540dcfcffddbfbd7e60b4aca4d54fb937db71991298fabc253f020a87ff7d4",
     buckets=128,
     threads=4,
