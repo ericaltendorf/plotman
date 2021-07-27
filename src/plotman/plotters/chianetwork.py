@@ -1,11 +1,14 @@
+# mypy: allow_untyped_decorators
+
 import collections
 import os
+import pathlib
 import typing
 
 import attr
+import click
 import pendulum
 
-import plotman.chia
 import plotman.job
 import plotman.plotters
 
@@ -107,7 +110,7 @@ class Plotter:
         # TODO: We could at some point do chia version detection and pick the
         #       associated command.  For now we'll just use the latest one we have
         #       copied.
-        command = plotman.chia.commands.latest_command()
+        command = commands.latest_command()
 
         self.parsed_command_line = plotman.plotters.parse_command_line_with_click(
             command=command,
@@ -230,3 +233,501 @@ def plot_size(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
 def plot_start_date(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # Starting phase 1/4: Forward Propagation into tmp files... Sun May  9 17:36:12 2021
     return attr.evolve(info, started_at=parse_chia_plot_time(s=match.group(1)))
+
+
+commands = plotman.plotters.core.Commands()
+
+
+@commands.register(version=(1, 1, 2))
+@click.command()
+# https://github.com/Chia-Network/chia-blockchain/blob/1.1.2/LICENSE
+# https://github.com/Chia-Network/chia-blockchain/blob/1.1.2/chia/cmds/plots.py#L39-L83
+# start copied code
+@click.option("-k", "--size", help="Plot size", type=int, default=32, show_default=True)
+@click.option("--override-k", help="Force size smaller than 32", default=False, show_default=True, is_flag=True)
+@click.option("-n", "--num", help="Number of plots or challenges", type=int, default=1, show_default=True)
+@click.option("-b", "--buffer", help="Megabytes for sort/plot buffer", type=int, default=4608, show_default=True)
+@click.option("-r", "--num_threads", help="Number of threads to use", type=int, default=2, show_default=True)
+@click.option("-u", "--buckets", help="Number of buckets", type=int, default=128, show_default=True)
+@click.option(
+    "-a",
+    "--alt_fingerprint",
+    type=int,
+    default=None,
+    help="Enter the alternative fingerprint of the key you want to use",
+)
+@click.option(
+    "-c",
+    "--pool_contract_address",
+    type=str,
+    default=None,
+    help="Address of where the pool reward will be sent to. Only used if alt_fingerprint and pool public key are None",
+)
+@click.option("-f", "--farmer_public_key", help="Hex farmer public key", type=str, default=None)
+@click.option("-p", "--pool_public_key", help="Hex public key of pool", type=str, default=None)
+@click.option(
+    "-t",
+    "--tmp_dir",
+    help="Temporary directory for plotting files",
+    type=click.Path(),
+    default=pathlib.Path("."),
+    show_default=True,
+)
+@click.option("-2", "--tmp2_dir", help="Second temporary directory for plotting files", type=click.Path(), default=None)
+@click.option(
+    "-d",
+    "--final_dir",
+    help="Final directory for plots (relative or absolute)",
+    type=click.Path(),
+    default=pathlib.Path("."),
+    show_default=True,
+)
+@click.option("-i", "--plotid", help="PlotID in hex for reproducing plots (debugging only)", type=str, default=None)
+@click.option("-m", "--memo", help="Memo in hex for reproducing plots (debugging only)", type=str, default=None)
+@click.option("-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True)
+@click.option(
+    "-x", "--exclude_final_dir", help="Skips adding [final dir] to harvester for farming", default=False, is_flag=True
+)
+# end copied code
+def _cli_1_1_2() -> None:
+    pass
+
+
+@commands.register(version=(1, 1, 3))
+@click.command()
+# https://github.com/Chia-Network/chia-blockchain/blob/1.1.3/LICENSE
+# https://github.com/Chia-Network/chia-blockchain/blob/1.1.3/chia/cmds/plots.py#L39-L83
+# start copied code
+@click.option("-k", "--size", help="Plot size", type=int, default=32, show_default=True)
+@click.option("--override-k", help="Force size smaller than 32", default=False, show_default=True, is_flag=True)
+@click.option("-n", "--num", help="Number of plots or challenges", type=int, default=1, show_default=True)
+@click.option("-b", "--buffer", help="Megabytes for sort/plot buffer", type=int, default=4608, show_default=True)
+@click.option("-r", "--num_threads", help="Number of threads to use", type=int, default=2, show_default=True)
+@click.option("-u", "--buckets", help="Number of buckets", type=int, default=128, show_default=True)
+@click.option(
+    "-a",
+    "--alt_fingerprint",
+    type=int,
+    default=None,
+    help="Enter the alternative fingerprint of the key you want to use",
+)
+@click.option(
+    "-c",
+    "--pool_contract_address",
+    type=str,
+    default=None,
+    help="Address of where the pool reward will be sent to. Only used if alt_fingerprint and pool public key are None",
+)
+@click.option("-f", "--farmer_public_key", help="Hex farmer public key", type=str, default=None)
+@click.option("-p", "--pool_public_key", help="Hex public key of pool", type=str, default=None)
+@click.option(
+    "-t",
+    "--tmp_dir",
+    help="Temporary directory for plotting files",
+    type=click.Path(),
+    default=pathlib.Path("."),
+    show_default=True,
+)
+@click.option("-2", "--tmp2_dir", help="Second temporary directory for plotting files", type=click.Path(), default=None)
+@click.option(
+    "-d",
+    "--final_dir",
+    help="Final directory for plots (relative or absolute)",
+    type=click.Path(),
+    default=pathlib.Path("."),
+    show_default=True,
+)
+@click.option("-i", "--plotid", help="PlotID in hex for reproducing plots (debugging only)", type=str, default=None)
+@click.option("-m", "--memo", help="Memo in hex for reproducing plots (debugging only)", type=str, default=None)
+@click.option("-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True)
+@click.option(
+    "-x", "--exclude_final_dir", help="Skips adding [final dir] to harvester for farming", default=False, is_flag=True
+)
+# end copied code
+def _cli_1_1_3() -> None:
+    pass
+
+
+@commands.register(version=(1, 1, 4))
+@click.command()
+# https://github.com/Chia-Network/chia-blockchain/blob/1.1.4/LICENSE
+# https://github.com/Chia-Network/chia-blockchain/blob/1.1.4/chia/cmds/plots.py#L39-L83
+# start copied code
+@click.option("-k", "--size", help="Plot size", type=int, default=32, show_default=True)
+@click.option("--override-k", help="Force size smaller than 32", default=False, show_default=True, is_flag=True)
+@click.option("-n", "--num", help="Number of plots or challenges", type=int, default=1, show_default=True)
+@click.option("-b", "--buffer", help="Megabytes for sort/plot buffer", type=int, default=3389, show_default=True)
+@click.option("-r", "--num_threads", help="Number of threads to use", type=int, default=2, show_default=True)
+@click.option("-u", "--buckets", help="Number of buckets", type=int, default=128, show_default=True)
+@click.option(
+    "-a",
+    "--alt_fingerprint",
+    type=int,
+    default=None,
+    help="Enter the alternative fingerprint of the key you want to use",
+)
+@click.option(
+    "-c",
+    "--pool_contract_address",
+    type=str,
+    default=None,
+    help="Address of where the pool reward will be sent to. Only used if alt_fingerprint and pool public key are None",
+)
+@click.option("-f", "--farmer_public_key", help="Hex farmer public key", type=str, default=None)
+@click.option("-p", "--pool_public_key", help="Hex public key of pool", type=str, default=None)
+@click.option(
+    "-t",
+    "--tmp_dir",
+    help="Temporary directory for plotting files",
+    type=click.Path(),
+    default=pathlib.Path("."),
+    show_default=True,
+)
+@click.option("-2", "--tmp2_dir", help="Second temporary directory for plotting files", type=click.Path(), default=None)
+@click.option(
+    "-d",
+    "--final_dir",
+    help="Final directory for plots (relative or absolute)",
+    type=click.Path(),
+    default=pathlib.Path("."),
+    show_default=True,
+)
+@click.option("-i", "--plotid", help="PlotID in hex for reproducing plots (debugging only)", type=str, default=None)
+@click.option("-m", "--memo", help="Memo in hex for reproducing plots (debugging only)", type=str, default=None)
+@click.option("-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True)
+@click.option(
+    "-x", "--exclude_final_dir", help="Skips adding [final dir] to harvester for farming", default=False, is_flag=True
+)
+# end copied code
+def _cli_1_1_4() -> None:
+    pass
+
+
+@commands.register(version=(1, 1, 5))
+@click.command()
+# https://github.com/Chia-Network/chia-blockchain/blob/1.1.5/LICENSE
+# https://github.com/Chia-Network/chia-blockchain/blob/1.1.5/chia/cmds/plots.py#L39-L83
+# start copied code
+@click.option("-k", "--size", help="Plot size", type=int, default=32, show_default=True)
+@click.option("--override-k", help="Force size smaller than 32", default=False, show_default=True, is_flag=True)
+@click.option("-n", "--num", help="Number of plots or challenges", type=int, default=1, show_default=True)
+@click.option("-b", "--buffer", help="Megabytes for sort/plot buffer", type=int, default=3389, show_default=True)
+@click.option("-r", "--num_threads", help="Number of threads to use", type=int, default=2, show_default=True)
+@click.option("-u", "--buckets", help="Number of buckets", type=int, default=128, show_default=True)
+@click.option(
+    "-a",
+    "--alt_fingerprint",
+    type=int,
+    default=None,
+    help="Enter the alternative fingerprint of the key you want to use",
+)
+@click.option(
+    "-c",
+    "--pool_contract_address",
+    type=str,
+    default=None,
+    help="Address of where the pool reward will be sent to. Only used if alt_fingerprint and pool public key are None",
+)
+@click.option("-f", "--farmer_public_key", help="Hex farmer public key", type=str, default=None)
+@click.option("-p", "--pool_public_key", help="Hex public key of pool", type=str, default=None)
+@click.option(
+    "-t",
+    "--tmp_dir",
+    help="Temporary directory for plotting files",
+    type=click.Path(),
+    default=pathlib.Path("."),
+    show_default=True,
+)
+@click.option("-2", "--tmp2_dir", help="Second temporary directory for plotting files", type=click.Path(), default=None)
+@click.option(
+    "-d",
+    "--final_dir",
+    help="Final directory for plots (relative or absolute)",
+    type=click.Path(),
+    default=pathlib.Path("."),
+    show_default=True,
+)
+@click.option("-i", "--plotid", help="PlotID in hex for reproducing plots (debugging only)", type=str, default=None)
+@click.option("-m", "--memo", help="Memo in hex for reproducing plots (debugging only)", type=str, default=None)
+@click.option("-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True)
+@click.option(
+    "-x", "--exclude_final_dir", help="Skips adding [final dir] to harvester for farming", default=False, is_flag=True
+)
+# end copied code
+def _cli_1_1_5() -> None:
+    pass
+
+
+@commands.register(version=(1, 1, 6))
+@click.command()
+# https://github.com/Chia-Network/chia-blockchain/blob/1.1.6/LICENSE
+# https://github.com/Chia-Network/chia-blockchain/blob/1.1.6/chia/cmds/plots.py#L39-L83
+# start copied code
+@click.option("-k", "--size", help="Plot size", type=int, default=32, show_default=True)
+@click.option("--override-k", help="Force size smaller than 32", default=False, show_default=True, is_flag=True)
+@click.option("-n", "--num", help="Number of plots or challenges", type=int, default=1, show_default=True)
+@click.option("-b", "--buffer", help="Megabytes for sort/plot buffer", type=int, default=3389, show_default=True)
+@click.option("-r", "--num_threads", help="Number of threads to use", type=int, default=2, show_default=True)
+@click.option("-u", "--buckets", help="Number of buckets", type=int, default=128, show_default=True)
+@click.option(
+    "-a",
+    "--alt_fingerprint",
+    type=int,
+    default=None,
+    help="Enter the alternative fingerprint of the key you want to use",
+)
+@click.option(
+    "-c",
+    "--pool_contract_address",
+    type=str,
+    default=None,
+    help="Address of where the pool reward will be sent to. Only used if alt_fingerprint and pool public key are None",
+)
+@click.option("-f", "--farmer_public_key", help="Hex farmer public key", type=str, default=None)
+@click.option("-p", "--pool_public_key", help="Hex public key of pool", type=str, default=None)
+@click.option(
+    "-t",
+    "--tmp_dir",
+    help="Temporary directory for plotting files",
+    type=click.Path(),
+    default=pathlib.Path("."),
+    show_default=True,
+)
+@click.option("-2", "--tmp2_dir", help="Second temporary directory for plotting files", type=click.Path(), default=None)
+@click.option(
+    "-d",
+    "--final_dir",
+    help="Final directory for plots (relative or absolute)",
+    type=click.Path(),
+    default=pathlib.Path("."),
+    show_default=True,
+)
+@click.option("-i", "--plotid", help="PlotID in hex for reproducing plots (debugging only)", type=str, default=None)
+@click.option("-m", "--memo", help="Memo in hex for reproducing plots (debugging only)", type=str, default=None)
+@click.option("-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True)
+@click.option(
+    "-x", "--exclude_final_dir", help="Skips adding [final dir] to harvester for farming", default=False, is_flag=True
+)
+# end copied code
+def _cli_1_1_6() -> None:
+    pass
+
+
+@commands.register(version=(1, 1, 7))
+@click.command()
+# https://github.com/Chia-Network/chia-blockchain/blob/1.1.7/LICENSE
+# https://github.com/Chia-Network/chia-blockchain/blob/1.1.7/chia/cmds/plots.py#L39-L83
+# start copied code
+@click.option("-k", "--size", help="Plot size", type=int, default=32, show_default=True)
+@click.option("--override-k", help="Force size smaller than 32", default=False, show_default=True, is_flag=True)
+@click.option("-n", "--num", help="Number of plots or challenges", type=int, default=1, show_default=True)
+@click.option("-b", "--buffer", help="Megabytes for sort/plot buffer", type=int, default=3389, show_default=True)
+@click.option("-r", "--num_threads", help="Number of threads to use", type=int, default=2, show_default=True)
+@click.option("-u", "--buckets", help="Number of buckets", type=int, default=128, show_default=True)
+@click.option(
+    "-a",
+    "--alt_fingerprint",
+    type=int,
+    default=None,
+    help="Enter the alternative fingerprint of the key you want to use",
+)
+@click.option(
+    "-c",
+    "--pool_contract_address",
+    type=str,
+    default=None,
+    help="Address of where the pool reward will be sent to. Only used if alt_fingerprint and pool public key are None",
+)
+@click.option("-f", "--farmer_public_key", help="Hex farmer public key", type=str, default=None)
+@click.option("-p", "--pool_public_key", help="Hex public key of pool", type=str, default=None)
+@click.option(
+    "-t",
+    "--tmp_dir",
+    help="Temporary directory for plotting files",
+    type=click.Path(),
+    default=pathlib.Path("."),
+    show_default=True,
+)
+@click.option("-2", "--tmp2_dir", help="Second temporary directory for plotting files", type=click.Path(), default=None)
+@click.option(
+    "-d",
+    "--final_dir",
+    help="Final directory for plots (relative or absolute)",
+    type=click.Path(),
+    default=pathlib.Path("."),
+    show_default=True,
+)
+@click.option("-i", "--plotid", help="PlotID in hex for reproducing plots (debugging only)", type=str, default=None)
+@click.option("-m", "--memo", help="Memo in hex for reproducing plots (debugging only)", type=str, default=None)
+@click.option("-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True)
+@click.option(
+    "-x", "--exclude_final_dir", help="Skips adding [final dir] to harvester for farming", default=False, is_flag=True
+)
+# end copied code
+def _cli_1_1_7() -> None:
+    pass
+
+
+@commands.register(version=(1, 2, 0))
+@click.command()
+# https://github.com/Chia-Network/chia-blockchain/blob/1.2.0/LICENSE
+# https://github.com/Chia-Network/chia-blockchain/blob/1.2.0/chia/cmds/plots.py#L39-L83
+# start copied code
+@click.option("-k", "--size", help="Plot size", type=int, default=32, show_default=True)
+@click.option("--override-k", help="Force size smaller than 32", default=False, show_default=True, is_flag=True)
+@click.option("-n", "--num", help="Number of plots or challenges", type=int, default=1, show_default=True)
+@click.option("-b", "--buffer", help="Megabytes for sort/plot buffer", type=int, default=3389, show_default=True)
+@click.option("-r", "--num_threads", help="Number of threads to use", type=int, default=2, show_default=True)
+@click.option("-u", "--buckets", help="Number of buckets", type=int, default=128, show_default=True)
+@click.option(
+    "-a",
+    "--alt_fingerprint",
+    type=int,
+    default=None,
+    help="Enter the alternative fingerprint of the key you want to use",
+)
+@click.option(
+    "-c",
+    "--pool_contract_address",
+    type=str,
+    default=None,
+    help="Address of where the pool reward will be sent to. Only used if alt_fingerprint and pool public key are None",
+)
+@click.option("-f", "--farmer_public_key", help="Hex farmer public key", type=str, default=None)
+@click.option("-p", "--pool_public_key", help="Hex public key of pool", type=str, default=None)
+@click.option(
+    "-t",
+    "--tmp_dir",
+    help="Temporary directory for plotting files",
+    type=click.Path(),
+    default=pathlib.Path("."),
+    show_default=True,
+)
+@click.option("-2", "--tmp2_dir", help="Second temporary directory for plotting files", type=click.Path(), default=None)
+@click.option(
+    "-d",
+    "--final_dir",
+    help="Final directory for plots (relative or absolute)",
+    type=click.Path(),
+    default=pathlib.Path("."),
+    show_default=True,
+)
+@click.option("-i", "--plotid", help="PlotID in hex for reproducing plots (debugging only)", type=str, default=None)
+@click.option("-m", "--memo", help="Memo in hex for reproducing plots (debugging only)", type=str, default=None)
+@click.option("-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True)
+@click.option(
+    "-x", "--exclude_final_dir", help="Skips adding [final dir] to harvester for farming", default=False, is_flag=True
+)
+# end copied code
+def _cli_1_2_0() -> None:
+    pass
+
+
+@commands.register(version=(1, 2, 1))
+@click.command()
+# https://github.com/Chia-Network/chia-blockchain/blob/1.2.1/LICENSE
+# https://github.com/Chia-Network/chia-blockchain/blob/1.2.1/chia/cmds/plots.py#L39-L83
+# start copied code
+@click.option("-k", "--size", help="Plot size", type=int, default=32, show_default=True)
+@click.option("--override-k", help="Force size smaller than 32", default=False, show_default=True, is_flag=True)
+@click.option("-n", "--num", help="Number of plots or challenges", type=int, default=1, show_default=True)
+@click.option("-b", "--buffer", help="Megabytes for sort/plot buffer", type=int, default=3389, show_default=True)
+@click.option("-r", "--num_threads", help="Number of threads to use", type=int, default=2, show_default=True)
+@click.option("-u", "--buckets", help="Number of buckets", type=int, default=128, show_default=True)
+@click.option(
+    "-a",
+    "--alt_fingerprint",
+    type=int,
+    default=None,
+    help="Enter the alternative fingerprint of the key you want to use",
+)
+@click.option(
+    "-c",
+    "--pool_contract_address",
+    type=str,
+    default=None,
+    help="Address of where the pool reward will be sent to. Only used if alt_fingerprint and pool public key are None",
+)
+@click.option("-f", "--farmer_public_key", help="Hex farmer public key", type=str, default=None)
+@click.option("-p", "--pool_public_key", help="Hex public key of pool", type=str, default=None)
+@click.option(
+    "-t",
+    "--tmp_dir",
+    help="Temporary directory for plotting files",
+    type=click.Path(),
+    default=pathlib.Path("."),
+    show_default=True,
+)
+@click.option("-2", "--tmp2_dir", help="Second temporary directory for plotting files", type=click.Path(), default=None)
+@click.option(
+    "-d",
+    "--final_dir",
+    help="Final directory for plots (relative or absolute)",
+    type=click.Path(),
+    default=pathlib.Path("."),
+    show_default=True,
+)
+@click.option("-i", "--plotid", help="PlotID in hex for reproducing plots (debugging only)", type=str, default=None)
+@click.option("-m", "--memo", help="Memo in hex for reproducing plots (debugging only)", type=str, default=None)
+@click.option("-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True)
+@click.option(
+    "-x", "--exclude_final_dir", help="Skips adding [final dir] to harvester for farming", default=False, is_flag=True
+)
+# end copied code
+def _cli_1_2_1() -> None:
+    pass
+
+
+@commands.register(version=(1, 2, 2))
+@click.command()
+# https://github.com/Chia-Network/chia-blockchain/blob/1.2.2/LICENSE
+# https://github.com/Chia-Network/chia-blockchain/blob/1.2.2/chia/cmds/plots.py#L39-L83
+# start copied code
+@click.option("-k", "--size", help="Plot size", type=int, default=32, show_default=True)
+@click.option("--override-k", help="Force size smaller than 32", default=False, show_default=True, is_flag=True)
+@click.option("-n", "--num", help="Number of plots or challenges", type=int, default=1, show_default=True)
+@click.option("-b", "--buffer", help="Megabytes for sort/plot buffer", type=int, default=3389, show_default=True)
+@click.option("-r", "--num_threads", help="Number of threads to use", type=int, default=2, show_default=True)
+@click.option("-u", "--buckets", help="Number of buckets", type=int, default=128, show_default=True)
+@click.option(
+    "-a",
+    "--alt_fingerprint",
+    type=int,
+    default=None,
+    help="Enter the alternative fingerprint of the key you want to use",
+)
+@click.option(
+    "-c",
+    "--pool_contract_address",
+    type=str,
+    default=None,
+    help="Address of where the pool reward will be sent to. Only used if alt_fingerprint and pool public key are None",
+)
+@click.option("-f", "--farmer_public_key", help="Hex farmer public key", type=str, default=None)
+@click.option("-p", "--pool_public_key", help="Hex public key of pool", type=str, default=None)
+@click.option(
+    "-t",
+    "--tmp_dir",
+    help="Temporary directory for plotting files",
+    type=click.Path(),
+    default=pathlib.Path("."),
+    show_default=True,
+)
+@click.option("-2", "--tmp2_dir", help="Second temporary directory for plotting files", type=click.Path(), default=None)
+@click.option(
+    "-d",
+    "--final_dir",
+    help="Final directory for plots (relative or absolute)",
+    type=click.Path(),
+    default=pathlib.Path("."),
+    show_default=True,
+)
+@click.option("-i", "--plotid", help="PlotID in hex for reproducing plots (debugging only)", type=str, default=None)
+@click.option("-m", "--memo", help="Memo in hex for reproducing plots (debugging only)", type=str, default=None)
+@click.option("-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True)
+@click.option(
+    "-x", "--exclude_final_dir", help="Skips adding [final dir] to harvester for farming", default=False, is_flag=True
+)
+# end copied code
+def _cli_1_2_2() -> None:
+    pass

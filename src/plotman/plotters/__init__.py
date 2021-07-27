@@ -10,8 +10,8 @@ import click
 import pendulum
 import typing_extensions
 
-import plotman.chia
 import plotman.job
+import plotman.plotters.core
 
 
 # TODO: should this be bound to SpecificInfo
@@ -279,7 +279,7 @@ def get_plotter_from_command_line(
 
 
 def parse_command_line_with_click(
-    command: plotman.chia.CommandProtocol,
+    command: "plotman.plotters.core.CommandProtocol",
     arguments: typing.List[str],
 ) -> plotman.job.ParsedChiaPlotsCreateCommand:
     # nice idea, but this doesn't include -h

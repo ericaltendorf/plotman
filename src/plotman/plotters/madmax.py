@@ -1,12 +1,15 @@
+# mypy: allow_untyped_decorators
+
 import collections
 import os.path
+import pathlib
 import typing
 
 import attr
+import click
 import pendulum
 
 import plotman.job
-import plotman.madmax
 import plotman.plotters
 
 
@@ -88,7 +91,7 @@ class Plotter:
         # TODO: We could at some point do chia version detection and pick the
         #       associated command.  For now we'll just use the latest one we have
         #       copied.
-        command = plotman.madmax.commands.latest_command()
+        command = commands.latest_command()
 
         self.parsed_command_line = plotman.plotters.parse_command_line_with_click(
             command=command,
@@ -268,3 +271,71 @@ def phase4_duration_raw(match: typing.Match[str], info: SpecificInfo) -> Specifi
 def total_time(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # Total plot creation time was 4276.32 sec (71.272 min)
     return attr.evolve(info, total_time_raw=float(match.group(1)))
+
+
+commands = plotman.plotters.core.Commands()
+
+
+# Madmax Git on 2021-06-19 -> https://github.com/madMAx43v3r/chia-plotter/commit/c8121b987186c42c895b49818e6c13acecc51332
+@commands.register(version=(0,))
+@click.command()
+# https://github.com/madMAx43v3r/chia-plotter/blob/c8121b987186c42c895b49818e6c13acecc51332/LICENSE
+# https://github.com/madMAx43v3r/chia-plotter/blob/c8121b987186c42c895b49818e6c13acecc51332/src/chia_plot.cpp#L177-L188
+@click.option("-n", "--count", help="Number of plots to create (default = 1, -1 = infinite)",
+    type=int, default=1, show_default=True)
+@click.option("-r", "--threads", help="Number of threads (default = 4)",
+    type=int, default=4, show_default=True)
+@click.option("-u", "--buckets", help="Number of buckets (default = 256)",
+    type=int, default=256, show_default=True)
+@click.option("-v", "--buckets3", help="Number of buckets for phase 3+4 (default = buckets)",
+    type=int, default=256)
+@click.option("-t", "--tmpdir", help="Temporary directory, needs ~220 GiB (default = $PWD)",
+    type=click.Path(), default=pathlib.Path("."), show_default=True)
+@click.option("-2", "--tmpdir2", help="Temporary directory 2, needs ~110 GiB [RAM] (default = <tmpdir>)",
+    type=click.Path(), default=None)
+@click.option("-d", "--finaldir", help="Final directory (default = <tmpdir>)",
+    type=click.Path(), default=pathlib.Path("."), show_default=True)
+@click.option("-p", "--poolkey", help="Pool Public Key (48 bytes)",
+    type=str, default=None)
+@click.option("-f", "--farmerkey", help="Farmer Public Key (48 bytes)",
+    type=str, default=None)
+@click.option("-G", "--tmptoggle", help="Alternate tmpdir/tmpdir2",
+    type=str, default=None)
+def _cli_c8121b987186c42c895b49818e6c13acecc51332() -> None:
+    pass
+
+
+
+# Madmax Git on 2021-07-12 -> https://github.com/madMAx43v3r/chia-plotter/commit/974d6e5f1440f68c48492122ca33828a98864dfc
+@commands.register(version=(1,))
+@click.command()
+# https://github.com/madMAx43v3r/chia-plotter/blob/974d6e5f1440f68c48492122ca33828a98864dfc/LICENSE
+# https://github.com/madMAx43v3r/chia-plotter/blob/974d6e5f1440f68c48492122ca33828a98864dfc/src/chia_plot.cpp#L235-L249
+@click.option("-n", "--count", help="Number of plots to create (default = 1, -1 = infinite)",
+    type=int, default=1, show_default=True)
+@click.option("-r", "--threads", help="Number of threads (default = 4)",
+    type=int, default=4, show_default=True)
+@click.option("-u", "--buckets", help="Number of buckets (default = 256)",
+    type=int, default=256, show_default=True)
+@click.option("-v", "--buckets3", help="Number of buckets for phase 3+4 (default = buckets)",
+    type=int, default=256)
+@click.option("-t", "--tmpdir", help="Temporary directory, needs ~220 GiB (default = $PWD)",
+    type=click.Path(), default=pathlib.Path("."), show_default=True)
+@click.option("-2", "--tmpdir2", help="Temporary directory 2, needs ~110 GiB [RAM] (default = <tmpdir>)",
+    type=click.Path(), default=None)
+@click.option("-d", "--finaldir", help="Final directory (default = <tmpdir>)",
+    type=click.Path(), default=pathlib.Path("."), show_default=True)
+@click.option("-w", "--waitforcopy", help="Wait for copy to start next plot",
+    type=bool, default=False, show_default=True)
+@click.option("-p", "--poolkey", help="Pool Public Key (48 bytes)",
+    type=str, default=None)
+@click.option("-c", "--contract", help="Pool Contract Address (62 chars)",
+    type=str, default=None)
+@click.option("-f", "--farmerkey", help="Farmer Public Key (48 bytes)",
+    type=str, default=None)
+@click.option("-G", "--tmptoggle", help="Alternate tmpdir/tmpdir2",
+    type=str, default=None)
+@click.option("-K", "--rmulti2", help="Thread multiplier for P2 (default = 1)",
+    type=int, default=1)
+def _cli_974d6e5f1440f68c48492122ca33828a98864dfc() -> None:
+    pass
