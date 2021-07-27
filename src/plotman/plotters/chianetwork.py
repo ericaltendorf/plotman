@@ -46,6 +46,20 @@ class SpecificInfo:
             phase=self.phase,
             tmpdir=self.tmp_dir1,
             tmp2dir=self.tmp_dir2,
+            completed=self.total_time_raw > 0,
+            started_at=self.started_at,
+            plot_id=self.plot_id,
+            plot_size=self.plot_size,
+            buffer=self.buffer,
+            buckets=self.buckets,
+            threads=self.threads,
+            phase1_duration_raw=self.phase1_duration_raw,
+            phase2_duration_raw=self.phase2_duration_raw,
+            phase3_duration_raw=self.phase3_duration_raw,
+            phase4_duration_raw=self.phase4_duration_raw,
+            total_time_raw=self.total_time_raw,
+            copy_time_raw=self.copy_time_raw,
+            filename=self.filename,
         )
 
 

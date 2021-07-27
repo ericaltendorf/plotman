@@ -7,11 +7,11 @@ import typing
 
 import attr
 import click
+import pendulum
 import typing_extensions
 
 import plotman.chia
 import plotman.job
-import plotman.plotinfo
 
 
 # TODO: should this be bound to SpecificInfo
@@ -71,15 +71,116 @@ class ProtocolChecker(typing.Generic[T]):
         return cls
 
 
+# TODO: should use pendulum without these helpers
+def duration_to_minutes(duration: float) -> int:
+    return round(duration / 60)
+
+
+# TODO: should use pendulum without these helpers
+def duration_to_hours(duration: float) -> float:
+    return round(duration / 60 / 60, 2)
+
+
 @attr.frozen
 class CommonInfo:
     phase: plotman.job.Phase
     tmpdir: str
     tmp2dir: str
     dstdir: str
+    buckets: int
+    threads: int
+    filename: str
+    buffer: typing.Optional[int] = None
+    plot_size: int = 0
+    phase1_duration_raw: float = 0
+    phase2_duration_raw: float = 0
+    phase3_duration_raw: float = 0
+    phase4_duration_raw: float = 0
+    total_time_raw: float = 0
+    copy_time_raw: float = 0
+    started_at: typing.Optional[pendulum.DateTime] = None
     tmp_files: typing.List[pathlib.Path] = attr.ib(factory=list)
     plot_id: typing.Optional[str] = None
     process_id: typing.Optional[int] = None
+    completed: bool = False
+
+    # Phase 1 duration
+    @property
+    def phase1_duration(self) -> int:
+        return round(self.phase1_duration_raw)
+
+    @property
+    def phase1_duration_minutes(self) -> int:
+        return duration_to_minutes(self.phase1_duration_raw)
+
+    @property
+    def phase1_duration_hours(self) -> float:
+        return duration_to_hours(self.phase1_duration_raw)
+
+    # Phase 2 duration
+    @property
+    def phase2_duration(self) -> int:
+        return round(self.phase2_duration_raw)
+
+    @property
+    def phase2_duration_minutes(self) -> int:
+        return duration_to_minutes(self.phase2_duration_raw)
+
+    @property
+    def phase2_duration_hours(self) -> float:
+        return duration_to_hours(self.phase2_duration_raw)
+
+    # Phase 3 duration
+    @property
+    def phase3_duration(self) -> int:
+        return round(self.phase3_duration_raw)
+
+    @property
+    def phase3_duration_minutes(self) -> int:
+        return duration_to_minutes(self.phase3_duration_raw)
+
+    @property
+    def phase3_duration_hours(self) -> float:
+        return duration_to_hours(self.phase3_duration_raw)
+
+    # Phase 4 duration
+    @property
+    def phase4_duration(self) -> int:
+        return round(self.phase4_duration_raw)
+
+    @property
+    def phase4_duration_minutes(self) -> int:
+        return duration_to_minutes(self.phase4_duration_raw)
+
+    @property
+    def phase4_duration_hours(self) -> float:
+        return duration_to_hours(self.phase4_duration_raw)
+
+    # Total time
+    @property
+    def total_time(self) -> int:
+        return round(self.total_time_raw)
+
+    @property
+    def total_time_minutes(self) -> int:
+        return duration_to_minutes(self.total_time_raw)
+
+    @property
+    def total_time_hours(self) -> float:
+        return duration_to_hours(self.total_time_raw)
+
+    # Copy time
+    @property
+    def copy_time(self) -> int:
+        return round(self.copy_time_raw)
+
+    @property
+    def copy_time_minutes(self) -> int:
+        return duration_to_minutes(self.copy_time_raw)
+
+    @property
+    def copy_time_hours(self) -> float:
+        return duration_to_hours(self.copy_time_raw)
 
 
 class SpecificInfo(typing_extensions.Protocol):
@@ -113,8 +214,10 @@ class Plotter(typing_extensions.Protocol):
     parsed_command_line: typing.Optional[plotman.job.ParsedChiaPlotsCreateCommand]
     # TODO: actually use this to resolve any relative path arguments
     cwd: str
+    tmpdir: str
+    dstdir: str
 
-    def __init__(self, cwd: str) -> None:
+    def __init__(self, cwd: str, tmpdir: str, dstdir: str) -> None:
         ...
 
     def common_info(self) -> CommonInfo:

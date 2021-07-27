@@ -6,8 +6,7 @@ import attr
 import attr._make
 import pendulum
 
-from plotman.log_parser import PlotLogParser
-import plotman.plotinfo
+import plotman.plotters
 
 
 @attr.frozen
@@ -52,7 +51,7 @@ class Row:
         return [field.metadata['name'] for field in attr.fields(cls)]
 
     @classmethod
-    def from_info(cls, info: plotman.plotinfo.PlotInfo) -> "Row":
+    def from_info(cls, info: plotman.plotters.CommonInfo) -> "Row":
         if info.started_at is None:
             raise Exception(f'Unexpected None start time for file: {info.filename}')
 
@@ -64,8 +63,8 @@ class Row:
             buffer=info.buffer,
             buckets=info.buckets,
             threads=info.threads,
-            tmp_dir_1=info.tmp_dir1,
-            tmp_dir_2=info.tmp_dir2,
+            tmp_dir_1=info.tmpdir,
+            tmp_dir_2=info.tmp2dir,
             phase_1_duration_raw=info.phase1_duration_raw,
             phase_1_duration=info.phase1_duration,
             phase_1_duration_minutes=info.phase1_duration_minutes,
@@ -100,22 +99,33 @@ class Row:
         }
 
 
-def key_on_plot_info_started_at(element: plotman.plotinfo.PlotInfo) -> pendulum.DateTime:
+def key_on_plot_info_started_at(element: plotman.plotters.CommonInfo) -> pendulum.DateTime:
     if element.started_at is None:
         return pendulum.now().add(years=9999)
 
     return element.started_at
 
 
-def parse_logs(logfilenames: typing.Sequence[str]) -> typing.List[plotman.plotinfo.PlotInfo]:
-    parser = PlotLogParser()
+def parse_logs(logfilenames: typing.Sequence[str]) -> typing.List[plotman.plotters.CommonInfo]:
     result = []
 
     for filename in logfilenames:
         with open(filename) as file:
-            info = parser.parse(file)
+            try:
+                plotter_type = plotman.plotters.get_plotter_from_log(lines=file)
+            except plotman.errors.UnableToIdentifyPlotterFromLogError:
+                continue
 
-        if not info.in_progress():
+        # TODO: if these garbage values are really ok they shouldn't be required
+        parser = plotter_type(cwd='', tmpdir='', dstdir='')
+
+        with open(filename, 'rb') as binary_file:
+            read_bytes = binary_file.read()
+
+        parser.update(chunk=read_bytes)
+        info = parser.common_info()
+
+        if info.completed:
             result.append(info)
 
     result.sort(key=key_on_plot_info_started_at)
