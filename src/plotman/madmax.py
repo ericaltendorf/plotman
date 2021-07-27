@@ -71,5 +71,7 @@ commands = Commands()
     type=str, default=None)
 @click.option("-G", "--tmptoggle", help="Alternate tmpdir/tmpdir2", 
     type=str, default=None)
+@click.option("-K", "--rmulti2", help="Thread multiplier for P2 (default = 1)",
+    type=int, default=1)
 def _cli_c8121b9() -> None:
     pass

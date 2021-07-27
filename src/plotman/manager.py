@@ -116,9 +116,11 @@ def maybe_start_new_plot(dir_cfg: plotman.configuration.Directories, sched_cfg: 
 
             dst_dirs = dir_cfg.get_dst_directories()
 
+            dir_cfg.next_tmp2()
+
             dstdir: str
             if dir_cfg.dst_is_tmp2():
-                dstdir = dir_cfg.tmp2  # type: ignore[assignment]
+                dstdir = dir_cfg.get_tmp2()
             elif tmpdir in dst_dirs:
                 dstdir = tmpdir
             elif dir_cfg.dst_is_tmp():
@@ -146,14 +148,15 @@ def maybe_start_new_plot(dir_cfg: plotman.configuration.Directories, sched_cfg: 
                     )
                 plot_args = [
                     plotting_cfg.madmax.executable,
+                    '-K', str(2),
                     '-n', str(1),
                     '-r', str(plotting_cfg.madmax.n_threads),
                     '-u', str(plotting_cfg.madmax.n_buckets),
                     '-t', tmpdir if tmpdir.endswith('/') else (tmpdir + '/'),
                     '-d', dstdir if dstdir.endswith('/') else (dstdir + '/') ]
-                if dir_cfg.tmp2 is not None:
+                if dir_cfg.get_tmp2() is not None:
                     plot_args.append('-2')
-                    plot_args.append(dir_cfg.tmp2 if dir_cfg.tmp2.endswith('/') else (dir_cfg.tmp2 + '/'))
+                    plot_args.append(dir_cfg.get_tmp2() if dir_cfg.get_tmp2().endswith('/') else (dir_cfg.get_tmp2() + '/'))
             else:
                 if plotting_cfg.chia is None:
                     raise Exception(
@@ -170,9 +173,9 @@ def maybe_start_new_plot(dir_cfg: plotman.configuration.Directories, sched_cfg: 
                     plot_args.append('-e')
                 if plotting_cfg.chia.x:
                     plot_args.append('-x')  
-                if dir_cfg.tmp2 is not None:
+                if dir_cfg.get_tmp2() is not None:
                     plot_args.append('-2')
-                    plot_args.append(dir_cfg.tmp2)
+                    plot_args.append(dir_cfg.get_tmp2())
             if plotting_cfg.farmer_pk is not None:
                 plot_args.append('-f')
                 plot_args.append(plotting_cfg.farmer_pk)
@@ -221,6 +224,10 @@ def maybe_start_new_plot(dir_cfg: plotman.configuration.Directories, sched_cfg: 
             else:
                 creationflags = 0
                 nice = 15
+
+            node = dir_cfg.get_tmp2().rstrip('/')[-1]
+
+            plot_args = ['numactl', f'--membind={node}', f'--cpunodebind={node}', '--', *plot_args]
 
             with open_log_file:
                 # start_new_sessions to make the job independent of this controlling tty (POSIX only).
