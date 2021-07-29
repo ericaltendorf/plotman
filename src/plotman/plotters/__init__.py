@@ -83,6 +83,7 @@ def duration_to_hours(duration: float) -> float:
 
 @attr.frozen
 class CommonInfo:
+    type: str
     phase: plotman.job.Phase
     tmpdir: str
     tmp2dir: str

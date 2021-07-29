@@ -98,10 +98,8 @@ def status_report(jobs: typing.List[job.Job], width: int, height: typing.Optiona
                 with j.proc.oneshot():
                     info = j.plotter.common_info()
                     row = [j.plot_id_prefix(), # Plot ID
-                        str(j.plotter), # chia or madmax
-                        # TODO: fill this out
-                        # str(j.k), # k size
-                        "?",
+                        info.type, # chia or madmax
+                        str(info.plot_size), # k size
                         abbr_path(info.tmpdir, tmp_prefix), # Temp directory
                         abbr_path(info.dstdir, dst_prefix), # Destination directory
                         plot_util.time_format(j.get_time_wall()), # Time wall

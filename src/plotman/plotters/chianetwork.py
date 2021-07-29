@@ -45,6 +45,7 @@ class SpecificInfo:
 
     def common(self) -> plotman.plotters.CommonInfo:
         return plotman.plotters.CommonInfo(
+            type="chia",
             dstdir=self.dst_dir,
             phase=self.phase,
             tmpdir=self.tmp_dir1,
@@ -161,6 +162,38 @@ def plot_id(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
 def filename(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # Renamed final file from "/farm/wagons/801/abc.plot.2.tmp" to "/farm/wagons/801/abc.plot"
     return attr.evolve(info, filename=match.group(1))
+
+
+@handlers.register(expression=r'^Starting phase (\d+)/')
+def phase_1(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+    # Starting phase 1/4: Forward Propagation into tmp files... Wed Jul 14 22:33:24 2021
+    major = int(match.group(1))
+    return attr.evolve(info, phase=plotman.job.Phase(major=major, minor=0))
+
+
+@handlers.register(expression=r'^Computing table (\d+)$')
+def subphase_1(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+    # Starting phase 1/4: Forward Propagation into tmp files... Wed Jul 14 22:33:24 2021
+    minor = int(match.group(1))
+    phase = attr.evolve(info.phase, minor=minor)
+    return attr.evolve(info, phase=phase)
+
+
+@handlers.register(expression=r'^Backpropagating on table (\d+)$')
+def subphase_2(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+    # Backpropagating on table 7
+    table = int(match.group(1))
+    minor = 8 - table
+    phase = attr.evolve(info.phase, minor=minor)
+    return attr.evolve(info, phase=phase)
+
+
+@handlers.register(expression=r'^# Compressing tables (\d+) and$')
+def subphase_3(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+    # Compressing tables 1 and 2
+    minor = int(match.group(1))
+    phase = attr.evolve(info.phase, minor=minor)
+    return attr.evolve(info, phase=phase)
 
 
 @handlers.register(expression=r"^Time for phase 1 = (\d+\.\d+) seconds")

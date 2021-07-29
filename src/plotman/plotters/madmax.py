@@ -41,6 +41,7 @@ class SpecificInfo:
 
     def common(self) -> plotman.plotters.CommonInfo:
         return plotman.plotters.CommonInfo(
+            type="madmax",
             dstdir=self.dst_dir,
             phase=self.phase,
             tmpdir=self.tmp_dir,

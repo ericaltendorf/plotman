@@ -169,6 +169,10 @@ class Job:
                                 plotter=plotter,
                                 logroot=logroot,
                             )
+                            # TODO: stop reloading every time...
+                            with open(job.logfile, 'rb') as f:
+                                r = f.read()
+                            job.plotter.update(chunk=r)
                             jobs.append(job)
 
         return jobs
