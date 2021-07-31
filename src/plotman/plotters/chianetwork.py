@@ -17,7 +17,7 @@ def parse_chia_plot_time(s: str) -> pendulum.DateTime:
     # This will grow to try ISO8601 as well for when Chia logs that way
     # TODO: unignore once fixed upstream
     #       https://github.com/sdispater/pendulum/pull/548
-    return pendulum.from_format(s, 'ddd MMM DD HH:mm:ss YYYY', locale='en', tz=None)  # type: ignore[arg-type]
+    return pendulum.from_format(s, "ddd MMM DD HH:mm:ss YYYY", locale="en", tz=None)  # type: ignore[arg-type]
 
 
 @plotman.plotters.check_SpecificInfo
@@ -73,15 +73,19 @@ class Plotter:
     cwd: str
     tmpdir: str
     dstdir: str
-    decoder: plotman.plotters.LineDecoder = attr.ib(factory=plotman.plotters.LineDecoder)
+    decoder: plotman.plotters.LineDecoder = attr.ib(
+        factory=plotman.plotters.LineDecoder
+    )
     info: SpecificInfo = attr.ib(factory=SpecificInfo)
-    parsed_command_line: typing.Optional[plotman.job.ParsedChiaPlotsCreateCommand] = None
+    parsed_command_line: typing.Optional[
+        plotman.job.ParsedChiaPlotsCreateCommand
+    ] = None
 
     @classmethod
     def identify_log(cls, line: str) -> bool:
         segments = [
-            'chia.plotting.create_plots',
-            'src.plotting.create_plots',
+            "chia.plotting.create_plots",
+            "src.plotting.create_plots",
         ]
         return any(segment in line for segment in segments)
 
@@ -90,14 +94,14 @@ class Plotter:
         if len(command_line) == 0:
             return False
 
-        if 'python' == os.path.basename(command_line[0]).lower():
+        if "python" == os.path.basename(command_line[0]).lower():
             command_line = command_line[1:]
 
         return (
             len(command_line) >= 3
-            and 'chia' in command_line[0]
-            and 'plots' == command_line[1]
-            and 'create' == command_line[2]
+            and "chia" in command_line[0]
+            and "plots" == command_line[1]
+            and "create" == command_line[2]
         )
 
     def common_info(self) -> plotman.plotters.CommonInfo:
@@ -128,6 +132,11 @@ class Plotter:
         new_lines = self.decoder.update(chunk=chunk)
 
         for line in new_lines:
+            if not self.info.phase.known:
+                self.info = attr.evolve(
+                    self.info, phase=plotman.job.Phase(major=0, minor=0)
+                )
+
             for pattern, handler_functions in handlers.mapping.items():
                 match = pattern.search(line)
 
@@ -145,41 +154,54 @@ class Plotter:
 handlers = plotman.plotters.RegexLineHandlers[SpecificInfo]()
 
 
-@handlers.register(expression=r'^\tBucket')
+@handlers.register(expression=r"^\tBucket")
 def ignore_line(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # Ignore lines starting with Bucket
     # Bucket 0 uniform sort. Ram: 3.250GiB, u_sort min: 0.563GiB, qs min: 0.281GiB.
     return info
 
 
-@handlers.register(expression=r'^ID: (.+)$')
+@handlers.register(expression=r"^ID: (.+)$")
 def plot_id(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # ID: 3eb8a37981de1cc76187a36ed947ab4307943cf92967a7e166841186c7899e24
     return attr.evolve(info, plot_id=match.group(1))
 
 
-@handlers.register(expression=r'^Renamed final file from ".+" to "(.+)"')
-def filename(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
-    # Renamed final file from "/farm/wagons/801/abc.plot.2.tmp" to "/farm/wagons/801/abc.plot"
-    return attr.evolve(info, filename=match.group(1))
+@handlers.register(
+    expression=r"^Starting phase (\d+)/4: (Forward Propagation into tmp files\.\.\. (.+))?"
+)
+def phase_major(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+    # Starting phase 1/4: Forward Propagation into tmp files... Wed Jul 14 22:33:24 2021
+    major = int(match.group(1))
+    timestamp = match.group(3)
+
+    new_info = attr.evolve(info, phase=plotman.job.Phase(major=major, minor=0))
+
+    if timestamp is None:
+        return new_info
+
+    return attr.evolve(
+        new_info,
+        started_at=parse_chia_plot_time(s=match.group(3)),
+    )
 
 
-@handlers.register(expression=r'^Starting phase (\d+)/')
-def phase_1(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+@handlers.register(expression=r"^Starting phase (\d+)/")
+def phase_2_3_4(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # Starting phase 1/4: Forward Propagation into tmp files... Wed Jul 14 22:33:24 2021
     major = int(match.group(1))
     return attr.evolve(info, phase=plotman.job.Phase(major=major, minor=0))
 
 
-@handlers.register(expression=r'^Computing table (\d+)$')
+@handlers.register(expression=r"^Computing table (\d+)$")
 def subphase_1(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
-    # Starting phase 1/4: Forward Propagation into tmp files... Wed Jul 14 22:33:24 2021
+    # Computing table 1
     minor = int(match.group(1))
     phase = attr.evolve(info.phase, minor=minor)
     return attr.evolve(info, phase=phase)
 
 
-@handlers.register(expression=r'^Backpropagating on table (\d+)$')
+@handlers.register(expression=r"^Backpropagating on table (\d+)$")
 def subphase_2(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # Backpropagating on table 7
     table = int(match.group(1))
@@ -188,7 +210,7 @@ def subphase_2(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     return attr.evolve(info, phase=phase)
 
 
-@handlers.register(expression=r'^# Compressing tables (\d+) and$')
+@handlers.register(expression=r"^Compressing tables (\d+) and")
 def subphase_3(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # Compressing tables 1 and 2
     minor = int(match.group(1))
@@ -196,9 +218,72 @@ def subphase_3(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     return attr.evolve(info, phase=phase)
 
 
+@handlers.register(expression=r"^table 1 new size: ")
+def phase2_7(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+    # table 1 new size: 3425157261
+    phase = attr.evolve(info.phase, minor=7)
+    return attr.evolve(info, phase=phase)
+
+
+@handlers.register(expression=r"^\tStarting to write C1 and C3 tables$")
+def phase4_1(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+    # \tStarting to write C1 and C3 tables
+    phase = attr.evolve(info.phase, minor=1)
+    return attr.evolve(info, phase=phase)
+
+
+@handlers.register(expression=r"^\tWriting C2 table$")
+def phase4_2(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+    # \tWriting C2 table
+    phase = attr.evolve(info.phase, minor=2)
+    return attr.evolve(info, phase=phase)
+
+
+@handlers.register(expression=r"^\tFinal table pointers:$")
+def phase4_3(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+    # \tFinal table pointers:
+    phase = attr.evolve(info.phase, minor=3)
+    return attr.evolve(info, phase=phase)
+
+
+@handlers.register(expression=r"^Approximate working space used")
+def phase5(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+    # Approximate working space used (without final file): 269.297 GiB
+    phase = plotman.job.Phase(major=5, minor=0)
+    return attr.evolve(info, phase=phase)
+
+
+@handlers.register(expression=r"^Copied final file from ")
+def phase5_1(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+    # Copied final file from "/farm/yards/902/fake_tmp2/plot-k32-2021-07-14-22-33-d2540dcfcffddbfbd7e60b4aca4d54fb937db71991298fabc253f020a87ff7d4.plot.2.tmp" to "/farm/yards/902/fake_dst/plot-k32-2021-07-14-22-33-d2540dcfcffddbfbd7e60b4aca4d54fb937db71991298fabc253f020a87ff7d4.plot.2.tmp"
+    phase = attr.evolve(info.phase, minor=1)
+    return attr.evolve(info, phase=phase)
+
+
+# @handlers.register(expression=r"^Copy time = (\d+\.\d+) seconds")
+# def phase5_2(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+#     # Copy time = 178.438 seconds. CPU (41.390%) Thu Jul 15 03:42:44 2021
+#     phase = attr.evolve(info.phase, minor=2)
+#     return attr.evolve(info, phase=phase, copy_time_raw=float(match.group(1)))
+
+
+@handlers.register(expression=r"^Removed temp2 file ")
+def phase5_2(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+    # Removed temp2 file "/farm/yards/902/fake_tmp2/plot-k32-2021-07-14-22-33-d2540dcfcffddbfbd7e60b4aca4d54fb937db71991298fabc253f020a87ff7d4.plot.2.tmp"? 1
+    phase = attr.evolve(info.phase, minor=2)
+    return attr.evolve(info, phase=phase)
+
+
+@handlers.register(expression=r'^Renamed final file from ".+" to "(.+)"')
+def phase5_3(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+    # Renamed final file from "/farm/yards/902/fake_dst/plot-k32-2021-07-14-22-33-d2540dcfcffddbfbd7e60b4aca4d54fb937db71991298fabc253f020a87ff7d4.plot.2.tmp" to "/farm/yards/902/fake_dst/plot-k32-2021-07-14-22-33-d2540dcfcffddbfbd7e60b4aca4d54fb937db71991298fabc253f020a87ff7d4.plot"
+    phase = attr.evolve(info.phase, minor=3)
+    return attr.evolve(info, phase=phase, filename=match.group(1))
+
+
 @handlers.register(expression=r"^Time for phase 1 = (\d+\.\d+) seconds")
 def phase1_duration(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
-    # Time for phase 1 = 17571.981 seconds. CPU (178.600%) Sun Apr  4 23:53:42 2021
+    # Time for phase 1 = 8134.660 seconds. CPU (194.060%) Thu Jul 15 00:48:59 2021
     return attr.evolve(info, phase1_duration_raw=float(match.group(1)))
 
 
@@ -232,7 +317,9 @@ def copy_time(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     return attr.evolve(info, copy_time_raw=float(match.group(1)))
 
 
-@handlers.register(expression=r"^Starting plotting progress into temporary dirs: (.+) and (.+)$")
+@handlers.register(
+    expression=r"^Starting plotting progress into temporary dirs: (.+) and (.+)$"
+)
 def plot_dirs(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # Starting plotting progress into temporary dirs: /farm/yards/901 and /farm/yards/901
     return attr.evolve(info, tmp_dir1=match.group(1), tmp_dir2=match.group(2))
@@ -256,16 +343,10 @@ def buffer_size(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     return attr.evolve(info, buffer=int(match.group(1)))
 
 
-@handlers.register(expression=r'^Plot size is: (\d+)')
+@handlers.register(expression=r"^Plot size is: (\d+)")
 def plot_size(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # Plot size is: 32
     return attr.evolve(info, plot_size=int(match.group(1)))
-
-
-@handlers.register(expression=r'^Starting phase 1/4: Forward Propagation into tmp files\.\.\. (.+)')
-def plot_start_date(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
-    # Starting phase 1/4: Forward Propagation into tmp files... Sun May  9 17:36:12 2021
-    return attr.evolve(info, started_at=parse_chia_plot_time(s=match.group(1)))
 
 
 commands = plotman.plotters.core.Commands()
@@ -277,11 +358,45 @@ commands = plotman.plotters.core.Commands()
 # https://github.com/Chia-Network/chia-blockchain/blob/1.1.2/chia/cmds/plots.py#L39-L83
 # start copied code
 @click.option("-k", "--size", help="Plot size", type=int, default=32, show_default=True)
-@click.option("--override-k", help="Force size smaller than 32", default=False, show_default=True, is_flag=True)
-@click.option("-n", "--num", help="Number of plots or challenges", type=int, default=1, show_default=True)
-@click.option("-b", "--buffer", help="Megabytes for sort/plot buffer", type=int, default=4608, show_default=True)
-@click.option("-r", "--num_threads", help="Number of threads to use", type=int, default=2, show_default=True)
-@click.option("-u", "--buckets", help="Number of buckets", type=int, default=128, show_default=True)
+@click.option(
+    "--override-k",
+    help="Force size smaller than 32",
+    default=False,
+    show_default=True,
+    is_flag=True,
+)
+@click.option(
+    "-n",
+    "--num",
+    help="Number of plots or challenges",
+    type=int,
+    default=1,
+    show_default=True,
+)
+@click.option(
+    "-b",
+    "--buffer",
+    help="Megabytes for sort/plot buffer",
+    type=int,
+    default=4608,
+    show_default=True,
+)
+@click.option(
+    "-r",
+    "--num_threads",
+    help="Number of threads to use",
+    type=int,
+    default=2,
+    show_default=True,
+)
+@click.option(
+    "-u",
+    "--buckets",
+    help="Number of buckets",
+    type=int,
+    default=128,
+    show_default=True,
+)
 @click.option(
     "-a",
     "--alt_fingerprint",
@@ -296,8 +411,12 @@ commands = plotman.plotters.core.Commands()
     default=None,
     help="Address of where the pool reward will be sent to. Only used if alt_fingerprint and pool public key are None",
 )
-@click.option("-f", "--farmer_public_key", help="Hex farmer public key", type=str, default=None)
-@click.option("-p", "--pool_public_key", help="Hex public key of pool", type=str, default=None)
+@click.option(
+    "-f", "--farmer_public_key", help="Hex farmer public key", type=str, default=None
+)
+@click.option(
+    "-p", "--pool_public_key", help="Hex public key of pool", type=str, default=None
+)
 @click.option(
     "-t",
     "--tmp_dir",
@@ -306,7 +425,13 @@ commands = plotman.plotters.core.Commands()
     default=pathlib.Path("."),
     show_default=True,
 )
-@click.option("-2", "--tmp2_dir", help="Second temporary directory for plotting files", type=click.Path(), default=None)
+@click.option(
+    "-2",
+    "--tmp2_dir",
+    help="Second temporary directory for plotting files",
+    type=click.Path(),
+    default=None,
+)
 @click.option(
     "-d",
     "--final_dir",
@@ -315,11 +440,29 @@ commands = plotman.plotters.core.Commands()
     default=pathlib.Path("."),
     show_default=True,
 )
-@click.option("-i", "--plotid", help="PlotID in hex for reproducing plots (debugging only)", type=str, default=None)
-@click.option("-m", "--memo", help="Memo in hex for reproducing plots (debugging only)", type=str, default=None)
-@click.option("-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True)
 @click.option(
-    "-x", "--exclude_final_dir", help="Skips adding [final dir] to harvester for farming", default=False, is_flag=True
+    "-i",
+    "--plotid",
+    help="PlotID in hex for reproducing plots (debugging only)",
+    type=str,
+    default=None,
+)
+@click.option(
+    "-m",
+    "--memo",
+    help="Memo in hex for reproducing plots (debugging only)",
+    type=str,
+    default=None,
+)
+@click.option(
+    "-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True
+)
+@click.option(
+    "-x",
+    "--exclude_final_dir",
+    help="Skips adding [final dir] to harvester for farming",
+    default=False,
+    is_flag=True,
 )
 # end copied code
 def _cli_1_1_2() -> None:
@@ -332,11 +475,45 @@ def _cli_1_1_2() -> None:
 # https://github.com/Chia-Network/chia-blockchain/blob/1.1.3/chia/cmds/plots.py#L39-L83
 # start copied code
 @click.option("-k", "--size", help="Plot size", type=int, default=32, show_default=True)
-@click.option("--override-k", help="Force size smaller than 32", default=False, show_default=True, is_flag=True)
-@click.option("-n", "--num", help="Number of plots or challenges", type=int, default=1, show_default=True)
-@click.option("-b", "--buffer", help="Megabytes for sort/plot buffer", type=int, default=4608, show_default=True)
-@click.option("-r", "--num_threads", help="Number of threads to use", type=int, default=2, show_default=True)
-@click.option("-u", "--buckets", help="Number of buckets", type=int, default=128, show_default=True)
+@click.option(
+    "--override-k",
+    help="Force size smaller than 32",
+    default=False,
+    show_default=True,
+    is_flag=True,
+)
+@click.option(
+    "-n",
+    "--num",
+    help="Number of plots or challenges",
+    type=int,
+    default=1,
+    show_default=True,
+)
+@click.option(
+    "-b",
+    "--buffer",
+    help="Megabytes for sort/plot buffer",
+    type=int,
+    default=4608,
+    show_default=True,
+)
+@click.option(
+    "-r",
+    "--num_threads",
+    help="Number of threads to use",
+    type=int,
+    default=2,
+    show_default=True,
+)
+@click.option(
+    "-u",
+    "--buckets",
+    help="Number of buckets",
+    type=int,
+    default=128,
+    show_default=True,
+)
 @click.option(
     "-a",
     "--alt_fingerprint",
@@ -351,8 +528,12 @@ def _cli_1_1_2() -> None:
     default=None,
     help="Address of where the pool reward will be sent to. Only used if alt_fingerprint and pool public key are None",
 )
-@click.option("-f", "--farmer_public_key", help="Hex farmer public key", type=str, default=None)
-@click.option("-p", "--pool_public_key", help="Hex public key of pool", type=str, default=None)
+@click.option(
+    "-f", "--farmer_public_key", help="Hex farmer public key", type=str, default=None
+)
+@click.option(
+    "-p", "--pool_public_key", help="Hex public key of pool", type=str, default=None
+)
 @click.option(
     "-t",
     "--tmp_dir",
@@ -361,7 +542,13 @@ def _cli_1_1_2() -> None:
     default=pathlib.Path("."),
     show_default=True,
 )
-@click.option("-2", "--tmp2_dir", help="Second temporary directory for plotting files", type=click.Path(), default=None)
+@click.option(
+    "-2",
+    "--tmp2_dir",
+    help="Second temporary directory for plotting files",
+    type=click.Path(),
+    default=None,
+)
 @click.option(
     "-d",
     "--final_dir",
@@ -370,11 +557,29 @@ def _cli_1_1_2() -> None:
     default=pathlib.Path("."),
     show_default=True,
 )
-@click.option("-i", "--plotid", help="PlotID in hex for reproducing plots (debugging only)", type=str, default=None)
-@click.option("-m", "--memo", help="Memo in hex for reproducing plots (debugging only)", type=str, default=None)
-@click.option("-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True)
 @click.option(
-    "-x", "--exclude_final_dir", help="Skips adding [final dir] to harvester for farming", default=False, is_flag=True
+    "-i",
+    "--plotid",
+    help="PlotID in hex for reproducing plots (debugging only)",
+    type=str,
+    default=None,
+)
+@click.option(
+    "-m",
+    "--memo",
+    help="Memo in hex for reproducing plots (debugging only)",
+    type=str,
+    default=None,
+)
+@click.option(
+    "-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True
+)
+@click.option(
+    "-x",
+    "--exclude_final_dir",
+    help="Skips adding [final dir] to harvester for farming",
+    default=False,
+    is_flag=True,
 )
 # end copied code
 def _cli_1_1_3() -> None:
@@ -387,11 +592,45 @@ def _cli_1_1_3() -> None:
 # https://github.com/Chia-Network/chia-blockchain/blob/1.1.4/chia/cmds/plots.py#L39-L83
 # start copied code
 @click.option("-k", "--size", help="Plot size", type=int, default=32, show_default=True)
-@click.option("--override-k", help="Force size smaller than 32", default=False, show_default=True, is_flag=True)
-@click.option("-n", "--num", help="Number of plots or challenges", type=int, default=1, show_default=True)
-@click.option("-b", "--buffer", help="Megabytes for sort/plot buffer", type=int, default=3389, show_default=True)
-@click.option("-r", "--num_threads", help="Number of threads to use", type=int, default=2, show_default=True)
-@click.option("-u", "--buckets", help="Number of buckets", type=int, default=128, show_default=True)
+@click.option(
+    "--override-k",
+    help="Force size smaller than 32",
+    default=False,
+    show_default=True,
+    is_flag=True,
+)
+@click.option(
+    "-n",
+    "--num",
+    help="Number of plots or challenges",
+    type=int,
+    default=1,
+    show_default=True,
+)
+@click.option(
+    "-b",
+    "--buffer",
+    help="Megabytes for sort/plot buffer",
+    type=int,
+    default=3389,
+    show_default=True,
+)
+@click.option(
+    "-r",
+    "--num_threads",
+    help="Number of threads to use",
+    type=int,
+    default=2,
+    show_default=True,
+)
+@click.option(
+    "-u",
+    "--buckets",
+    help="Number of buckets",
+    type=int,
+    default=128,
+    show_default=True,
+)
 @click.option(
     "-a",
     "--alt_fingerprint",
@@ -406,8 +645,12 @@ def _cli_1_1_3() -> None:
     default=None,
     help="Address of where the pool reward will be sent to. Only used if alt_fingerprint and pool public key are None",
 )
-@click.option("-f", "--farmer_public_key", help="Hex farmer public key", type=str, default=None)
-@click.option("-p", "--pool_public_key", help="Hex public key of pool", type=str, default=None)
+@click.option(
+    "-f", "--farmer_public_key", help="Hex farmer public key", type=str, default=None
+)
+@click.option(
+    "-p", "--pool_public_key", help="Hex public key of pool", type=str, default=None
+)
 @click.option(
     "-t",
     "--tmp_dir",
@@ -416,7 +659,13 @@ def _cli_1_1_3() -> None:
     default=pathlib.Path("."),
     show_default=True,
 )
-@click.option("-2", "--tmp2_dir", help="Second temporary directory for plotting files", type=click.Path(), default=None)
+@click.option(
+    "-2",
+    "--tmp2_dir",
+    help="Second temporary directory for plotting files",
+    type=click.Path(),
+    default=None,
+)
 @click.option(
     "-d",
     "--final_dir",
@@ -425,11 +674,29 @@ def _cli_1_1_3() -> None:
     default=pathlib.Path("."),
     show_default=True,
 )
-@click.option("-i", "--plotid", help="PlotID in hex for reproducing plots (debugging only)", type=str, default=None)
-@click.option("-m", "--memo", help="Memo in hex for reproducing plots (debugging only)", type=str, default=None)
-@click.option("-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True)
 @click.option(
-    "-x", "--exclude_final_dir", help="Skips adding [final dir] to harvester for farming", default=False, is_flag=True
+    "-i",
+    "--plotid",
+    help="PlotID in hex for reproducing plots (debugging only)",
+    type=str,
+    default=None,
+)
+@click.option(
+    "-m",
+    "--memo",
+    help="Memo in hex for reproducing plots (debugging only)",
+    type=str,
+    default=None,
+)
+@click.option(
+    "-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True
+)
+@click.option(
+    "-x",
+    "--exclude_final_dir",
+    help="Skips adding [final dir] to harvester for farming",
+    default=False,
+    is_flag=True,
 )
 # end copied code
 def _cli_1_1_4() -> None:
@@ -442,11 +709,45 @@ def _cli_1_1_4() -> None:
 # https://github.com/Chia-Network/chia-blockchain/blob/1.1.5/chia/cmds/plots.py#L39-L83
 # start copied code
 @click.option("-k", "--size", help="Plot size", type=int, default=32, show_default=True)
-@click.option("--override-k", help="Force size smaller than 32", default=False, show_default=True, is_flag=True)
-@click.option("-n", "--num", help="Number of plots or challenges", type=int, default=1, show_default=True)
-@click.option("-b", "--buffer", help="Megabytes for sort/plot buffer", type=int, default=3389, show_default=True)
-@click.option("-r", "--num_threads", help="Number of threads to use", type=int, default=2, show_default=True)
-@click.option("-u", "--buckets", help="Number of buckets", type=int, default=128, show_default=True)
+@click.option(
+    "--override-k",
+    help="Force size smaller than 32",
+    default=False,
+    show_default=True,
+    is_flag=True,
+)
+@click.option(
+    "-n",
+    "--num",
+    help="Number of plots or challenges",
+    type=int,
+    default=1,
+    show_default=True,
+)
+@click.option(
+    "-b",
+    "--buffer",
+    help="Megabytes for sort/plot buffer",
+    type=int,
+    default=3389,
+    show_default=True,
+)
+@click.option(
+    "-r",
+    "--num_threads",
+    help="Number of threads to use",
+    type=int,
+    default=2,
+    show_default=True,
+)
+@click.option(
+    "-u",
+    "--buckets",
+    help="Number of buckets",
+    type=int,
+    default=128,
+    show_default=True,
+)
 @click.option(
     "-a",
     "--alt_fingerprint",
@@ -461,8 +762,12 @@ def _cli_1_1_4() -> None:
     default=None,
     help="Address of where the pool reward will be sent to. Only used if alt_fingerprint and pool public key are None",
 )
-@click.option("-f", "--farmer_public_key", help="Hex farmer public key", type=str, default=None)
-@click.option("-p", "--pool_public_key", help="Hex public key of pool", type=str, default=None)
+@click.option(
+    "-f", "--farmer_public_key", help="Hex farmer public key", type=str, default=None
+)
+@click.option(
+    "-p", "--pool_public_key", help="Hex public key of pool", type=str, default=None
+)
 @click.option(
     "-t",
     "--tmp_dir",
@@ -471,7 +776,13 @@ def _cli_1_1_4() -> None:
     default=pathlib.Path("."),
     show_default=True,
 )
-@click.option("-2", "--tmp2_dir", help="Second temporary directory for plotting files", type=click.Path(), default=None)
+@click.option(
+    "-2",
+    "--tmp2_dir",
+    help="Second temporary directory for plotting files",
+    type=click.Path(),
+    default=None,
+)
 @click.option(
     "-d",
     "--final_dir",
@@ -480,11 +791,29 @@ def _cli_1_1_4() -> None:
     default=pathlib.Path("."),
     show_default=True,
 )
-@click.option("-i", "--plotid", help="PlotID in hex for reproducing plots (debugging only)", type=str, default=None)
-@click.option("-m", "--memo", help="Memo in hex for reproducing plots (debugging only)", type=str, default=None)
-@click.option("-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True)
 @click.option(
-    "-x", "--exclude_final_dir", help="Skips adding [final dir] to harvester for farming", default=False, is_flag=True
+    "-i",
+    "--plotid",
+    help="PlotID in hex for reproducing plots (debugging only)",
+    type=str,
+    default=None,
+)
+@click.option(
+    "-m",
+    "--memo",
+    help="Memo in hex for reproducing plots (debugging only)",
+    type=str,
+    default=None,
+)
+@click.option(
+    "-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True
+)
+@click.option(
+    "-x",
+    "--exclude_final_dir",
+    help="Skips adding [final dir] to harvester for farming",
+    default=False,
+    is_flag=True,
 )
 # end copied code
 def _cli_1_1_5() -> None:
@@ -497,11 +826,45 @@ def _cli_1_1_5() -> None:
 # https://github.com/Chia-Network/chia-blockchain/blob/1.1.6/chia/cmds/plots.py#L39-L83
 # start copied code
 @click.option("-k", "--size", help="Plot size", type=int, default=32, show_default=True)
-@click.option("--override-k", help="Force size smaller than 32", default=False, show_default=True, is_flag=True)
-@click.option("-n", "--num", help="Number of plots or challenges", type=int, default=1, show_default=True)
-@click.option("-b", "--buffer", help="Megabytes for sort/plot buffer", type=int, default=3389, show_default=True)
-@click.option("-r", "--num_threads", help="Number of threads to use", type=int, default=2, show_default=True)
-@click.option("-u", "--buckets", help="Number of buckets", type=int, default=128, show_default=True)
+@click.option(
+    "--override-k",
+    help="Force size smaller than 32",
+    default=False,
+    show_default=True,
+    is_flag=True,
+)
+@click.option(
+    "-n",
+    "--num",
+    help="Number of plots or challenges",
+    type=int,
+    default=1,
+    show_default=True,
+)
+@click.option(
+    "-b",
+    "--buffer",
+    help="Megabytes for sort/plot buffer",
+    type=int,
+    default=3389,
+    show_default=True,
+)
+@click.option(
+    "-r",
+    "--num_threads",
+    help="Number of threads to use",
+    type=int,
+    default=2,
+    show_default=True,
+)
+@click.option(
+    "-u",
+    "--buckets",
+    help="Number of buckets",
+    type=int,
+    default=128,
+    show_default=True,
+)
 @click.option(
     "-a",
     "--alt_fingerprint",
@@ -516,8 +879,12 @@ def _cli_1_1_5() -> None:
     default=None,
     help="Address of where the pool reward will be sent to. Only used if alt_fingerprint and pool public key are None",
 )
-@click.option("-f", "--farmer_public_key", help="Hex farmer public key", type=str, default=None)
-@click.option("-p", "--pool_public_key", help="Hex public key of pool", type=str, default=None)
+@click.option(
+    "-f", "--farmer_public_key", help="Hex farmer public key", type=str, default=None
+)
+@click.option(
+    "-p", "--pool_public_key", help="Hex public key of pool", type=str, default=None
+)
 @click.option(
     "-t",
     "--tmp_dir",
@@ -526,7 +893,13 @@ def _cli_1_1_5() -> None:
     default=pathlib.Path("."),
     show_default=True,
 )
-@click.option("-2", "--tmp2_dir", help="Second temporary directory for plotting files", type=click.Path(), default=None)
+@click.option(
+    "-2",
+    "--tmp2_dir",
+    help="Second temporary directory for plotting files",
+    type=click.Path(),
+    default=None,
+)
 @click.option(
     "-d",
     "--final_dir",
@@ -535,11 +908,29 @@ def _cli_1_1_5() -> None:
     default=pathlib.Path("."),
     show_default=True,
 )
-@click.option("-i", "--plotid", help="PlotID in hex for reproducing plots (debugging only)", type=str, default=None)
-@click.option("-m", "--memo", help="Memo in hex for reproducing plots (debugging only)", type=str, default=None)
-@click.option("-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True)
 @click.option(
-    "-x", "--exclude_final_dir", help="Skips adding [final dir] to harvester for farming", default=False, is_flag=True
+    "-i",
+    "--plotid",
+    help="PlotID in hex for reproducing plots (debugging only)",
+    type=str,
+    default=None,
+)
+@click.option(
+    "-m",
+    "--memo",
+    help="Memo in hex for reproducing plots (debugging only)",
+    type=str,
+    default=None,
+)
+@click.option(
+    "-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True
+)
+@click.option(
+    "-x",
+    "--exclude_final_dir",
+    help="Skips adding [final dir] to harvester for farming",
+    default=False,
+    is_flag=True,
 )
 # end copied code
 def _cli_1_1_6() -> None:
@@ -552,11 +943,45 @@ def _cli_1_1_6() -> None:
 # https://github.com/Chia-Network/chia-blockchain/blob/1.1.7/chia/cmds/plots.py#L39-L83
 # start copied code
 @click.option("-k", "--size", help="Plot size", type=int, default=32, show_default=True)
-@click.option("--override-k", help="Force size smaller than 32", default=False, show_default=True, is_flag=True)
-@click.option("-n", "--num", help="Number of plots or challenges", type=int, default=1, show_default=True)
-@click.option("-b", "--buffer", help="Megabytes for sort/plot buffer", type=int, default=3389, show_default=True)
-@click.option("-r", "--num_threads", help="Number of threads to use", type=int, default=2, show_default=True)
-@click.option("-u", "--buckets", help="Number of buckets", type=int, default=128, show_default=True)
+@click.option(
+    "--override-k",
+    help="Force size smaller than 32",
+    default=False,
+    show_default=True,
+    is_flag=True,
+)
+@click.option(
+    "-n",
+    "--num",
+    help="Number of plots or challenges",
+    type=int,
+    default=1,
+    show_default=True,
+)
+@click.option(
+    "-b",
+    "--buffer",
+    help="Megabytes for sort/plot buffer",
+    type=int,
+    default=3389,
+    show_default=True,
+)
+@click.option(
+    "-r",
+    "--num_threads",
+    help="Number of threads to use",
+    type=int,
+    default=2,
+    show_default=True,
+)
+@click.option(
+    "-u",
+    "--buckets",
+    help="Number of buckets",
+    type=int,
+    default=128,
+    show_default=True,
+)
 @click.option(
     "-a",
     "--alt_fingerprint",
@@ -571,8 +996,12 @@ def _cli_1_1_6() -> None:
     default=None,
     help="Address of where the pool reward will be sent to. Only used if alt_fingerprint and pool public key are None",
 )
-@click.option("-f", "--farmer_public_key", help="Hex farmer public key", type=str, default=None)
-@click.option("-p", "--pool_public_key", help="Hex public key of pool", type=str, default=None)
+@click.option(
+    "-f", "--farmer_public_key", help="Hex farmer public key", type=str, default=None
+)
+@click.option(
+    "-p", "--pool_public_key", help="Hex public key of pool", type=str, default=None
+)
 @click.option(
     "-t",
     "--tmp_dir",
@@ -581,7 +1010,13 @@ def _cli_1_1_6() -> None:
     default=pathlib.Path("."),
     show_default=True,
 )
-@click.option("-2", "--tmp2_dir", help="Second temporary directory for plotting files", type=click.Path(), default=None)
+@click.option(
+    "-2",
+    "--tmp2_dir",
+    help="Second temporary directory for plotting files",
+    type=click.Path(),
+    default=None,
+)
 @click.option(
     "-d",
     "--final_dir",
@@ -590,11 +1025,29 @@ def _cli_1_1_6() -> None:
     default=pathlib.Path("."),
     show_default=True,
 )
-@click.option("-i", "--plotid", help="PlotID in hex for reproducing plots (debugging only)", type=str, default=None)
-@click.option("-m", "--memo", help="Memo in hex for reproducing plots (debugging only)", type=str, default=None)
-@click.option("-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True)
 @click.option(
-    "-x", "--exclude_final_dir", help="Skips adding [final dir] to harvester for farming", default=False, is_flag=True
+    "-i",
+    "--plotid",
+    help="PlotID in hex for reproducing plots (debugging only)",
+    type=str,
+    default=None,
+)
+@click.option(
+    "-m",
+    "--memo",
+    help="Memo in hex for reproducing plots (debugging only)",
+    type=str,
+    default=None,
+)
+@click.option(
+    "-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True
+)
+@click.option(
+    "-x",
+    "--exclude_final_dir",
+    help="Skips adding [final dir] to harvester for farming",
+    default=False,
+    is_flag=True,
 )
 # end copied code
 def _cli_1_1_7() -> None:
@@ -607,11 +1060,45 @@ def _cli_1_1_7() -> None:
 # https://github.com/Chia-Network/chia-blockchain/blob/1.2.0/chia/cmds/plots.py#L39-L83
 # start copied code
 @click.option("-k", "--size", help="Plot size", type=int, default=32, show_default=True)
-@click.option("--override-k", help="Force size smaller than 32", default=False, show_default=True, is_flag=True)
-@click.option("-n", "--num", help="Number of plots or challenges", type=int, default=1, show_default=True)
-@click.option("-b", "--buffer", help="Megabytes for sort/plot buffer", type=int, default=3389, show_default=True)
-@click.option("-r", "--num_threads", help="Number of threads to use", type=int, default=2, show_default=True)
-@click.option("-u", "--buckets", help="Number of buckets", type=int, default=128, show_default=True)
+@click.option(
+    "--override-k",
+    help="Force size smaller than 32",
+    default=False,
+    show_default=True,
+    is_flag=True,
+)
+@click.option(
+    "-n",
+    "--num",
+    help="Number of plots or challenges",
+    type=int,
+    default=1,
+    show_default=True,
+)
+@click.option(
+    "-b",
+    "--buffer",
+    help="Megabytes for sort/plot buffer",
+    type=int,
+    default=3389,
+    show_default=True,
+)
+@click.option(
+    "-r",
+    "--num_threads",
+    help="Number of threads to use",
+    type=int,
+    default=2,
+    show_default=True,
+)
+@click.option(
+    "-u",
+    "--buckets",
+    help="Number of buckets",
+    type=int,
+    default=128,
+    show_default=True,
+)
 @click.option(
     "-a",
     "--alt_fingerprint",
@@ -626,8 +1113,12 @@ def _cli_1_1_7() -> None:
     default=None,
     help="Address of where the pool reward will be sent to. Only used if alt_fingerprint and pool public key are None",
 )
-@click.option("-f", "--farmer_public_key", help="Hex farmer public key", type=str, default=None)
-@click.option("-p", "--pool_public_key", help="Hex public key of pool", type=str, default=None)
+@click.option(
+    "-f", "--farmer_public_key", help="Hex farmer public key", type=str, default=None
+)
+@click.option(
+    "-p", "--pool_public_key", help="Hex public key of pool", type=str, default=None
+)
 @click.option(
     "-t",
     "--tmp_dir",
@@ -636,7 +1127,13 @@ def _cli_1_1_7() -> None:
     default=pathlib.Path("."),
     show_default=True,
 )
-@click.option("-2", "--tmp2_dir", help="Second temporary directory for plotting files", type=click.Path(), default=None)
+@click.option(
+    "-2",
+    "--tmp2_dir",
+    help="Second temporary directory for plotting files",
+    type=click.Path(),
+    default=None,
+)
 @click.option(
     "-d",
     "--final_dir",
@@ -645,11 +1142,29 @@ def _cli_1_1_7() -> None:
     default=pathlib.Path("."),
     show_default=True,
 )
-@click.option("-i", "--plotid", help="PlotID in hex for reproducing plots (debugging only)", type=str, default=None)
-@click.option("-m", "--memo", help="Memo in hex for reproducing plots (debugging only)", type=str, default=None)
-@click.option("-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True)
 @click.option(
-    "-x", "--exclude_final_dir", help="Skips adding [final dir] to harvester for farming", default=False, is_flag=True
+    "-i",
+    "--plotid",
+    help="PlotID in hex for reproducing plots (debugging only)",
+    type=str,
+    default=None,
+)
+@click.option(
+    "-m",
+    "--memo",
+    help="Memo in hex for reproducing plots (debugging only)",
+    type=str,
+    default=None,
+)
+@click.option(
+    "-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True
+)
+@click.option(
+    "-x",
+    "--exclude_final_dir",
+    help="Skips adding [final dir] to harvester for farming",
+    default=False,
+    is_flag=True,
 )
 # end copied code
 def _cli_1_2_0() -> None:
@@ -662,11 +1177,45 @@ def _cli_1_2_0() -> None:
 # https://github.com/Chia-Network/chia-blockchain/blob/1.2.1/chia/cmds/plots.py#L39-L83
 # start copied code
 @click.option("-k", "--size", help="Plot size", type=int, default=32, show_default=True)
-@click.option("--override-k", help="Force size smaller than 32", default=False, show_default=True, is_flag=True)
-@click.option("-n", "--num", help="Number of plots or challenges", type=int, default=1, show_default=True)
-@click.option("-b", "--buffer", help="Megabytes for sort/plot buffer", type=int, default=3389, show_default=True)
-@click.option("-r", "--num_threads", help="Number of threads to use", type=int, default=2, show_default=True)
-@click.option("-u", "--buckets", help="Number of buckets", type=int, default=128, show_default=True)
+@click.option(
+    "--override-k",
+    help="Force size smaller than 32",
+    default=False,
+    show_default=True,
+    is_flag=True,
+)
+@click.option(
+    "-n",
+    "--num",
+    help="Number of plots or challenges",
+    type=int,
+    default=1,
+    show_default=True,
+)
+@click.option(
+    "-b",
+    "--buffer",
+    help="Megabytes for sort/plot buffer",
+    type=int,
+    default=3389,
+    show_default=True,
+)
+@click.option(
+    "-r",
+    "--num_threads",
+    help="Number of threads to use",
+    type=int,
+    default=2,
+    show_default=True,
+)
+@click.option(
+    "-u",
+    "--buckets",
+    help="Number of buckets",
+    type=int,
+    default=128,
+    show_default=True,
+)
 @click.option(
     "-a",
     "--alt_fingerprint",
@@ -681,8 +1230,12 @@ def _cli_1_2_0() -> None:
     default=None,
     help="Address of where the pool reward will be sent to. Only used if alt_fingerprint and pool public key are None",
 )
-@click.option("-f", "--farmer_public_key", help="Hex farmer public key", type=str, default=None)
-@click.option("-p", "--pool_public_key", help="Hex public key of pool", type=str, default=None)
+@click.option(
+    "-f", "--farmer_public_key", help="Hex farmer public key", type=str, default=None
+)
+@click.option(
+    "-p", "--pool_public_key", help="Hex public key of pool", type=str, default=None
+)
 @click.option(
     "-t",
     "--tmp_dir",
@@ -691,7 +1244,13 @@ def _cli_1_2_0() -> None:
     default=pathlib.Path("."),
     show_default=True,
 )
-@click.option("-2", "--tmp2_dir", help="Second temporary directory for plotting files", type=click.Path(), default=None)
+@click.option(
+    "-2",
+    "--tmp2_dir",
+    help="Second temporary directory for plotting files",
+    type=click.Path(),
+    default=None,
+)
 @click.option(
     "-d",
     "--final_dir",
@@ -700,11 +1259,29 @@ def _cli_1_2_0() -> None:
     default=pathlib.Path("."),
     show_default=True,
 )
-@click.option("-i", "--plotid", help="PlotID in hex for reproducing plots (debugging only)", type=str, default=None)
-@click.option("-m", "--memo", help="Memo in hex for reproducing plots (debugging only)", type=str, default=None)
-@click.option("-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True)
 @click.option(
-    "-x", "--exclude_final_dir", help="Skips adding [final dir] to harvester for farming", default=False, is_flag=True
+    "-i",
+    "--plotid",
+    help="PlotID in hex for reproducing plots (debugging only)",
+    type=str,
+    default=None,
+)
+@click.option(
+    "-m",
+    "--memo",
+    help="Memo in hex for reproducing plots (debugging only)",
+    type=str,
+    default=None,
+)
+@click.option(
+    "-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True
+)
+@click.option(
+    "-x",
+    "--exclude_final_dir",
+    help="Skips adding [final dir] to harvester for farming",
+    default=False,
+    is_flag=True,
 )
 # end copied code
 def _cli_1_2_1() -> None:
@@ -717,11 +1294,45 @@ def _cli_1_2_1() -> None:
 # https://github.com/Chia-Network/chia-blockchain/blob/1.2.2/chia/cmds/plots.py#L39-L83
 # start copied code
 @click.option("-k", "--size", help="Plot size", type=int, default=32, show_default=True)
-@click.option("--override-k", help="Force size smaller than 32", default=False, show_default=True, is_flag=True)
-@click.option("-n", "--num", help="Number of plots or challenges", type=int, default=1, show_default=True)
-@click.option("-b", "--buffer", help="Megabytes for sort/plot buffer", type=int, default=3389, show_default=True)
-@click.option("-r", "--num_threads", help="Number of threads to use", type=int, default=2, show_default=True)
-@click.option("-u", "--buckets", help="Number of buckets", type=int, default=128, show_default=True)
+@click.option(
+    "--override-k",
+    help="Force size smaller than 32",
+    default=False,
+    show_default=True,
+    is_flag=True,
+)
+@click.option(
+    "-n",
+    "--num",
+    help="Number of plots or challenges",
+    type=int,
+    default=1,
+    show_default=True,
+)
+@click.option(
+    "-b",
+    "--buffer",
+    help="Megabytes for sort/plot buffer",
+    type=int,
+    default=3389,
+    show_default=True,
+)
+@click.option(
+    "-r",
+    "--num_threads",
+    help="Number of threads to use",
+    type=int,
+    default=2,
+    show_default=True,
+)
+@click.option(
+    "-u",
+    "--buckets",
+    help="Number of buckets",
+    type=int,
+    default=128,
+    show_default=True,
+)
 @click.option(
     "-a",
     "--alt_fingerprint",
@@ -736,8 +1347,12 @@ def _cli_1_2_1() -> None:
     default=None,
     help="Address of where the pool reward will be sent to. Only used if alt_fingerprint and pool public key are None",
 )
-@click.option("-f", "--farmer_public_key", help="Hex farmer public key", type=str, default=None)
-@click.option("-p", "--pool_public_key", help="Hex public key of pool", type=str, default=None)
+@click.option(
+    "-f", "--farmer_public_key", help="Hex farmer public key", type=str, default=None
+)
+@click.option(
+    "-p", "--pool_public_key", help="Hex public key of pool", type=str, default=None
+)
 @click.option(
     "-t",
     "--tmp_dir",
@@ -746,7 +1361,13 @@ def _cli_1_2_1() -> None:
     default=pathlib.Path("."),
     show_default=True,
 )
-@click.option("-2", "--tmp2_dir", help="Second temporary directory for plotting files", type=click.Path(), default=None)
+@click.option(
+    "-2",
+    "--tmp2_dir",
+    help="Second temporary directory for plotting files",
+    type=click.Path(),
+    default=None,
+)
 @click.option(
     "-d",
     "--final_dir",
@@ -755,11 +1376,29 @@ def _cli_1_2_1() -> None:
     default=pathlib.Path("."),
     show_default=True,
 )
-@click.option("-i", "--plotid", help="PlotID in hex for reproducing plots (debugging only)", type=str, default=None)
-@click.option("-m", "--memo", help="Memo in hex for reproducing plots (debugging only)", type=str, default=None)
-@click.option("-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True)
 @click.option(
-    "-x", "--exclude_final_dir", help="Skips adding [final dir] to harvester for farming", default=False, is_flag=True
+    "-i",
+    "--plotid",
+    help="PlotID in hex for reproducing plots (debugging only)",
+    type=str,
+    default=None,
+)
+@click.option(
+    "-m",
+    "--memo",
+    help="Memo in hex for reproducing plots (debugging only)",
+    type=str,
+    default=None,
+)
+@click.option(
+    "-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True
+)
+@click.option(
+    "-x",
+    "--exclude_final_dir",
+    help="Skips adding [final dir] to harvester for farming",
+    default=False,
+    is_flag=True,
 )
 # end copied code
 def _cli_1_2_2() -> None:
