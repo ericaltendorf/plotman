@@ -95,3 +95,18 @@ def test_log_phases():
             wrong.append([parser.info.phase, phase, line_bytes.decode("utf-8")])
 
     assert wrong == []
+
+
+def test_marked_log_matches():
+    marked_bytes = importlib.resources.read_binary(
+        package=plotman._tests.resources,
+        resource="chianetwork.marked",
+    )
+    log_bytes = importlib.resources.read_binary(
+        package=plotman._tests.resources,
+        resource="chianetwork.plot.log",
+    )
+
+    for marked_line, log_line in zip(marked_bytes.splitlines(keepends=True), log_bytes.splitlines(keepends=True)):
+        _, _, marked_just_line = marked_line.partition(b",")
+        assert marked_just_line == log_line
