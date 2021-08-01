@@ -67,20 +67,24 @@ class Plotter:
     cwd: str
     tmpdir: str
     dstdir: str
-    decoder: plotman.plotters.LineDecoder = attr.ib(factory=plotman.plotters.LineDecoder)
+    decoder: plotman.plotters.LineDecoder = attr.ib(
+        factory=plotman.plotters.LineDecoder
+    )
     info: SpecificInfo = attr.ib(factory=SpecificInfo)
-    parsed_command_line: typing.Optional[plotman.job.ParsedChiaPlotsCreateCommand] = None
+    parsed_command_line: typing.Optional[
+        plotman.job.ParsedChiaPlotsCreateCommand
+    ] = None
 
     @classmethod
     def identify_log(cls, line: str) -> bool:
-        return 'Multi-threaded pipelined Chia' in line
+        return "Multi-threaded pipelined Chia" in line
 
     @classmethod
     def identify_process(cls, command_line: typing.List[str]) -> bool:
         if len(command_line) == 0:
             return False
 
-        return 'chia_plot' == os.path.basename(command_line[0]).lower()
+        return "chia_plot" == os.path.basename(command_line[0]).lower()
 
     def common_info(self) -> plotman.plotters.CommonInfo:
         return self.info.common()
@@ -103,6 +107,11 @@ class Plotter:
         new_lines = self.decoder.update(chunk=chunk)
 
         for line in new_lines:
+            if not self.info.phase.known:
+                self.info = attr.evolve(
+                    self.info, phase=plotman.job.Phase(major=0, minor=0)
+                )
+
             for pattern, handler_functions in handlers.mapping.items():
                 match = pattern.search(line)
 
@@ -120,7 +129,7 @@ class Plotter:
 handlers = plotman.plotters.RegexLineHandlers[SpecificInfo]()
 
 
-@handlers.register(expression=r'^\[P1\] Table ([1-6])')
+@handlers.register(expression=r"^\[P1\] Table ([1-6])")
 def phase_1(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # [P1] Table 1 took 39.8662 sec
     # [P1] Table 2 took 211.248 sec, found 4294987039 matches
@@ -132,13 +141,13 @@ def phase_1(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     return attr.evolve(info, phase=plotman.job.Phase(major=1, minor=minor))
 
 
-@handlers.register(expression=r'^\[P2\] max_table_size')
+@handlers.register(expression=r"^\[P2\] max_table_size")
 def phase_2_start(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # [P2] max_table_size = 4295422716
     return attr.evolve(info, phase=plotman.job.Phase(major=2, minor=1))
 
 
-@handlers.register(expression=r'^\[P2\] Table ([3-7]) rewrite')
+@handlers.register(expression=r"^\[P2\] Table ([2-7]) rewrite")
 def phase_2(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # [P2] Table 7 scan took 18.4493 sec
     # [P2] Table 7 rewrite took 60.7659 sec, dropped 0 entries (0 %)
@@ -150,18 +159,30 @@ def phase_2(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # [P2] Table 4 rewrite took 131.374 sec, dropped 828922032 entries (19.2993 %)
     # [P2] Table 3 scan took 87.8078 sec
     # [P2] Table 3 rewrite took 135.269 sec, dropped 855096923 entries (19.9091 %)
+    # [P2] Table 2 scan took 103.825 sec
+    # [P2] Table 2 rewrite took 159.486 sec, dropped 865588810 entries (20.1532 %)
     minor_in_log = int(match.group(1))
     active_minor = 8 - minor_in_log + 1
     return attr.evolve(info, phase=plotman.job.Phase(major=2, minor=active_minor))
 
 
-@handlers.register(expression=r'^Wrote plot header')
+@handlers.register(expression=r"^Phase 2 took (\d+(\.\d+)) sec")
+def phase3_0(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+    # Phase 2 took 1344.24 sec
+    return attr.evolve(
+        info,
+        phase=plotman.job.Phase(major=3, minor=0),
+        phase2_duration_raw=float(match.group(1)),
+    )
+
+
+@handlers.register(expression=r"^Wrote plot header")
 def phase_3_start(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # Wrote plot header with 252 bytes
     return attr.evolve(info, phase=plotman.job.Phase(major=3, minor=1))
 
 
-@handlers.register(expression=r'^\[P3-2\] Table ([2-6]) took')
+@handlers.register(expression=r"^\[P3-2\] Table ([2-6]) took")
 def phase_3(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # [P3-1] Table 2 took 80.1436 sec, wrote 3429403335 right entries
     # [P3-2] Table 2 took 69.0526 sec, wrote 3429403335 left entries, 3429403335 final
@@ -177,16 +198,48 @@ def phase_3(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     return attr.evolve(info, phase=plotman.job.Phase(major=3, minor=minor))
 
 
-@handlers.register(expression=r'^\[P4\] Starting')
+@handlers.register(expression=r"^Phase 3 took (\d+(\.\d+)) sec")
+def phase4(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+    # Phase 3 took 1002.89 sec, wrote 21877315926 entries to final plot
+    return attr.evolve(
+        info,
+        phase=plotman.job.Phase(major=4, minor=0),
+        phase3_duration_raw=float(match.group(1)),
+    )
+
+
+@handlers.register(expression=r"^\[P4\] Starting")
 def phase_4_1(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # [P4] Starting to write C1 and C3 tables
     return attr.evolve(info, phase=plotman.job.Phase(major=4, minor=1))
 
 
-@handlers.register(expression=r'^\[P4\] Writing C2 table')
-def phase_4(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+@handlers.register(expression=r"^\[P4\] Writing C2 table")
+def phase_4_2(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # [P4] Writing C2 table
     return attr.evolve(info, phase=plotman.job.Phase(major=4, minor=2))
+
+
+@handlers.register(expression=r"^Phase 4 took (\d+(\.\d+)) sec")
+def phase5(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+    # Phase 4 took 77.9891 sec, final plot size is 108836186159 bytes
+    return attr.evolve(
+        info,
+        phase=plotman.job.Phase(major=5, minor=0),
+        phase4_duration_raw=float(match.group(1)),
+    )
+
+
+@handlers.register(expression=r"^Started copy to ")
+def phase_5_1(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+    # Started copy to /farm/yards/902/fake_dst/plot-k32-2021-07-14-21-56-522acbd6308af7e229281352f746449134126482cfabd51d38e0f89745d21698.plot
+    return attr.evolve(info, phase=plotman.job.Phase(major=5, minor=1))
+
+
+@handlers.register(expression=r"^Renamed final plot to ")
+def phase_5_2(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+    # Renamed final plot to /farm/yards/902/fake_dst/plot-k32-2021-07-14-21-56-522acbd6308af7e229281352f746449134126482cfabd51d38e0f89745d21698.plot
+    return attr.evolve(info, phase=plotman.job.Phase(major=5, minor=2))
 
 
 @handlers.register(expression=r"^Final Directory:\s*(.+)")
@@ -207,7 +260,9 @@ def tmp2_dir(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     return attr.evolve(info, tmp2_dir=match.group(1))
 
 
-@handlers.register(expression=r"^Plot Name: (?P<name>plot-k(?P<size>\d+)-(?P<year>\d+)-(?P<month>\d+)-(?P<day>\d+)-(?P<hour>\d+)-(?P<minute>\d+)-(\w+))$")
+@handlers.register(
+    expression=r"^Plot Name: (?P<name>plot-k(?P<size>\d+)-(?P<year>\d+)-(?P<month>\d+)-(?P<day>\d+)-(?P<hour>\d+)-(?P<minute>\d+)-(\w+))$"
+)
 def plot_name_line(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # Plot Name: plot-k32-2021-07-11-16-52-3a3872f5a124497a17fb917dfe027802aa1867f8b0a8cbac558ed12aa5b697b2
     return attr.evolve(
@@ -223,6 +278,7 @@ def plot_name_line(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo
             tz=None,
         ),
         plot_id="3a3872f5a124497a17fb917dfe027802aa1867f8b0a8cbac558ed12aa5b697b2",
+        phase=plotman.job.Phase(major=1, minor=1),
     )
 
 
@@ -250,24 +306,6 @@ def phase1_duration_raw(match: typing.Match[str], info: SpecificInfo) -> Specifi
     return attr.evolve(info, phase1_duration_raw=float(match.group(1)))
 
 
-@handlers.register(expression=r"^Phase 2 took (\d+(\.\d+)) sec")
-def phase2_duration_raw(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
-    # Phase 2 took 1344.24 sec
-    return attr.evolve(info, phase2_duration_raw=float(match.group(1)))
-
-
-@handlers.register(expression=r"^Phase 3 took (\d+(\.\d+)) sec")
-def phase3_duration_raw(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
-    # Phase 3 took 1002.89 sec, wrote 21877315926 entries to final plot
-    return attr.evolve(info, phase3_duration_raw=float(match.group(1)))
-
-
-@handlers.register(expression=r"^Phase 4 took (\d+(\.\d+)) sec")
-def phase4_duration_raw(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
-    # Phase 4 took 77.9891 sec, final plot size is 108836186159 bytes
-    return attr.evolve(info, phase4_duration_raw=float(match.group(1)))
-
-
 @handlers.register(expression=r"^Total plot creation time was (\d+(\.\d+)) sec")
 def total_time(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # Total plot creation time was 4276.32 sec (71.272 min)
@@ -282,29 +320,71 @@ commands = plotman.plotters.core.Commands()
 @click.command()
 # https://github.com/madMAx43v3r/chia-plotter/blob/c8121b987186c42c895b49818e6c13acecc51332/LICENSE
 # https://github.com/madMAx43v3r/chia-plotter/blob/c8121b987186c42c895b49818e6c13acecc51332/src/chia_plot.cpp#L177-L188
-@click.option("-n", "--count", help="Number of plots to create (default = 1, -1 = infinite)",
-    type=int, default=1, show_default=True)
-@click.option("-r", "--threads", help="Number of threads (default = 4)",
-    type=int, default=4, show_default=True)
-@click.option("-u", "--buckets", help="Number of buckets (default = 256)",
-    type=int, default=256, show_default=True)
-@click.option("-v", "--buckets3", help="Number of buckets for phase 3+4 (default = buckets)",
-    type=int, default=256)
-@click.option("-t", "--tmpdir", help="Temporary directory, needs ~220 GiB (default = $PWD)",
-    type=click.Path(), default=pathlib.Path("."), show_default=True)
-@click.option("-2", "--tmpdir2", help="Temporary directory 2, needs ~110 GiB [RAM] (default = <tmpdir>)",
-    type=click.Path(), default=None)
-@click.option("-d", "--finaldir", help="Final directory (default = <tmpdir>)",
-    type=click.Path(), default=pathlib.Path("."), show_default=True)
-@click.option("-p", "--poolkey", help="Pool Public Key (48 bytes)",
-    type=str, default=None)
-@click.option("-f", "--farmerkey", help="Farmer Public Key (48 bytes)",
-    type=str, default=None)
-@click.option("-G", "--tmptoggle", help="Alternate tmpdir/tmpdir2",
-    type=str, default=None)
+@click.option(
+    "-n",
+    "--count",
+    help="Number of plots to create (default = 1, -1 = infinite)",
+    type=int,
+    default=1,
+    show_default=True,
+)
+@click.option(
+    "-r",
+    "--threads",
+    help="Number of threads (default = 4)",
+    type=int,
+    default=4,
+    show_default=True,
+)
+@click.option(
+    "-u",
+    "--buckets",
+    help="Number of buckets (default = 256)",
+    type=int,
+    default=256,
+    show_default=True,
+)
+@click.option(
+    "-v",
+    "--buckets3",
+    help="Number of buckets for phase 3+4 (default = buckets)",
+    type=int,
+    default=256,
+)
+@click.option(
+    "-t",
+    "--tmpdir",
+    help="Temporary directory, needs ~220 GiB (default = $PWD)",
+    type=click.Path(),
+    default=pathlib.Path("."),
+    show_default=True,
+)
+@click.option(
+    "-2",
+    "--tmpdir2",
+    help="Temporary directory 2, needs ~110 GiB [RAM] (default = <tmpdir>)",
+    type=click.Path(),
+    default=None,
+)
+@click.option(
+    "-d",
+    "--finaldir",
+    help="Final directory (default = <tmpdir>)",
+    type=click.Path(),
+    default=pathlib.Path("."),
+    show_default=True,
+)
+@click.option(
+    "-p", "--poolkey", help="Pool Public Key (48 bytes)", type=str, default=None
+)
+@click.option(
+    "-f", "--farmerkey", help="Farmer Public Key (48 bytes)", type=str, default=None
+)
+@click.option(
+    "-G", "--tmptoggle", help="Alternate tmpdir/tmpdir2", type=str, default=None
+)
 def _cli_c8121b987186c42c895b49818e6c13acecc51332() -> None:
     pass
-
 
 
 # Madmax Git on 2021-07-12 -> https://github.com/madMAx43v3r/chia-plotter/commit/974d6e5f1440f68c48492122ca33828a98864dfc
@@ -312,31 +392,86 @@ def _cli_c8121b987186c42c895b49818e6c13acecc51332() -> None:
 @click.command()
 # https://github.com/madMAx43v3r/chia-plotter/blob/974d6e5f1440f68c48492122ca33828a98864dfc/LICENSE
 # https://github.com/madMAx43v3r/chia-plotter/blob/974d6e5f1440f68c48492122ca33828a98864dfc/src/chia_plot.cpp#L235-L249
-@click.option("-n", "--count", help="Number of plots to create (default = 1, -1 = infinite)",
-    type=int, default=1, show_default=True)
-@click.option("-r", "--threads", help="Number of threads (default = 4)",
-    type=int, default=4, show_default=True)
-@click.option("-u", "--buckets", help="Number of buckets (default = 256)",
-    type=int, default=256, show_default=True)
-@click.option("-v", "--buckets3", help="Number of buckets for phase 3+4 (default = buckets)",
-    type=int, default=256)
-@click.option("-t", "--tmpdir", help="Temporary directory, needs ~220 GiB (default = $PWD)",
-    type=click.Path(), default=pathlib.Path("."), show_default=True)
-@click.option("-2", "--tmpdir2", help="Temporary directory 2, needs ~110 GiB [RAM] (default = <tmpdir>)",
-    type=click.Path(), default=None)
-@click.option("-d", "--finaldir", help="Final directory (default = <tmpdir>)",
-    type=click.Path(), default=pathlib.Path("."), show_default=True)
-@click.option("-w", "--waitforcopy", help="Wait for copy to start next plot",
-    type=bool, default=False, show_default=True)
-@click.option("-p", "--poolkey", help="Pool Public Key (48 bytes)",
-    type=str, default=None)
-@click.option("-c", "--contract", help="Pool Contract Address (62 chars)",
-    type=str, default=None)
-@click.option("-f", "--farmerkey", help="Farmer Public Key (48 bytes)",
-    type=str, default=None)
-@click.option("-G", "--tmptoggle", help="Alternate tmpdir/tmpdir2",
-    type=str, default=None)
-@click.option("-K", "--rmulti2", help="Thread multiplier for P2 (default = 1)",
-    type=int, default=1)
+@click.option(
+    "-n",
+    "--count",
+    help="Number of plots to create (default = 1, -1 = infinite)",
+    type=int,
+    default=1,
+    show_default=True,
+)
+@click.option(
+    "-r",
+    "--threads",
+    help="Number of threads (default = 4)",
+    type=int,
+    default=4,
+    show_default=True,
+)
+@click.option(
+    "-u",
+    "--buckets",
+    help="Number of buckets (default = 256)",
+    type=int,
+    default=256,
+    show_default=True,
+)
+@click.option(
+    "-v",
+    "--buckets3",
+    help="Number of buckets for phase 3+4 (default = buckets)",
+    type=int,
+    default=256,
+)
+@click.option(
+    "-t",
+    "--tmpdir",
+    help="Temporary directory, needs ~220 GiB (default = $PWD)",
+    type=click.Path(),
+    default=pathlib.Path("."),
+    show_default=True,
+)
+@click.option(
+    "-2",
+    "--tmpdir2",
+    help="Temporary directory 2, needs ~110 GiB [RAM] (default = <tmpdir>)",
+    type=click.Path(),
+    default=None,
+)
+@click.option(
+    "-d",
+    "--finaldir",
+    help="Final directory (default = <tmpdir>)",
+    type=click.Path(),
+    default=pathlib.Path("."),
+    show_default=True,
+)
+@click.option(
+    "-w",
+    "--waitforcopy",
+    help="Wait for copy to start next plot",
+    type=bool,
+    default=False,
+    show_default=True,
+)
+@click.option(
+    "-p", "--poolkey", help="Pool Public Key (48 bytes)", type=str, default=None
+)
+@click.option(
+    "-c", "--contract", help="Pool Contract Address (62 chars)", type=str, default=None
+)
+@click.option(
+    "-f", "--farmerkey", help="Farmer Public Key (48 bytes)", type=str, default=None
+)
+@click.option(
+    "-G", "--tmptoggle", help="Alternate tmpdir/tmpdir2", type=str, default=None
+)
+@click.option(
+    "-K",
+    "--rmulti2",
+    help="Thread multiplier for P2 (default = 1)",
+    type=int,
+    default=1,
+)
 def _cli_974d6e5f1440f68c48492122ca33828a98864dfc() -> None:
     pass

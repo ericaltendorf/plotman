@@ -75,6 +75,7 @@ with set_locale("C"):
 
 
 def test_log_phases():
+    # TODO: CAMPid 0978413087474699698142013249869897439887
     read_bytes = importlib.resources.read_binary(
         package=plotman._tests.resources,
         resource="chianetwork.marked",
@@ -98,6 +99,7 @@ def test_log_phases():
 
 
 def test_marked_log_matches():
+    # TODO: CAMPid 909831931987460871349879878609830987138931700871340870
     marked_bytes = importlib.resources.read_binary(
         package=plotman._tests.resources,
         resource="chianetwork.marked",
