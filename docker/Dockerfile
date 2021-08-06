@@ -17,7 +17,7 @@ RUN /bin/bash ./install.sh
 
 COPY . /plotman
 
-RUN ["/bin/bash", "-c", "source ./activate && pip install /plotman && deactivate"] 
+RUN ["/bin/bash", "-c", "source ./activate && pip install /plotman && pip install supervisor && deactivate"]
 
 # Build deployment container
 FROM ${BASE_CONTAINER} as plotman
@@ -31,6 +31,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
 && rm -rf /var/lib/apt/lists
 
 COPY --from=plotman-builder /chia-blockchain /chia-blockchain
+COPY ./docker/supervisord.conf /srv/supervisord.conf
 
 RUN groupadd -g ${GID} chia
 RUN useradd -m -u ${UID} -g ${GID} chia
@@ -50,7 +51,7 @@ USER chia
 ENV VIRTUAL_ENV="/chia-blockchain/venv"
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# Kick off plots (assumes the environemnt is good to go)
-CMD ["/bin/bash", "-c", "plotman plot" ]
+# Kick off plots & archives (assumes the environemnt is good to go)
+CMD ["/chia-blockchain/venv/bin/supervisord", "-c", "/srv/supervisord.conf" ]
 # Alternative command to simply provide shell environment
 # CMD ["/bin/bash", "-c", "trap : TERM INT; sleep infinity & wait" ]
