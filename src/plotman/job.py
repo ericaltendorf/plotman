@@ -7,6 +7,7 @@ import os
 import random
 import re
 import sys
+import glob
 import time
 from datetime import datetime
 from enum import Enum, auto
@@ -18,26 +19,34 @@ import click
 import pendulum
 import psutil
 
-from plotman import chia
+from plotman import chia, madmax
 
 
 def job_phases_for_tmpdir(d: str, all_jobs: typing.List["Job"]) -> typing.List["Phase"]:
     '''Return phase 2-tuples for jobs running on tmpdir d'''
-    return sorted([j.progress() for j in all_jobs if j.tmpdir == d])
+    return sorted([j.progress() for j in all_jobs if os.path.normpath(j.tmpdir) == os.path.normpath(d)])
 
 def job_phases_for_dstdir(d: str, all_jobs: typing.List["Job"]) -> typing.List["Phase"]:
     '''Return phase 2-tuples for jobs outputting to dstdir d'''
-    return sorted([j.progress() for j in all_jobs if j.dstdir == d])
+    return sorted([j.progress() for j in all_jobs if os.path.normpath(j.dstdir) == os.path.normpath(d)])
 
 def is_plotting_cmdline(cmdline: typing.List[str]) -> bool:
-    if cmdline and 'python' in cmdline[0].lower():
-        cmdline = cmdline[1:]
-    return (
-        len(cmdline) >= 3
-        and 'chia' in cmdline[0]
-        and 'plots' == cmdline[1]
-        and 'create' == cmdline[2]
-    )
+    if len(cmdline) == 0:
+        return False
+
+    if 'chia_plot' == os.path.basename(cmdline[0].lower()):  # Madmax plotter
+        # TODO: use the configured executable
+        return True
+    else:
+        if 'python' in cmdline[0].lower():  # Stock Chia plotter
+            cmdline = cmdline[1:]
+        return (
+            len(cmdline) >= 3
+            # TODO: use the configured executable
+            and 'chia' in cmdline[0]
+            and 'plots' == cmdline[1]
+            and 'create' == cmdline[2]
+        )
 
 def parse_chia_plot_time(s: str) -> pendulum.DateTime:
     # This will grow to try ISO8601 as well for when Chia logs that way
@@ -50,14 +59,24 @@ def parse_chia_plots_create_command_line(
 ) -> "ParsedChiaPlotsCreateCommand":
     command_line = list(command_line)
     # Parse command line args
-    if 'python' in command_line[0].lower():
-        command_line = command_line[1:]
-    assert len(command_line) >= 3
-    assert 'chia' in command_line[0]
-    assert 'plots' == command_line[1]
-    assert 'create' == command_line[2]
 
-    all_command_arguments = command_line[3:]
+    if 'chia_plot' == os.path.basename(command_line[0].lower()):  # Madmax plotter
+        # TODO: use the configured executable
+        all_command_arguments = command_line[1:]
+        command = madmax.commands.latest_command()
+    else:
+        if 'python' in command_line[0].lower():  # Stock Chia plotter
+            command_line = command_line[1:]
+        assert len(command_line) >= 3
+        # TODO: use the configured executable
+        assert 'chia' in command_line[0]
+        assert 'plots' == command_line[1]
+        assert 'create' == command_line[2]
+        all_command_arguments = command_line[3:]
+        # TODO: We could at some point do chia version detection and pick the
+        #       associated command.  For now we'll just use the latest one we have
+        #       copied.
+        command = chia.commands.latest_command()
 
     # nice idea, but this doesn't include -h
     # help_option_names = command.get_help_option_names(ctx=context)
@@ -69,10 +88,6 @@ def parse_chia_plots_create_command_line(
         if argument not in help_option_names
     ]
 
-    # TODO: We could at some point do chia version detection and pick the
-    #       associated command.  For now we'll just use the latest one we have
-    #       copied.
-    command = chia.commands.latest_command()
     try:
         context = command.make_context(info_name='', args=list(command_arguments))
     except click.ClickException as e:
@@ -146,10 +161,13 @@ class Job:
     jobfile: str = ''
     job_id: int = 0
     plot_id: str = '--------'
+    plotter: str = ''
     proc: psutil.Process
     k: int
     r: int
     u: int
+    v: int
+    rmulti2: int
     b: int
     n: int
     tmpdir: str
@@ -252,15 +270,27 @@ class Job:
         #     'nobitfield': False,
         #     'exclude_final_dir': False,
         # }
-
-        self.k = self.args['size']  # type: ignore[assignment]
-        self.r = self.args['num_threads']  # type: ignore[assignment]
-        self.u = self.args['buckets']  # type: ignore[assignment]
-        self.b = self.args['buffer']  # type: ignore[assignment]
-        self.n = self.args['num']  # type: ignore[assignment]
-        self.tmpdir = self.args['tmp_dir']  # type: ignore[assignment]
-        self.tmp2dir = self.args['tmp2_dir']  # type: ignore[assignment]
-        self.dstdir = self.args['final_dir']  # type: ignore[assignment]
+        # TODO: use the configured executable
+        if proc.name().startswith("chia_plot"): # MADMAX
+            self.k = 32
+            self.r = self.args['threads']  # type: ignore[assignment]
+            self.u = self.args['buckets']  # type: ignore[assignment]
+            self.v = self.args['buckets3']  # type: ignore[assignment]
+            self.rmulti2 = self.args['rmulti2']  # type: ignore[assignment]
+            self.b = 0
+            self.n = self.args['count']  # type: ignore[assignment]
+            self.tmpdir = self.args['tmpdir']  # type: ignore[assignment]
+            self.tmp2dir = self.args['tmpdir2']  # type: ignore[assignment]
+            self.dstdir = self.args['finaldir']  # type: ignore[assignment]
+        else: # CHIA
+            self.k = self.args['size']  # type: ignore[assignment]
+            self.r = self.args['num_threads']  # type: ignore[assignment]
+            self.u = self.args['buckets']  # type: ignore[assignment]
+            self.b = self.args['buffer']  # type: ignore[assignment]
+            self.n = self.args['num']  # type: ignore[assignment]
+            self.tmpdir = self.args['tmp_dir']  # type: ignore[assignment]
+            self.tmp2dir = self.args['tmp2_dir']  # type: ignore[assignment]
+            self.dstdir = self.args['final_dir']  # type: ignore[assignment]
 
         plot_cwd: str = self.proc.cwd()
         self.tmpdir = os.path.join(plot_cwd, self.tmpdir)
@@ -303,11 +333,22 @@ class Job:
                 with contextlib.suppress(UnicodeDecodeError):
                     for line in f:
                         m = re.match('^ID: ([0-9a-f]*)', line)
-                        if m:
+                        if m: # CHIA
                             self.plot_id = m.group(1)
+                            self.plotter = 'chia'
                             found_id = True
+                        else: 
+                            m = re.match(r"^Plot Name: plot-k(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\w+)$", line)
+                            if m: # MADMAX
+                                self.plot_id = m.group(7)
+                                self.plotter = 'madmax'
+                                self.start_time = pendulum.from_timestamp(os.path.getctime(self.logfile))
+                                found_id = True
+                                found_log = True
+                                break
+
                         m = re.match(r'^Starting phase 1/4:.*\.\.\. (.*)', line)
-                        if m:
+                        if m: # CHIA
                             # Mon Nov  2 08:39:53 2020
                             self.start_time = parse_chia_plot_time(m.group(1))
                             found_log = True
@@ -344,27 +385,52 @@ class Job:
         with open(self.logfile, 'r') as f:
             with contextlib.suppress(UnicodeDecodeError):
                 for line in f:
-                    # "Starting phase 1/4: Forward Propagation into tmp files... Sat Oct 31 11:27:04 2020"
-                    m = re.match(r'^Starting phase (\d).*', line)
-                    if m:
-                        phase = int(m.group(1))
-                        phase_subphases[phase] = 0
+                    if self.plotter == "madmax":
 
-                    # Phase 1: "Computing table 2"
-                    m = re.match(r'^Computing table (\d).*', line)
-                    if m:
-                        phase_subphases[1] = max(phase_subphases[1], int(m.group(1)))
+                        # MADMAX reports after completion of phases so increment the reported subphases
+                        # and assume that phase 1 has already started
+                        m = re.match(r'^\[P(\d)-?(1|2)?\] Table (\d) (rewrite)?', line)
+                        if m:
+                            phase = int(m.group(1))
+                            phase_subphases[phase] = int(m.group(3))
 
-                    # Phase 2: "Backpropagating on table 2"
-                    m = re.match(r'^Backpropagating on table (\d).*', line)
-                    if m:
-                        phase_subphases[2] = max(phase_subphases[2], 7 - int(m.group(1)))
+                            if phase == 2:
+                                phase_subphases[phase] = 9 - phase_subphases[phase] + (m.lastindex == 4)
+                            elif phase != 3 or m.group(2) and m.group(2) == '2':
+                                phase_subphases[phase] += 1
+                            
+                            if phase_subphases[phase] > 7:
+                                phase += 1
+                                phase_subphases[phase] = 2 * (phase < 4)
 
-                    # Phase 3: "Compressing tables 4 and 5"
-                    m = re.match(r'^Compressing tables (\d) and (\d).*', line)
-                    if m:
-                        phase_subphases[3] = max(phase_subphases[3], int(m.group(1)))
+                        else:
+                            m = re.match(r'^\[P4\] (Starting)?(Finished writing C2)?', line)
+                            if m and m.lastindex:
+                                phase = 3 + int(m.lastindex)
+                                phase_subphases[phase] = 0
 
+                    else:                    
+                        # CHIA: "Starting phase 1/4: Forward Propagation into tmp files... Sat Oct 31 11:27:04 2020"
+                        m = re.match(r'^Starting phase (\d).*', line)
+                        if m:
+                            phase = int(m.group(1))
+                            phase_subphases[phase] = 0
+                        
+                        # CHIA: Phase 1: "Computing table 2"
+                        m = re.match(r'^Computing table (\d).*', line)
+                        if m:
+                            phase_subphases[1] = max(phase_subphases[1], int(m.group(1)))
+                        
+                        # CHIA: Phase 2: "Backpropagating on table 2"
+                        m = re.match(r'^Backpropagating on table (\d).*', line)
+                        if m:
+                            phase_subphases[2] = max(phase_subphases[2], 7 - int(m.group(1)))
+
+                        # CHIA: Phase 3: "Compressing tables 4 and 5"
+                        m = re.match(r'^Compressing tables (\d) and (\d).*', line)
+                        if m:
+                            phase_subphases[3] = max(phase_subphases[3], int(m.group(1)))
+                    
                     # TODO also collect timing info:
 
                     # "Time for phase 1 = 22796.7 seconds. CPU (98%) Tue Sep 29 17:57:19 2020"
@@ -498,13 +564,11 @@ class Job:
     def get_temp_files(self) -> typing.Set[str]:
         # Prevent duplicate file paths by using set.
         temp_files = set([])
-        for f in self.proc.open_files():
-            if any(
-                dir in f.path
-                for dir in [self.tmpdir, self.tmp2dir, self.dstdir]
-                if dir is not None
-            ):
-                temp_files.add(f.path)
+
+        for dir in [self.tmpdir, self.tmp2dir, self.dstdir]:
+            if dir is not None:
+                temp_files.update(glob.glob(os.path.join(dir, f"plot-*-{self.plot_id}.tmp")))
+
         return temp_files
 
     def cancel(self) -> None:

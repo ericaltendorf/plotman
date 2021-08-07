@@ -2,6 +2,7 @@ import contextlib
 import importlib
 import os
 import stat
+import subprocess
 import tempfile
 import textwrap
 from typing import Dict, Generator, List, Mapping, Optional
@@ -12,6 +13,9 @@ import desert
 # TODO: should be a desert.ib() but mypy doesn't understand it then, see below
 import desert._make
 import marshmallow
+import marshmallow.fields
+import marshmallow.validate
+import packaging.version
 import pendulum
 import yaml
 
@@ -49,7 +53,7 @@ def get_validated_configs(config_text: str, config_path: str, preset_target_defi
 
     version = config_objects.get('version', (0,))
 
-    expected_major_version = 1
+    expected_major_version = 2
 
     if version[0] != expected_major_version:
         message = textwrap.dedent(f"""\
@@ -66,6 +70,52 @@ def get_validated_configs(config_text: str, config_path: str, preset_target_defi
         raise ConfigurationException(
             f"Config file at: '{config_path}' is malformed"
         ) from e
+
+    if loaded.plotting.type == "chia":
+        if loaded.plotting.chia is None:
+            # TODO: fix all the `TODO: use the configured executable` so this is not
+            #       needed.
+            raise ConfigurationException(
+                "chia selected as plotter but plotting: chia: was not specified in the config",
+            )
+
+        if loaded.plotting.pool_pk is not None and loaded.plotting.pool_contract_address is not None:
+            raise ConfigurationException(
+                "Chia Network plotter accepts up to one of plotting: pool_pk: and pool_contract_address: but both are specified",
+            )
+
+        executable_name = os.path.basename(loaded.plotting.chia.executable)
+        if executable_name != "chia":
+            raise ConfigurationException(
+                "plotting: chia: executable: must refer to an executable named chia"
+            )
+    elif loaded.plotting.type == "madmax":
+        if loaded.plotting.madmax is None:
+            raise ConfigurationException(
+                "madMAx selected as plotter but plotting: madmax: was not specified in the config",
+            )
+
+        if loaded.plotting.farmer_pk is None:
+            raise ConfigurationException(
+                "madMAx selected as plotter but no plotting: farmer_pk: was specified in the config",
+            )
+
+        if loaded.plotting.pool_pk is None and loaded.plotting.pool_contract_address is None:
+            raise ConfigurationException(
+                "madMAx plotter requires one of plotting: pool_pk: or pool_contract_address: to be specified but neither is",
+            )
+        elif loaded.plotting.pool_pk is not None and loaded.plotting.pool_contract_address is not None:
+            raise ConfigurationException(
+                "madMAx plotter accepts only one of plotting: pool_pk: and pool_contract_address: but both are specified",
+            )
+
+        executable_name = os.path.basename(loaded.plotting.madmax.executable)
+        if executable_name != "chia_plot":
+            # TODO: fix all the `TODO: use the configured executable` so this is not
+            #       needed.
+            raise ConfigurationException(
+                "plotting: madmax: executable: must refer to an executable named chia_plot"
+            )
 
     if loaded.archiving is not None:
         preset_target_objects = yaml.safe_load(preset_target_definitions_text)
@@ -208,6 +258,9 @@ class Archiving:
 
 @attr.frozen
 class TmpOverrides:
+    tmpdir_stagger_phase_major: Optional[int] = None
+    tmpdir_stagger_phase_minor: Optional[int] = None
+    tmpdir_stagger_phase_limit: Optional[int] = None
     tmpdir_max_jobs: Optional[int] = None
 
 @attr.frozen
@@ -244,7 +297,6 @@ class Directories:
     tmp: List[str]
     dst: Optional[List[str]] = None
     tmp2: Optional[str] = None
-    tmp_overrides: Optional[Dict[str, TmpOverrides]] = None
 
     def dst_is_tmp(self) -> bool:
         return self.dst is None and self.tmp2 is None
@@ -272,18 +324,43 @@ class Scheduling:
     tmpdir_stagger_phase_major: int
     tmpdir_stagger_phase_minor: int
     tmpdir_stagger_phase_limit: int = 1  # If not explicit, "tmpdir_stagger_phase_limit" will default to 1
+    tmp_overrides: Optional[Dict[str, TmpOverrides]] = None
+
+@attr.frozen
+class ChiaPlotterOptions:
+    executable: str = "chia"
+    n_threads: int = 2
+    n_buckets: int = 128
+    k: Optional[int] = 32
+    e: Optional[bool] = False
+    job_buffer: Optional[int] = 3389
+    x: bool = False
+
+@attr.frozen
+class MadmaxPlotterOptions:
+    executable: str = "chia_plot"
+    n_threads: int = 4
+    n_buckets: int = 256
+    n_buckets3: int = 256
+    n_rmulti2: int = 1
 
 @attr.frozen
 class Plotting:
-    k: int
-    e: bool
-    n_threads: int
-    n_buckets: int
-    job_buffer: int
     farmer_pk: Optional[str] = None
     pool_pk: Optional[str] = None
     pool_contract_address: Optional[str] = None
-    x: bool = False
+    type: str = attr.ib(
+        default="chia",
+        metadata={
+            desert._make._DESERT_SENTINEL: {
+                'marshmallow_field': marshmallow.fields.String(
+                    validate=marshmallow.validate.OneOf(choices=["chia", "madmax"]),
+                ),
+            },
+        },
+    )
+    chia: Optional[ChiaPlotterOptions] = None
+    madmax: Optional[MadmaxPlotterOptions] = None
 
 @attr.frozen
 class UserInterface:
@@ -311,6 +388,48 @@ class PlotmanConfig:
 
     @contextlib.contextmanager
     def setup(self) -> Generator[None, None, None]:
+        if self.plotting.type == 'chia':
+            if self.plotting.chia is None:
+                message = (
+                    "internal plotman error, please report the full traceback and your"
+                    + " full configuration file"
+                )
+                raise Exception(message)
+            if self.plotting.pool_contract_address is not None:
+                completed_process = subprocess.run(
+                    args=[self.plotting.chia.executable, 'version'],
+                    capture_output=True,
+                    check=True,
+                    encoding='utf-8',
+                )
+                version = packaging.version.Version(completed_process.stdout)
+                required_version = packaging.version.Version('1.2')
+                if version < required_version:
+                    raise Exception(
+                        f'Chia version {required_version} required for creating pool'
+                        f' plots but found: {version}'
+                    )
+        elif self.plotting.type == 'madmax':
+            if self.plotting.madmax is None:
+                message = (
+                    "internal plotman error, please report the full traceback and your"
+                    + " full configuration file"
+                )
+                raise Exception(message)
+
+            if self.plotting.pool_contract_address is not None:
+                completed_process = subprocess.run(
+                    args=[self.plotting.madmax.executable, '--help'],
+                    capture_output=True,
+                    check=True,
+                    encoding='utf-8',
+                )
+                if '--contract' not in completed_process.stdout:
+                    raise Exception(
+                        f'found madMAx version does not support the `--contract`'
+                        f' option for pools.'
+                    )
+
         prefix = f'plotman-pid_{os.getpid()}-'
 
         self.logging.setup()

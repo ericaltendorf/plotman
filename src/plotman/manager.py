@@ -53,21 +53,38 @@ def phases_permit_new_job(phases: typing.List[job.Phase], d: str, sched_cfg: plo
     if len(phases) == 0:
         return True
 
-    milestone = job.Phase(
-        major=sched_cfg.tmpdir_stagger_phase_major,
-        minor=sched_cfg.tmpdir_stagger_phase_minor,
-    )
+    # Assign variables
+    major = sched_cfg.tmpdir_stagger_phase_major
+    minor = sched_cfg.tmpdir_stagger_phase_minor
     # tmpdir_stagger_phase_limit default is 1, as declared in configuration.py
-    if len([p for p in phases if p < milestone]) >= sched_cfg.tmpdir_stagger_phase_limit:
-        return False
-
-    # Limit the total number of jobs per tmp dir. Default to the overall max
+    stagger_phase_limit = sched_cfg.tmpdir_stagger_phase_limit
+    
+    # Limit the total number of jobs per tmp dir. Default to overall max
     # jobs configuration, but restrict to any configured overrides.
     max_plots = sched_cfg.tmpdir_max_jobs
-    if dir_cfg.tmp_overrides is not None and d in dir_cfg.tmp_overrides:
-        curr_overrides = dir_cfg.tmp_overrides[d]
+    
+    # Check if any overrides exist for the current job
+    if sched_cfg.tmp_overrides is not None and d in sched_cfg.tmp_overrides:
+        curr_overrides = sched_cfg.tmp_overrides[d]
+    
+        # Check for and assign major & minor phase overrides
+        if curr_overrides.tmpdir_stagger_phase_major is not None:
+            major = curr_overrides.tmpdir_stagger_phase_major
+        if curr_overrides.tmpdir_stagger_phase_minor is not None:
+            minor = curr_overrides.tmpdir_stagger_phase_minor
+        # Check for and assign stagger phase limit override
+        if curr_overrides.tmpdir_stagger_phase_limit is not None:
+            stagger_phase_limit = curr_overrides.tmpdir_stagger_phase_limit
+        # Check for and assign stagger phase limit override
         if curr_overrides.tmpdir_max_jobs is not None:
             max_plots = curr_overrides.tmpdir_max_jobs
+        
+    milestone = job.Phase(major,minor)
+    
+    # Check if phases pass the criteria
+    if len([p for p in phases if p < milestone]) >= stagger_phase_limit:
+        return False
+
     if len(phases) >= max_plots:
         return False
 
@@ -121,15 +138,47 @@ def maybe_start_new_plot(dir_cfg: plotman.configuration.Directories, sched_cfg: 
 
             log_file_path = log_cfg.create_plot_log_path(time=pendulum.now())
 
-            plot_args: typing.List[str] = ['chia', 'plots', 'create',
-                    '-k', str(plotting_cfg.k),
-                    '-r', str(plotting_cfg.n_threads),
-                    '-u', str(plotting_cfg.n_buckets),
-                    '-b', str(plotting_cfg.job_buffer),
+            plot_args: typing.List[str]
+            if plotting_cfg.type == "madmax":
+                if plotting_cfg.madmax is None:
+                    raise Exception(
+                        "madmax plotter selected but not configured, report this as a plotman bug",
+                    )
+                plot_args = [
+                    plotting_cfg.madmax.executable,
+                    '-n', str(1),
+                    '-r', str(plotting_cfg.madmax.n_threads),
+                    '-u', str(plotting_cfg.madmax.n_buckets),
+                    '-t', tmpdir if tmpdir.endswith('/') else (tmpdir + '/'),
+                    '-d', dstdir if dstdir.endswith('/') else (dstdir + '/') ]
+                if dir_cfg.tmp2 is not None:
+                    plot_args.append('-2')
+                    plot_args.append(dir_cfg.tmp2 if dir_cfg.tmp2.endswith('/') else (dir_cfg.tmp2 + '/'))
+                if plotting_cfg.madmax.n_buckets3 is not None:
+                    plot_args.append('-v')
+                    plot_args.append(str(plotting_cfg.madmax.n_buckets3))
+                if plotting_cfg.madmax.n_rmulti2 is not None:
+                    plot_args.append('-K')
+                    plot_args.append(str(plotting_cfg.madmax.n_rmulti2))
+            else:
+                if plotting_cfg.chia is None:
+                    raise Exception(
+                        "chia plotter selected but not configured, report this as a plotman bug",
+                    )
+                plot_args = [plotting_cfg.chia.executable, 'plots', 'create',
+                    '-k', str(plotting_cfg.chia.k),
+                    '-r', str(plotting_cfg.chia.n_threads),
+                    '-u', str(plotting_cfg.chia.n_buckets),
+                    '-b', str(plotting_cfg.chia.job_buffer),
                     '-t', tmpdir,
                     '-d', dstdir ]
-            if plotting_cfg.e:
-                plot_args.append('-e')
+                if plotting_cfg.chia.e:
+                    plot_args.append('-e')
+                if plotting_cfg.chia.x:
+                    plot_args.append('-x')  
+                if dir_cfg.tmp2 is not None:
+                    plot_args.append('-2')
+                    plot_args.append(dir_cfg.tmp2)
             if plotting_cfg.farmer_pk is not None:
                 plot_args.append('-f')
                 plot_args.append(plotting_cfg.farmer_pk)
@@ -139,11 +188,8 @@ def maybe_start_new_plot(dir_cfg: plotman.configuration.Directories, sched_cfg: 
             if plotting_cfg.pool_contract_address is not None:
                 plot_args.append('-c')
                 plot_args.append(plotting_cfg.pool_contract_address)
-            if dir_cfg.tmp2 is not None:
-                plot_args.append('-2')
-                plot_args.append(dir_cfg.tmp2)
-            if plotting_cfg.x:
-                plot_args.append('-x')  
+
+
 
             logmsg = ('Starting plot job: %s ; logging to %s' % (' '.join(plot_args), log_file_path))
 

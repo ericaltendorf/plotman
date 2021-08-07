@@ -1,7 +1,7 @@
 # Default/example plotman.yaml configuration file
 
 # https://github.com/ericaltendorf/plotman/wiki/Configuration#versions
-version: [1]
+version: [2]
 
 logging:
         # One directory in which to store all plot job logs (the STDOUT/
@@ -43,19 +43,6 @@ directories:
                 - /mnt/tmp/01
                 - /mnt/tmp/02
                 - /mnt/tmp/03
-
-        # Optional: Allows overriding some characteristics of certain tmp
-        # directories. This contains a map of tmp directory names to
-        # attributes. If a tmp directory and attribute is not listed here,
-        # it uses the default attribute setting from the main configuration.
-        #
-        # Currently support override parameters:
-        #     - tmpdir_max_jobs
-        tmp_overrides:
-                # In this example, /mnt/tmp/00 is larger than the other tmp
-                # dirs and it can hold more plots than the default.
-                "/mnt/tmp/00":
-                        tmpdir_max_jobs: 5
 
         # Optional: tmp2 directory.  If specified, will be passed to
         # chia plots create as -2.  Only one tmp2 directory is supported.
@@ -131,20 +118,62 @@ scheduling:
         # How often the daemon wakes to consider starting a new plot job, in seconds.
         polling_time_s: 20
 
+        # Optional: Allows the overriding of some scheduling characteristics of the
+        # tmp directories specified here.
+        # This contains a map of tmp directory names to attributes. If a tmp directory 
+        # and attribute is not listed here, the default attribute setting from the main 
+        # configuration will be used
+        #
+        # Currently support override parameters:
+        #     - tmpdir_stagger_phase_major (requires tmpdir_stagger_phase_minor)
+        #     - tmpdir_stagger_phase_minor (requires tmpdir_stagger_phase_major)
+        #     - tmpdir_stagger_phase_limit
+        #     - tmpdir_max_jobs
+        tmp_overrides:
+                # In this example, /mnt/tmp/00 is larger and faster than the
+                # other tmp dirs and it can hold more plots than the default,
+                # allowing more simultaneous plots, so they are being started
+                # earlier than the global setting above.
+                "/mnt/tmp/00":
+                        tmpdir_stagger_phase_major: 1
+                        tmpdir_stagger_phase_minor: 5
+                        tmpdir_max_jobs: 5
+                # Here, /mnt/tmp/03 is smaller, so a different config might be
+                # to space the phase stagger further apart and only allow 2 jobs
+                # to run concurrently in it
+                "/mnt/tmp/03":
+                        tmpdir_stagger_phase_major: 3
+                        tmpdir_stagger_phase_minor: 1
+                        tmpdir_max_jobs: 2
 
 # Plotting parameters.  These are pass-through parameters to chia plots create.
 # See documentation at
 # https://github.com/Chia-Network/chia-blockchain/wiki/CLI-Commands-Reference#create
 plotting:
-        k: 32
-        e: False             # Use -e plotting option
-        n_threads: 2         # Threads per job
-        n_buckets: 128       # Number of buckets to split data into
-        job_buffer: 3389     # Per job memory
-        # If specified, pass through to the -f and -p options.  See CLI reference.
-        #   farmer_pk: ...
-        #   pool_pk: ...
-        # If true, Skips adding [final dir] / dst to harvester for farming. 
-        # Especially useful if you have harvesters that are running somewhere else
-        # and you are just plotting on the machine where plotman is running.
-        #   x: True
+        # Your public keys.  Be sure to use the pool contract address for
+        # portable pool plots.  The pool public key is only for original
+        # non-portable plots that can not be used with the official pooling
+        # protocol.
+        # farmer_pk: ...
+        # pool_pk: ...
+        # pool_contract_address: ...
+        
+        # If you enable Chia, plot in *parallel* with higher tmpdir_max_jobs and global_max_jobs
+        type: chia
+        chia:
+                # The stock plotter: https://github.com/Chia-Network/chia-blockchain
+                # executable: /path/to/chia
+                k: 32                # k-size of plot, leave at 32 most of the time
+                e: False             # Use -e plotting option
+                n_threads: 2         # Threads per job
+                n_buckets: 128       # Number of buckets to split data into
+                job_buffer: 3389     # Per job memory
+
+        # If you enable madMAx, plot in *sequence* with very low tmpdir_max_jobs and global_max_jobs
+        madmax:
+                # madMAx plotter: https://github.com/madMAx43v3r/chia-plotter
+                # executable: /path/to/chia_plot
+                n_threads: 4          # Default is 4, crank up if you have many cores
+                n_buckets: 256        # Default is 256
+                n_buckets3: 256       # Default is 256
+                n_rmulti2: 1          # Default is 1 

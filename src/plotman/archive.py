@@ -210,7 +210,7 @@ def archive(dir_cfg: configuration.Directories, arch_cfg: configuration.Archivin
     dst_dir = dir_cfg.get_dst_directories()
     for d in dst_dir:
         ph = dir2ph.get(d, job.Phase(0, 0))
-        dir_plots = plot_util.list_k32_plots(d)
+        dir_plots = plot_util.list_plots(d)
         gb_free = plot_util.df_b(d) / plot_util.GB
         n_plots = len(dir_plots)
         priority = compute_priority(ph, gb_free, n_plots)
@@ -240,7 +240,7 @@ def archive(dir_cfg: configuration.Directories, arch_cfg: configuration.Archivin
     available = [(d, space) for (d, space) in archdir_freebytes.items() if
                  space > (chosen_plot_size + free_space_margin)]
     if len(available) > 0:
-        index = min(arch_cfg.index, len(available) - 1)
+        index = arch_cfg.index % len(available)
         (archdir, freespace) = sorted(available)[index]
 
     if not archdir:
