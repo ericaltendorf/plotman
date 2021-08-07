@@ -15,7 +15,7 @@ import typing
 import pendulum
 
 # Plotman libraries
-from plotman import analyzer, archive, configuration, interactive, manager, plot_util, reporting, csv_exporter
+from plotman import analyzer, archive, configuration, interactive, manager, plot_util, reporting, csv_exporter, graph
 from plotman import resources as plotman_resources
 from plotman.job import Job
 
@@ -103,16 +103,14 @@ class PlotmanArgParser:
                 help='figure to be created if logdir is passed')
 
         p_graph = sp.add_parser('graph', help='create graph with plotting statistics')
-        p_graph.add_argument('--logdir', type=str, default=None,
-                help='directory containing multiple logfiles to analyze')
-        p_graph.add_argument('--figfile', type=str, default=None,
+        p_graph.add_argument('logdir', type=str,
+                help='directory containing multiple logfiles to graph')
+        p_graph.add_argument('figfile', type=str,
                 help='graph file produced as output (.png, .jpg, etc.)')
-        p_graph.add_argument('--bytmp',
-                action='store_true',
-                help='slice by tmp dirs')
-        p_graph.add_argument('--bybitfield',
-                action='store_true',
-                help='slice by bitfield/non-bitfield sorting')
+        p_graph.add_argument('--latest_k', type=int, default=None,
+                help='if passed, will only graph statistics for the latest k plots')
+        p_graph.add_argument('--window', type=int, default=3,
+                help='window size to compute moving average over')
 
         args = parser.parse_args()
         return args
@@ -224,7 +222,7 @@ def main() -> None:
         # Graphing of completed jobs
         #
         elif args.cmd == 'graph':
-            graph.graph(args.logfile, args.figfile, args.bytmp, args.bybitfield)
+            graph.graph(args.logdir, args.figfile, args.latest_k, args.window)
 
         #
         # Exports log metadata to CSV

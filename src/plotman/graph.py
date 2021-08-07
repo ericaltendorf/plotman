@@ -10,8 +10,10 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 
+from plotman.log_parser import PlotLogParser
 
-def create_ax_dumbbell(ax, data, max_stacked=50):
+
+def create_ax_dumbbell(ax, data, max_stacked=50) -> None: 
     '''
         Create a dumbbell plot of concurrent plot instances over time.
         Parameters:
@@ -42,7 +44,7 @@ def create_ax_dumbbell(ax, data, max_stacked=50):
     ax.set_xlim(np.min(data[:,0])-2, np.max(data[:,1])+2)
 
 
-def create_ax_plotrate(ax, data, end=True, window=3):
+def create_ax_plotrate(ax, data, end=True, window=3) -> None: 
     '''
         Create a plot showing the rate of plotting over time. Can be computed
             with respect to the plot start (this is rate of plot creation) or
@@ -54,7 +56,7 @@ def create_ax_plotrate(ax, data, end=True, window=3):
             window: Window to compute rate over.
     '''
 
-    def estimate_rate(data, window):
+    def estimate_rate(data, window): 
         rate_list = []
         window_list = []
         # This takes care of when we dont have a full window
@@ -81,7 +83,7 @@ def create_ax_plotrate(ax, data, end=True, window=3):
     ax.set_xlim(np.min(data[:,0])-2, np.max(data[:,1])+2)
 
 
-def create_ax_plottime(ax, data, window=3):
+def create_ax_plottime(ax, data, window=3) -> None: 
     '''
         Create a plot showing the average time to create a single plot. This is
             computed using a moving average. Note that the plot may not be
@@ -106,7 +108,7 @@ def create_ax_plottime(ax, data, window=3):
     ax.set_xlim(np.min(data[:,0])-2, np.max(data[:,1])+2)
 
 
-def create_ax_plotcumulative(ax, data):
+def create_ax_plotcumulative(ax, data) -> None:
     '''
         Create a plot showing the cumulative number of plots over time.
         Parameters:
@@ -119,145 +121,64 @@ def create_ax_plotcumulative(ax, data):
     ax.set_xlim(np.min(data[:,0])-2, np.max(data[:,1])+2)
 
 
-def graph(logfilenames, figfile, bytmp, bybitfield):
-    data = {}
-    logfilenames = [os.path.join(os.path.dirname(logfilenames), l) for l in os.listdir(logfilenames) if
+def graph(logdir : str, figfile : str, latest_k : int, window : int) -> None: 
+    assert window >= 2, "Cannot compute moving average over such a small window"
+    assert os.path.isdir(logdir)
+
+    # Build a list of the logfiles
+    logdir = os.path.abspath(logdir)
+    logfilenames = [os.path.join(logdir, l) for l in os.listdir(logdir) if
         os.path.splitext(l)[-1] == '.log']
 
+    assert len(logfilenames) > 0, "Directory contains no files {}".format(logdir)
+
+    # For each log file, extract the start, end, and duration
+    time_catter = []
+    parser = PlotLogParser()    
     for logfilename in logfilenames:
         with open(logfilename, 'r') as f:
-            # Record of slicing and data associated with the slice
-            sl = 'x'         # Slice key
-            phase_time = {}  # Map from phase index to time
-            n_sorts = 0
-            n_uniform = 0
-            is_first_last = False
+            info = parser.parse(f)
+            if info.total_time_raw != 0:
+                time_catter.append(
+                    [
+                        info.started_at.timestamp(), 
+                        info.started_at.timestamp() + info.total_time_raw,
+                        info.total_time_raw
+                    ]
+                )
 
-            # Read the logfile, triggering various behaviors on various
-            # regex matches.
-            for line in f:
-                # Beginning of plot job.  We may encounter this multiple
-                # times, if a job was run with -n > 1.  Sample log line:
-                # 2021-04-08T13:33:43.542  chia.plotting.create_plots       : INFO     Starting plot 1/5
-                m = re.search(r'Starting plot (\d*)/(\d*)', line)
-                if m:
-                    # (re)-initialize data structures
-                    sl = 'x'         # Slice key
-                    phase_time = {}  # Map from phase index to time
-                    n_sorts = 0
-                    n_uniform = 0
+    assert len(time_catter) > 0, "No valid log files found, need a finished plot"
 
-                    seq_num = int(m.group(1))
-                    seq_total = int(m.group(2))
-                    is_first_last = seq_num == 1 or seq_num == seq_total
+    # This array will hold start and end data (in hours)
+    data_started_ended = np.array(time_catter) / (60 * 60)
 
-                # Temp dirs.  Sample log line:
-                # Starting plotting progress into temporary dirs: /mnt/tmp/01 and /mnt/tmp/a
-                m = re.search(r'^Starting plotting.*dirs: (.*) and (.*)', line)
-                if m:
-                    # Record tmpdir, if slicing by it
-                    if bytmp:
-                        tmpdir = m.group(1)
-                        sl += '-' + tmpdir
+    # Shift the data so that it starts at zero
+    data_started_ended -= np.min(data_started_ended[:, 0])
 
-                # Bitfield marker.  Sample log line(s):
-                # Starting phase 2/4: Backpropagation without bitfield into tmp files... Mon Mar  1 03:56:11 2021
-                #   or
-                # Starting phase 2/4: Backpropagation into tmp files... Fri Apr  2 03:17:32 2021
-                m = re.search(r'^Starting phase 2/4: Backpropagation', line)
-                if bybitfield and m:
-                    if 'without bitfield' in line:
-                        sl += '-nobitfield'
-                    else:
-                        sl += '-bitfield'
+    # Sort the rows by start time
+    data_started_ended = data_started_ended[np.argsort(data_started_ended[:, 0])]
 
-                # Phase timing.  Sample log line:
-                # Time for phase 1 = 22796.7 seconds. CPU (98%) Tue Sep 29 17:57:19 2020
-                for phase in ['1', '2', '3', '4']:
-                    m = re.search(r'^Time for phase ' + phase + ' = (\d+.\d+) seconds..*', line)
-                    if m:
-                        phase_time[phase] = float(m.group(1))
+    # Remove older entries
+    if latest_k is not None:
+        data_started_ended = data_started_ended[-latest_k:, :]
 
-                # Uniform sort.  Sample log line:
-                # Bucket 267 uniform sort. Ram: 0.920GiB, u_sort min: 0.688GiB, qs min: 0.172GiB.
-                #   or
-                # ....?....
-                #   or
-                # Bucket 511 QS. Ram: 0.920GiB, u_sort min: 0.375GiB, qs min: 0.094GiB. force_qs: 1
-                m = re.search(r'Bucket \d+ ([^\.]+)\..*', line)
-                if m and not 'force_qs' in line:
-                    sorter = m.group(1)
-                    n_sorts += 1
-                    if sorter == 'uniform sort':
-                        n_uniform += 1
-                    elif sorter == 'QS':
-                        pass
-                    else:
-                        print ('Warning: unrecognized sort ' + sorter)
+    # Create figure
+    num_plots = 4
+    f, _ = plt.subplots(2,1, figsize=(8, 10))
+    ax = plt.subplot(num_plots,1,1)
+    ax.set_title('Plot performance summary')
 
-                # Job completion.  Record total time in sliced data store.
-                # Sample log line:
-                # Total time = 49487.1 seconds. CPU (97.26%) Wed Sep 30 01:22:10 2020
-                m = re.search(r'^Total time = (\d+.\d+) seconds.', line)
-                if m:
-                    time_taken = float(m.group(1))
-                    data.setdefault(sl, {}).setdefault('total time', []).append(time_taken)
-                    for phase in ['1', '2', '3', '4']:
-                        data.setdefault(sl, {}).setdefault('phase ' + phase, []).append(phase_time[phase])
-                    data.setdefault(sl, {}).setdefault('%usort', []).append(100 * n_uniform // n_sorts)
+    create_ax_dumbbell(ax, data_started_ended)
 
-                    time_ended = time.mktime(datetime.datetime.strptime(line.split(')')[-1][1:-1], '%a %b %d %H:%M:%S %Y').timetuple())
-                    data.setdefault(sl, {}).setdefault('time ended', []).append(time_ended)
-                    data.setdefault(sl, {}).setdefault('time started', []).append(time_ended - time_taken)
-
-    # Prepare report
-    for sl in data.keys():
-
-        # This array will hold start and end data (in hours)
-        data_started_ended = np.array([[ts, te, te-ts] for
-            ts, te in zip(data[sl]['time started'], data[sl]['time ended'])
-        ]) / (60 * 60)
-
-        # Sift the data so that it starts at zero
-        data_started_ended -= np.min(data_started_ended[:, 0])
-
-        # Sort the rows by start time
-        data_started_ended = data_started_ended[np.argsort(data_started_ended[:, 0])]
-
-        # Create figure
-        num_plots = 4
-        f, _ = plt.subplots(2,1, figsize=(8, 12))
-        ax = plt.subplot(num_plots,1,1)
-        ax.set_title('Plot performance summary')
-
-        create_ax_dumbbell(ax, data_started_ended)
-
+    if data_started_ended.shape[0] > window:
         ax = plt.subplot(num_plots,1,2)
-        create_ax_plotrate(ax, data_started_ended, end=True, window=3)
+        create_ax_plotrate(ax, data_started_ended, end=True, window=window)
 
         ax = plt.subplot(num_plots,1,3)
-        create_ax_plottime(ax, data_started_ended, window=3)
+        create_ax_plottime(ax, data_started_ended, window=window)
 
-        ax = plt.subplot(num_plots,1,4)
-        create_ax_plotcumulative(ax, data_started_ended)
+    ax = plt.subplot(num_plots,1,4)
+    create_ax_plotcumulative(ax, data_started_ended)
 
-        ax.set_xlabel('Time (hours)')
-        f.savefig(figfile)
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='')
-    parser.add_argument(
-        'log_dir',
-        help='directory containing logs to analyze.')
-    parser.add_argument(
-        '--bytmp',
-        action='store_true',
-        help='slice by tmp dirs')
-    parser.add_argument(
-        '--bybitfield',
-        action='store_true',
-        help='slice by bitfield/non-bitfield sorting')
-    args = parser.parse_args()
-
-    analyze(args.log_dir, args.bytmp, args.bybitfield)n
+    ax.set_xlabel('Time (hours)')
+    f.savefig(figfile)

@@ -5,10 +5,6 @@ import sys
 import typing
 
 import texttable as tt
-import numpy as np
-
-import matplotlib
-import matplotlib.pyplot as plt
 
 from plotman import plot_util
 
@@ -114,48 +110,6 @@ def analyze(logfilenames: typing.List[str], clipterminals: bool, bytmp: bool, by
                         data.setdefault(sl, {}).setdefault('phase ' + phase, []).append(phase_time[phase])
                     data.setdefault(sl, {}).setdefault('%usort', []).append(0)  # Not available for MADMAX
 
-                        # Grab the time ended, compute the time started
-                        time_ended = time.mktime(datetime.datetime.strptime(line.split(')')[-1][1:-1], '%a %b %d %H:%M:%S %Y').timetuple())
-                        data.setdefault(sl, {}).setdefault('time ended', []).append(time_ended)
-                        data.setdefault(sl, {}).setdefault('time started', []).append(time_ended - float(m.group(1)))
-
-    if figfile is not None:
-        # Prepare report
-        for sl in data.keys():
-            
-            # This array will hold start and end data (in hours)
-            data_started_ended = np.array([[ts, te, te-ts] for 
-                ts, te in zip(data[sl]['time started'], data[sl]['time ended'])
-            ]) / (60 * 60)
-            assert data_started_ended.shape[0] >= 3, 'Cannot generate figure with less than 3 datapoints ({} datapoints passed)'.format(data_started_ended.shape[0])
-
-            # Sift the data so that it starts at zero
-            data_started_ended -= np.min(data_started_ended[:, 0])
-
-            # Sort the rows by start time 
-            data_started_ended = data_started_ended[np.argsort(data_started_ended[:, 0])]
-
-            # Create figure
-            num_plots = 4
-            f, _ = plt.subplots(2,1, figsize=(8, 12))
-            ax = plt.subplot(num_plots,1,1)
-            ax.set_title('Plot performance summary')
-
-            create_ax_dumbbell(ax, data_started_ended)
-
-            ax = plt.subplot(num_plots,1,2)
-            create_ax_plotrate(ax, data_started_ended, end=True, window=3)
-
-            ax = plt.subplot(num_plots,1,3)
-            create_ax_plottime(ax, data_started_ended, window=3)
-
-            ax = plt.subplot(num_plots,1,4)
-            create_ax_plotcumulative(ax, data_started_ended)
-
-            print('Saving analysis figure to {}'.format(figfile))
-            ax.set_xlabel('Time (hours)')
-            f.savefig(figfile)
-
     # Prepare report
     tab = tt.Texttable()
     all_measures = ['%usort', 'phase 1', 'phase 2', 'phase 3', 'phase 4', 'total time']
@@ -196,5 +150,3 @@ def analyze(logfilenames: typing.List[str], clipterminals: bool, bytmp: bool, by
     tab.set_max_width(int(columns))
     s = tab.draw()
     print(s)
-
-
