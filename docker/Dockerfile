@@ -17,7 +17,7 @@ RUN /bin/bash ./install.sh
 
 COPY . /plotman
 
-RUN ["/bin/bash", "-c", "source ./activate && pip install /plotman && pip install supervisor && deactivate"]
+RUN ["/bin/bash", "-c", "source ./activate && pip install /plotman supervisor && deactivate"]
 
 # Build deployment container
 FROM ${BASE_CONTAINER} as plotman
