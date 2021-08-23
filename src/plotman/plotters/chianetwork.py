@@ -125,15 +125,7 @@ class Plotter:
         for key in ["tmp_dir", "tmp2_dir", "final_dir"]:
             original: os.PathLike[str] = self.parsed_command_line.parameters.get(key)  # type: ignore[assignment]
             if original is not None:
-                resolved = pathlib.Path(cwd).joinpath(
-                    original
-                )
-
-                if key == "final_dir":
-                    # TODO: yep, this is goofy.  be consistent
-                    self.parsed_command_line.parameters[key] = os.fspath(resolved)
-                else:
-                    self.parsed_command_line.parameters[key] = resolved
+                self.parsed_command_line.parameters[key] = os.path.join(cwd, original)
 
         if self.parsed_command_line.error is None and not self.parsed_command_line.help:
             self.info = attr.evolve(
