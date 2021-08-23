@@ -64,9 +64,6 @@ class SpecificInfo:
 @plotman.plotters.check_Plotter
 @attr.mutable
 class Plotter:
-    cwd: str
-    tmpdir: str
-    dstdir: str
     decoder: plotman.plotters.LineDecoder = attr.ib(
         factory=plotman.plotters.LineDecoder
     )
@@ -89,7 +86,7 @@ class Plotter:
     def common_info(self) -> plotman.plotters.CommonInfo:
         return self.info.common()
 
-    def parse_command_line(self, command_line: typing.List[str]) -> None:
+    def parse_command_line(self, command_line: typing.List[str], cwd: str) -> None:
         # drop the chia_plot
         arguments = command_line[1:]
 
@@ -102,6 +99,13 @@ class Plotter:
             command=command,
             arguments=arguments,
         )
+
+        for key in ["tmpdir", "tmpdir2", "finaldir"]:
+            original: os.PathLike[str] = self.parsed_command_line.parameters.get(key)  # type: ignore[assignment]
+            if original is not None:
+                self.parsed_command_line.parameters[key] = pathlib.Path(cwd).joinpath(
+                    original
+                )
 
     def update(self, chunk: bytes) -> SpecificInfo:
         new_lines = self.decoder.update(chunk=chunk)

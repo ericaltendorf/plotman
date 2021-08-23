@@ -15,19 +15,21 @@ import plotman._tests.resources
 
 
 @pytest.fixture(name="line_decoder")
-def line_decoder_fixture():
+def line_decoder_fixture() -> typing.Iterator[plotman.plotters.LineDecoder]:
     decoder = plotman.plotters.LineDecoder()
     yield decoder
     # assert decoder.buffer == ""
 
 
-def test_decoder_single_chunk(line_decoder: plotman.plotters.LineDecoder):
+def test_decoder_single_chunk(line_decoder: plotman.plotters.LineDecoder) -> None:
     lines = line_decoder.update(b"abc\n123\n\xc3\xa4\xc3\xab\xc3\xaf\n")
 
     assert lines == ["abc", "123", "äëï"]
 
 
-def test_decoder_individual_byte_chunks(line_decoder: plotman.plotters.LineDecoder):
+def test_decoder_individual_byte_chunks(
+    line_decoder: plotman.plotters.LineDecoder,
+) -> None:
     lines = []
     for byte in b"abc\n123\n\xc3\xa4\xc3\xab\xc3\xaf\n":
         lines.extend(line_decoder.update(bytes([byte])))
@@ -35,7 +37,9 @@ def test_decoder_individual_byte_chunks(line_decoder: plotman.plotters.LineDecod
     assert lines == ["abc", "123", "äëï"]
 
 
-def test_decoder_partial_line_with_final(line_decoder: plotman.plotters.LineDecoder):
+def test_decoder_partial_line_with_final(
+    line_decoder: plotman.plotters.LineDecoder,
+) -> None:
     lines = []
     lines.extend(line_decoder.update(b"abc\n123\n\xc3\xa4\xc3\xab"))
     lines.extend(line_decoder.update(b"\xc3\xaf", final=True))
@@ -43,7 +47,9 @@ def test_decoder_partial_line_with_final(line_decoder: plotman.plotters.LineDeco
     assert lines == ["abc", "123", "äëï"]
 
 
-def test_decoder_partial_line_without_final(line_decoder: plotman.plotters.LineDecoder):
+def test_decoder_partial_line_without_final(
+    line_decoder: plotman.plotters.LineDecoder,
+) -> None:
     lines = []
     lines.extend(line_decoder.update(b"abc\n123\n\xc3\xa4\xc3\xab"))
     lines.extend(line_decoder.update(b"\xc3\xaf"))
@@ -60,7 +66,7 @@ def test_decoder_partial_line_without_final(line_decoder: plotman.plotters.LineD
 )
 def test_plotter_identifies_log(
     resource_name: str,
-    correct_plotter: plotman.plotters.Plotter,
+    correct_plotter: typing.Type[plotman.plotters.Plotter],
 ) -> None:
     with importlib.resources.open_text(
         package=plotman._tests.resources,
@@ -76,7 +82,8 @@ def test_plotter_identifies_log(
 class CommandLineExample:
     line: typing.List[str]
     plotter: typing.Optional[typing.Type[plotman.plotters.Plotter]]
-    parsed: plotman.job.ParsedChiaPlotsCreateCommand = None
+    parsed: typing.Optional[plotman.job.ParsedChiaPlotsCreateCommand] = None
+    cwd: str = ""
 
 
 default_chia_network_arguments = {
@@ -242,12 +249,41 @@ command_line_examples: typing.List[CommandLineExample] = [
     ),
     # binary installer
     CommandLineExample(
-        line=["chia", "plots", "create"],
+        line=["chia", "plots", "create", "--final_dir", "/blue/red"],
         plotter=plotman.plotters.chianetwork.Plotter,
         parsed=plotman.job.ParsedChiaPlotsCreateCommand(
             error=None,
             help=False,
-            parameters={**default_chia_network_arguments},
+            parameters={
+                **default_chia_network_arguments,
+                "final_dir": pathlib.Path("/blue/red"),
+            },
+        ),
+    ),
+    CommandLineExample(
+        line=[
+            "python",
+            "chia",
+            "plots",
+            "create",
+            "--final_dir",
+            "final/dir",
+            "--tmp_dir",
+            "tmp/dir",
+            "--tmp2_dir",
+            "tmp2/dir",
+        ],
+        cwd="/cwd",
+        plotter=plotman.plotters.chianetwork.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=False,
+            parameters={
+                **default_chia_network_arguments,
+                "final_dir": pathlib.Path("/", "cwd", "final", "dir"),
+                "tmp_dir": pathlib.Path("/", "cwd", "tmp", "dir"),
+                "tmp2_dir": pathlib.Path("/", "cwd", "tmp2", "dir"),
+            },
         ),
     ),
     CommandLineExample(
@@ -308,6 +344,29 @@ command_line_examples: typing.List[CommandLineExample] = [
             parameters={**default_madmax_arguments},
         ),
     ),
+    CommandLineExample(
+        line=[
+            "chia_plot",
+            "--finaldir",
+            "final/dir",
+            "--tmpdir",
+            "tmp/dir",
+            "--tmpdir2",
+            "tmp/dir2",
+        ],
+        cwd="/cwd",
+        plotter=plotman.plotters.madmax.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=False,
+            parameters={
+                **default_madmax_arguments,
+                "finaldir": pathlib.Path("/", "cwd", "final", "dir"),
+                "tmpdir": pathlib.Path("/", "cwd", "tmp", "dir"),
+                "tmpdir2": pathlib.Path("/", "cwd", "tmp", "dir2"),
+            },
+        ),
+    ),
 ]
 
 not_command_line_examples: typing.List[CommandLineExample] = [
@@ -324,8 +383,10 @@ not_command_line_examples: typing.List[CommandLineExample] = [
     params=command_line_examples,
     ids=lambda param: repr(param.line),
 )
-def command_line_example_fixture(request: _pytest.fixtures.SubRequest):
-    return request.param
+def command_line_example_fixture(
+    request: _pytest.fixtures.SubRequest,
+) -> typing.Iterator[CommandLineExample]:
+    return request.param  # type: ignore[no-any-return]
 
 
 @pytest.fixture(
@@ -333,15 +394,17 @@ def command_line_example_fixture(request: _pytest.fixtures.SubRequest):
     params=not_command_line_examples,
     ids=lambda param: repr(param.line),
 )
-def not_command_line_example_fixture(request: _pytest.fixtures.SubRequest):
-    return request.param
+def not_command_line_example_fixture(
+    request: _pytest.fixtures.SubRequest,
+) -> typing.Iterator[CommandLineExample]:
+    return request.param  # type: ignore[no-any-return]
 
 
 def test_plotter_identifies_command_line(
     command_line_example: CommandLineExample,
 ) -> None:
     plotter = plotman.plotters.get_plotter_from_command_line(
-        command_line=command_line_example.line
+        command_line=command_line_example.line,
     )
 
     assert plotter == command_line_example.plotter
@@ -352,13 +415,13 @@ def test_plotter_fails_to_identify_command_line(
 ) -> None:
     with pytest.raises(plotman.plotters.UnableToIdentifyCommandLineError):
         plotman.plotters.get_plotter_from_command_line(
-            command_line=not_command_line_example.line
+            command_line=not_command_line_example.line,
         )
 
 
 def test_is_plotting_command_line(command_line_example: CommandLineExample) -> None:
     assert plotman.plotters.is_plotting_command_line(
-        command_line=command_line_example.line
+        command_line=command_line_example.line,
     )
 
 
@@ -366,7 +429,7 @@ def test_is_not_plotting_command_line(
     not_command_line_example: CommandLineExample,
 ) -> None:
     assert not plotman.plotters.is_plotting_command_line(
-        command_line=not_command_line_example.line
+        command_line=not_command_line_example.line,
     )
 
 
@@ -375,6 +438,9 @@ def test_command_line_parsed_correctly(
 ) -> None:
     assert command_line_example.plotter is not None
 
-    plotter = command_line_example.plotter(cwd='/', dstdir='', tmpdir='')
-    plotter.parse_command_line(command_line=command_line_example.line)
+    plotter = command_line_example.plotter()
+    plotter.parse_command_line(
+        command_line=command_line_example.line,
+        cwd=command_line_example.cwd,
+    )
     assert plotter.parsed_command_line == command_line_example.parsed

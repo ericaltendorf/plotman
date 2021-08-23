@@ -151,10 +151,8 @@ class Job:
                             plotter_type = plotman.plotters.get_plotter_from_command_line(
                                 command_line=command_line,
                             )
-                            # TODO: isn't this tmp/dst passing supposed to be after (from?)
-                            #       the command line parsing?
-                            plotter = plotter_type(cwd=proc.cwd(), tmpdir='', dstdir='')
-                            plotter.parse_command_line(command_line=command_line)
+                            plotter = plotter_type()
+                            plotter.parse_command_line(command_line=command_line, cwd=proc.cwd())
 
                             if plotter.parsed_command_line is None:
                                 continue

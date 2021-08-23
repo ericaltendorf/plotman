@@ -70,9 +70,6 @@ class SpecificInfo:
 @plotman.plotters.check_Plotter
 @attr.mutable
 class Plotter:
-    cwd: str
-    tmpdir: str
-    dstdir: str
     decoder: plotman.plotters.LineDecoder = attr.ib(
         factory=plotman.plotters.LineDecoder
     )
@@ -107,10 +104,13 @@ class Plotter:
     def common_info(self) -> plotman.plotters.CommonInfo:
         return self.info.common()
 
-    def parse_command_line(self, command_line: typing.List[str]) -> None:
-        # drop the python chia plots create
-        # TODO: not always 4 since python isn't always there...
-        arguments = command_line[4:]
+    def parse_command_line(self, command_line: typing.List[str], cwd: str) -> None:
+        if "python" in os.path.basename(command_line[0]).casefold():
+            # drop the python
+            command_line = command_line[1:]
+
+        # drop the chia plots create
+        arguments = command_line[3:]
 
         # TODO: We could at some point do chia version detection and pick the
         #       associated command.  For now we'll just use the latest one we have
@@ -121,6 +121,17 @@ class Plotter:
             command=command,
             arguments=arguments,
         )
+
+        for key in ["tmp_dir", "tmp2_dir", "final_dir"]:
+            original: os.PathLike[str] = self.parsed_command_line.parameters.get(key)  # type: ignore[assignment]
+            if original is not None:
+                self.parsed_command_line.parameters[key] = pathlib.Path(cwd).joinpath(
+                    original
+                )
+
+                if key == "final_dir":
+                    # TODO: yep, this is goofy.  be consistent
+                    self.parsed_command_line.parameters[key] = os.fspath(self.parsed_command_line.parameters[key])
 
         if self.parsed_command_line.error is None and not self.parsed_command_line.help:
             self.info = attr.evolve(

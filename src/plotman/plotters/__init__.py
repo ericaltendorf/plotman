@@ -213,12 +213,8 @@ class RegexLineHandlers(typing.Generic[T]):
 
 class Plotter(typing_extensions.Protocol):
     parsed_command_line: typing.Optional[plotman.job.ParsedChiaPlotsCreateCommand]
-    # TODO: actually use this to resolve any relative path arguments
-    cwd: str
-    tmpdir: str
-    dstdir: str
 
-    def __init__(self, cwd: str, tmpdir: str, dstdir: str) -> None:
+    def __init__(self) -> None:
         ...
 
     def common_info(self) -> CommonInfo:
@@ -232,7 +228,7 @@ class Plotter(typing_extensions.Protocol):
     def identify_process(cls, command_line: typing.List[str]) -> bool:
         ...
 
-    def parse_command_line(self, command_line: typing.List[str]) -> None:
+    def parse_command_line(self, command_line: typing.List[str], cwd: str) -> None:
         ...
 
     def update(self, chunk: bytes) -> SpecificInfo:
