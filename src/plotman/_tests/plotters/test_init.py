@@ -86,7 +86,7 @@ class CommandLineExample:
     cwd: str = ""
 
 
-default_chia_network_arguments = {
+default_chia_network_arguments = dict(sorted({
     "size": 32,
     "override_k": False,
     "num": 1,
@@ -104,10 +104,11 @@ default_chia_network_arguments = {
     "memo": None,
     "nobitfield": False,
     "exclude_final_dir": False,
-}
+}.items()))
 
 
-default_madmax_arguments = {
+default_madmax_arguments = dict(sorted({
+    "size": 32,
     "count": 1,
     "threads": 4,
     "buckets": 256,
@@ -121,7 +122,7 @@ default_madmax_arguments = {
     "farmerkey": None,
     "tmptoggle": None,
     "rmulti2": 1,
-}
+}.items()))
 
 
 command_line_examples: typing.List[CommandLineExample] = [

@@ -300,7 +300,7 @@ def parse_command_line_with_click(
     return plotman.job.ParsedChiaPlotsCreateCommand(
         error=error,
         help=len(arguments) > len(command_arguments),
-        parameters=params,
+        parameters=dict(sorted(params.items())),
     )
 
 
