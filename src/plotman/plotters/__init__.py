@@ -14,7 +14,6 @@ import plotman.job
 import plotman.plotters.core
 
 
-# TODO: should this be bound to SpecificInfo
 T = typing.TypeVar("T")
 
 

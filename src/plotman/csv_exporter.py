@@ -116,7 +116,6 @@ def parse_logs(logfilenames: typing.Sequence[str]) -> typing.List[plotman.plotte
             except plotman.errors.UnableToIdentifyPlotterFromLogError:
                 continue
 
-        # TODO: if these garbage values are really ok they shouldn't be required
         parser = plotter_type()
 
         with open(filename, 'rb') as binary_file:

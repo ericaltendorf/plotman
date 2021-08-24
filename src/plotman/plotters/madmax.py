@@ -479,3 +479,101 @@ def _cli_c8121b987186c42c895b49818e6c13acecc51332() -> None:
 )
 def _cli_974d6e5f1440f68c48492122ca33828a98864dfc() -> None:
     pass
+
+
+# Madmax Git on 2021-08-22 -> https://github.com/madMAx43v3r/chia-plotter/commit/aaa3214d4abbd49bb99c2ec087e27c765424cd65
+@commands.register(version=(2,))
+@click.command()
+# https://github.com/madMAx43v3r/chia-plotter/blob/aaa3214d4abbd49bb99c2ec087e27c765424cd65/LICENSE
+# https://github.com/madMAx43v3r/chia-plotter/blob/aaa3214d4abbd49bb99c2ec087e27c765424cd65/src/chia_plot.cpp#L238-L253
+@click.option(
+    "-k",
+    "--size",
+    help="K size (default = 32, k <= 32)",
+    type=int,
+    default=32,
+    show_default=True,
+)
+@click.option(
+    "-n",
+    "--count",
+    help="Number of plots to create (default = 1, -1 = infinite)",
+    type=int,
+    default=1,
+    show_default=True,
+)
+@click.option(
+    "-r",
+    "--threads",
+    help="Number of threads (default = 4)",
+    type=int,
+    default=4,
+    show_default=True,
+)
+@click.option(
+    "-u",
+    "--buckets",
+    help="Number of buckets (default = 256)",
+    type=int,
+    default=256,
+    show_default=True,
+)
+@click.option(
+    "-v",
+    "--buckets3",
+    help="Number of buckets for phase 3+4 (default = buckets)",
+    type=int,
+    default=256,
+)
+@click.option(
+    "-t",
+    "--tmpdir",
+    help="Temporary directory, needs ~220 GiB (default = $PWD)",
+    type=click.Path(),
+    default=pathlib.Path("."),
+    show_default=True,
+)
+@click.option(
+    "-2",
+    "--tmpdir2",
+    help="Temporary directory 2, needs ~110 GiB [RAM] (default = <tmpdir>)",
+    type=click.Path(),
+    default=None,
+)
+@click.option(
+    "-d",
+    "--finaldir",
+    help="Final directory (default = <tmpdir>)",
+    type=click.Path(),
+    default=pathlib.Path("."),
+    show_default=True,
+)
+@click.option(
+    "-w",
+    "--waitforcopy",
+    help="Wait for copy to start next plot",
+    type=bool,
+    default=False,
+    show_default=True,
+)
+@click.option(
+    "-p", "--poolkey", help="Pool Public Key (48 bytes)", type=str, default=None
+)
+@click.option(
+    "-c", "--contract", help="Pool Contract Address (62 chars)", type=str, default=None
+)
+@click.option(
+    "-f", "--farmerkey", help="Farmer Public Key (48 bytes)", type=str, default=None
+)
+@click.option(
+    "-G", "--tmptoggle", help="Alternate tmpdir/tmpdir2", type=str, default=None
+)
+@click.option(
+    "-K",
+    "--rmulti2",
+    help="Thread multiplier for P2 (default = 1)",
+    type=int,
+    default=1,
+)
+def _cli_aaa3214d4abbd49bb99c2ec087e27c765424cd65() -> None:
+    pass
