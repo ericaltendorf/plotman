@@ -17,7 +17,7 @@ class Commands:
     def __init__(self) -> None:
         self.by_version: typing.Dict[typing.Sequence[int], CommandProtocol] = {}
 
-    def register(self, version: typing.Sequence[int]) -> typing.Callable[[CommandProtocol], None]:
+    def register(self, version: typing.Sequence[int]) -> typing.Callable[[CommandProtocol], CommandProtocol]:
         if version in self.by_version:
             raise Exception(f'Version already registered: {version!r}')
         if not isinstance(version, tuple):
@@ -25,7 +25,7 @@ class Commands:
 
         return functools.partial(self._decorator, version=version)
 
-    def _decorator(self, command: CommandProtocol, *, version: typing.Sequence[int]) -> None:
+    def _decorator(self, command: CommandProtocol, *, version: typing.Sequence[int]) -> CommandProtocol:
         self.by_version[version] = command
         # self.by_version = dict(sorted(self.by_version.items()))
         return command
