@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 ### Fixed
+- Temp files are correctly identified for cleanup.
+  ([#912](https://github.com/ericaltendorf/plotman/pull/913))
 ### Added
 - `-v`/`--buckets3` and `-K`/`--rmulti2` are configurable for madMAx.
   ([#869](https://github.com/ericaltendorf/plotman/pull/869))
