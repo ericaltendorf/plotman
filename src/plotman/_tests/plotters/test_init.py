@@ -79,7 +79,7 @@ def test_plotter_identifies_log(
     assert plotter == correct_plotter
 
 
-def test_plotter_not_identified():
+def test_plotter_not_identified() -> None:
     with pytest.raises(plotman.errors.UnableToIdentifyPlotterFromLogError):
         plotman.plotters.get_plotter_from_log(lines=['a', 'b'])
 
