@@ -382,6 +382,7 @@ not_command_line_examples: typing.List[CommandLineExample] = [
     CommandLineExample(line=["some/chia/not"], plotter=None),
     CommandLineExample(line=["chia", "other"], plotter=None),
     CommandLineExample(line=["chia_plot/blue"], plotter=None),
+    CommandLineExample(line=[], plotter=None, parsed=None),
 ]
 
 

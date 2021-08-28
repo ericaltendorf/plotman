@@ -191,13 +191,6 @@ def phase_major(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     )
 
 
-@handlers.register(expression=r"^Starting phase (\d+)/")
-def phase_2_3_4(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
-    # Starting phase 1/4: Forward Propagation into tmp files... Wed Jul 14 22:33:24 2021
-    major = int(match.group(1))
-    return attr.evolve(info, phase=plotman.job.Phase(major=major, minor=0))
-
-
 @handlers.register(expression=r"^Computing table (\d+)$")
 def subphase_1(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # Computing table 1

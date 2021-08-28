@@ -28,6 +28,7 @@ class Commands:
     def _decorator(self, command: CommandProtocol, *, version: typing.Sequence[int]) -> None:
         self.by_version[version] = command
         # self.by_version = dict(sorted(self.by_version.items()))
+        return command
 
     def __getitem__(self, item: typing.Sequence[int]) -> typing.Callable[[], None]:
         return self.by_version[item]
