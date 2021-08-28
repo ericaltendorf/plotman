@@ -575,7 +575,7 @@ class Job:
 
         for dir in [self.tmpdir, self.tmp2dir, self.dstdir]:
             if dir is not None:
-                temp_files.update(glob.glob(os.path.join(dir, f"plot-*-{self.plot_id}.tmp")))
+                temp_files.update(glob.glob(os.path.join(dir, f"plot-*-{self.plot_id}*.tmp")))
 
         return temp_files
 
