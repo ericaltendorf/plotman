@@ -265,7 +265,7 @@ def tmp2_dir(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
 
 
 @handlers.register(
-    expression=r"^Plot Name: (?P<name>plot-k(?P<size>\d+)-(?P<year>\d+)-(?P<month>\d+)-(?P<day>\d+)-(?P<hour>\d+)-(?P<minute>\d+)-(\w+))$"
+    expression=r"^Plot Name: (?P<name>plot-k(?P<size>\d+)-(?P<year>\d+)-(?P<month>\d+)-(?P<day>\d+)-(?P<hour>\d+)-(?P<minute>\d+)-(?P<plot_id>\w+))$"
 )
 def plot_name_line(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # Plot Name: plot-k32-2021-07-11-16-52-3a3872f5a124497a17fb917dfe027802aa1867f8b0a8cbac558ed12aa5b697b2
@@ -281,7 +281,7 @@ def plot_name_line(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo
             minute=int(match.group("minute")),
             tz=None,
         ),
-        plot_id="3a3872f5a124497a17fb917dfe027802aa1867f8b0a8cbac558ed12aa5b697b2",
+        plot_id=match.group("plot_id"),
         phase=plotman.job.Phase(major=1, minor=1),
     )
 

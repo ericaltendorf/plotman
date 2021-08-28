@@ -23,7 +23,7 @@ def test_byte_by_byte_full_load() -> None:
     assert parser.info == plotman.plotters.madmax.SpecificInfo(
         phase=plotman.job.Phase(major=5, minor=2),
         started_at=pendulum.datetime(2021, 7, 14, 21, 56, 0, tz=None),
-        plot_id='3a3872f5a124497a17fb917dfe027802aa1867f8b0a8cbac558ed12aa5b697b2',
+        plot_id='522acbd6308af7e229281352f746449134126482cfabd51d38e0f89745d21698',
         p1_buckets=256,
         p34_buckets=256,
         threads=8,
