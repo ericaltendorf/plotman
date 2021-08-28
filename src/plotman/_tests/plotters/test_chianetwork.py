@@ -70,12 +70,6 @@ def set_locale(name: str) -> typing.Generator[str, None, None]:
         locale.setlocale(locale.LC_ALL, original)
 
 
-with set_locale("C"):
-    log_file_time = datetime.datetime.strptime(
-        "Wed Jul 14 22:33:24 2021", "%a %b  %d %H:%M:%S %Y"
-    )
-
-
 def test_log_phases() -> None:
     # TODO: CAMPid 0978413087474699698142013249869897439887
     read_bytes = importlib.resources.read_binary(
@@ -94,7 +88,7 @@ def test_log_phases() -> None:
 
         parser.update(chunk=line_bytes)
 
-        if parser.info.phase != phase:
+        if parser.info.phase != phase:  # pragma: nocov
             wrong.append([parser.info.phase, phase, line_bytes.decode("utf-8")])
 
     assert wrong == []

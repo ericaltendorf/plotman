@@ -7,6 +7,7 @@ import click
 import pytest
 import _pytest
 
+import plotman.errors
 import plotman.job
 import plotman.plotters
 import plotman.plotters.chianetwork
@@ -76,6 +77,11 @@ def test_plotter_identifies_log(
         plotter = plotman.plotters.get_plotter_from_log(lines=f)
 
     assert plotter == correct_plotter
+
+
+def test_plotter_not_identified():
+    with pytest.raises(plotman.errors.UnableToIdentifyPlotterFromLogError):
+        plotman.plotters.get_plotter_from_log(lines=['a', 'b'])
 
 
 @attr.frozen

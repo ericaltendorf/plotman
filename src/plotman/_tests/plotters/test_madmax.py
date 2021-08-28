@@ -59,7 +59,7 @@ def test_log_phases() -> None:
 
         parser.update(chunk=line_bytes)
 
-        if parser.info.phase != phase:
+        if parser.info.phase != phase:  # pragma: nocov
             wrong.append([parser.info.phase, phase, line_bytes.decode("utf-8")])
 
     assert wrong == []
