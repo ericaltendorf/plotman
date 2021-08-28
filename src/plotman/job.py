@@ -332,7 +332,7 @@ class Job:
         info = self.plotter.common_info()
         for dir in [info.tmpdir, info.tmp2dir, info.dstdir]:
             if dir is not None:
-                temp_files.update(glob.glob(os.path.join(dir, f"plot-*-{info.plot_id}.tmp")))
+                temp_files.update(glob.glob(os.path.join(dir, f"plot-*-{info.plot_id}*.tmp")))
 
         return temp_files
 
