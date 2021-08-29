@@ -202,18 +202,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - name: Linux
-            runs-on: ubuntu-latest
-        python:
-          - name: CPython 3.8
-            action: 3.8
-        taks:
-          - name: Coverage
-            tox: check-coverage
-            coverage: true
-          - name: Format
-            tox: check-format
+        include:
+          - os:
+              name: Linux
+              runs-on: ubuntu-latest
+            python:
+              name: CPython 3.8
+              action: 3.8
+            task:
+              name: Coverage
+              tox: check-coverage
+              coverage: false
+              download_coverage: true
 
     env:
       # Should match name above
