@@ -11,17 +11,31 @@ import click
 import psutil
 
 import plotman.errors
+
 if typing.TYPE_CHECKING:
     import plotman.errors
 
 
 def job_phases_for_tmpdir(d: str, all_jobs: typing.List["Job"]) -> typing.List["Phase"]:
-    '''Return phase 2-tuples for jobs running on tmpdir d'''
-    return sorted([j.progress() for j in all_jobs if os.path.normpath(j.plotter.common_info().tmpdir) == os.path.normpath(d)])
+    """Return phase 2-tuples for jobs running on tmpdir d"""
+    return sorted(
+        [
+            j.progress()
+            for j in all_jobs
+            if os.path.normpath(j.plotter.common_info().tmpdir) == os.path.normpath(d)
+        ]
+    )
+
 
 def job_phases_for_dstdir(d: str, all_jobs: typing.List["Job"]) -> typing.List["Phase"]:
-    '''Return phase 2-tuples for jobs outputting to dstdir d'''
-    return sorted([j.progress() for j in all_jobs if os.path.normpath(j.plotter.common_info().dstdir) == os.path.normpath(d)])
+    """Return phase 2-tuples for jobs outputting to dstdir d"""
+    return sorted(
+        [
+            j.progress()
+            for j in all_jobs
+            if os.path.normpath(j.plotter.common_info().dstdir) == os.path.normpath(d)
+        ]
+    )
 
 
 @attr.frozen
@@ -50,18 +64,21 @@ class Phase:
     known: bool = True
 
     def __lt__(self, other: "Phase") -> bool:
-        return (
-            (not self.known, self.major, self.minor)
-            < (not other.known, other.major, other.minor)
+        return (not self.known, self.major, self.minor) < (
+            not other.known,
+            other.major,
+            other.minor,
         )
 
     @classmethod
-    def from_tuple(cls, t: typing.Tuple[typing.Optional[int], typing.Optional[int]]) -> "Phase":
+    def from_tuple(
+        cls, t: typing.Tuple[typing.Optional[int], typing.Optional[int]]
+    ) -> "Phase":
         if len(t) != 2:
-            raise Exception(f'phase must be created from 2-tuple: {t!r}')
+            raise Exception(f"phase must be created from 2-tuple: {t!r}")
 
         if None in t and not t[0] is t[1]:
-            raise Exception(f'phase can not be partially known: {t!r}')
+            raise Exception(f"phase can not be partially known: {t!r}")
 
         if t[0] is None:
             return cls(known=False)
@@ -77,17 +94,18 @@ class Phase:
 
     def __str__(self) -> str:
         if not self.known:
-            return '?:?'
-        return f'{self.major}:{self.minor}'
+            return "?:?"
+        return f"{self.major}:{self.minor}"
+
 
 # TODO: be more principled and explicit about what we cache vs. what we look up
 # dynamically from the logfile
 class Job:
-    'Represents a plotter job'
+    "Represents a plotter job"
 
     plotter: "plotman.plotters.Plotter"
 
-    logfile: str = ''
+    logfile: str = ""
     job_id: int = 0
     proc: psutil.Process
 
@@ -97,11 +115,11 @@ class Job:
         logroot: str,
         cached_jobs: typing.Sequence["Job"] = (),
     ) -> typing.List["Job"]:
-        '''Return a list of running plot jobs.  If a cache of preexisting jobs is provided,
-           reuse those previous jobs without updating their information.  Always look for
-           new jobs not already in the cache.'''
+        """Return a list of running plot jobs.  If a cache of preexisting jobs is provided,
+        reuse those previous jobs without updating their information.  Always look for
+        new jobs not already in the cache."""
         jobs: typing.List[Job] = []
-        cached_jobs_by_pid = { j.proc.pid: j for j in cached_jobs }
+        cached_jobs_by_pid = {j.proc.pid: j for j in cached_jobs}
 
         with contextlib.ExitStack() as exit_stack:
             processes = []
@@ -116,6 +134,7 @@ class Job:
                     exit_stack.enter_context(process.oneshot())
                     # TODO: handle import loop
                     import plotman.plotters
+
                     if plotman.plotters.is_plotting_command_line(process.cmdline()):
                         ppids.add(process.ppid())
                         pids.add(process.pid)
@@ -131,9 +150,7 @@ class Job:
             wanted_pids = pids - ppids
 
             wanted_processes = [
-                process
-                for process in processes
-                if process.pid in wanted_pids
+                process for process in processes if process.pid in wanted_pids
             ]
 
             for proc in wanted_processes:
@@ -148,11 +165,16 @@ class Job:
                                 continue
                             # TODO: handle import loop
                             import plotman.plotters
-                            plotter_type = plotman.plotters.get_plotter_from_command_line(
-                                command_line=command_line,
+
+                            plotter_type = (
+                                plotman.plotters.get_plotter_from_command_line(
+                                    command_line=command_line,
+                                )
                             )
                             plotter = plotter_type()
-                            plotter.parse_command_line(command_line=command_line, cwd=proc.cwd())
+                            plotter.parse_command_line(
+                                command_line=command_line, cwd=proc.cwd()
+                            )
 
                             if plotter.parsed_command_line is None:
                                 continue
@@ -168,13 +190,12 @@ class Job:
                                 logroot=logroot,
                             )
                             # TODO: stop reloading every time...
-                            with open(job.logfile, 'rb') as f:
+                            with open(job.logfile, "rb") as f:
                                 r = f.read()
                             job.plotter.update(chunk=r)
                             jobs.append(job)
 
         return jobs
-
 
     def __init__(
         self,
@@ -183,7 +204,7 @@ class Job:
         # parsed_command: ParsedChiaPlotsCreateCommand,
         logroot: str,
     ) -> None:
-        '''Initialize from an existing psutil.Process object.  must know logroot in order to understand open files'''
+        """Initialize from an existing psutil.Process object.  must know logroot in order to understand open files"""
         self.proc = proc
         self.plotter = plotter
 
@@ -198,13 +219,13 @@ class Job:
                 break
 
     def progress(self) -> Phase:
-        '''Return a 2-tuple with the job phase and subphase (by reading the logfile)'''
+        """Return a 2-tuple with the job phase and subphase (by reading the logfile)"""
         return self.plotter.common_info().phase
 
     def plot_id_prefix(self) -> str:
         plot_id = self.plotter.common_info().plot_id
         if plot_id is None:
-            return '--------'
+            return "--------"
 
         return plot_id[:8]
 
@@ -212,13 +233,13 @@ class Job:
     def status_str_long(self) -> str:
         # TODO: get the rest of this filled out
         info = self.plotter.common_info()
-        return '{plot_id}\npid:{pid}\ntmp:{tmp}\ndst:{dst}\nlogfile:{logfile}'.format(
-            plot_id = info.plot_id,
-            pid = self.proc.pid,
-            tmp = info.tmpdir,
-            dst = info.dstdir,
-            logfile = self.logfile
-            )
+        return "{plot_id}\npid:{pid}\ntmp:{tmp}\ndst:{dst}\nlogfile:{logfile}".format(
+            plot_id=info.plot_id,
+            pid=self.proc.pid,
+            tmp=info.tmpdir,
+            dst=info.dstdir,
+            logfile=self.logfile,
+        )
         # return '{plot_id}\nk={k} r={r} b={b} u={u}\npid:{pid}\ntmp:{tmp}\ntmp2:{tmp2}\ndst:{dst}\nlogfile:{logfile}'.format(
         #     plot_id = info.plot_id,
         #     # k = self.k,
@@ -233,23 +254,23 @@ class Job:
         #     )
 
     def print_logs(self, follow: bool = False) -> None:
-        with open(self.logfile, 'r') as f:
+        with open(self.logfile, "r") as f:
             if follow:
-                line = ''
+                line = ""
                 while True:
                     tmp = f.readline()
                     if tmp is not None:
                         line += tmp
                         if line.endswith("\n"):
-                            print(line.rstrip('\n'))
-                            line = ''
+                            print(line.rstrip("\n"))
+                            line = ""
                     else:
                         time.sleep(0.1)
             else:
                 print(f.read())
 
     def to_dict(self) -> typing.Dict[str, object]:
-        '''Exports important information as dictionary.'''
+        """Exports important information as dictionary."""
         info = self.plotter.common_info()
         # TODO: get the rest of this filled out
         return dict(
@@ -265,9 +286,8 @@ class Job:
             time_wall=self.get_time_wall(),
             time_user=self.get_time_user(),
             time_sys=self.get_time_sys(),
-            time_iowait=self.get_time_iowait()
+            time_iowait=self.get_time_iowait(),
         )
-
 
     def get_mem_usage(self) -> int:
         # Total, inc swapped
@@ -287,16 +307,16 @@ class Job:
         return total_bytes
 
     def get_run_status(self) -> str:
-        '''Running, suspended, etc.'''
+        """Running, suspended, etc."""
         status = self.proc.status()
         if status == psutil.STATUS_RUNNING:
-            return 'RUN'
+            return "RUN"
         elif status == psutil.STATUS_SLEEPING:
-            return 'SLP'
+            return "SLP"
         elif status == psutil.STATUS_DISK_SLEEP:
-            return 'DSK'
+            return "DSK"
         elif status == psutil.STATUS_STOPPED:
-            return 'STP'
+            return "STP"
         else:
             return self.proc.status()  # type: ignore[no-any-return]
 
@@ -312,13 +332,13 @@ class Job:
 
     def get_time_iowait(self) -> typing.Optional[int]:
         cpu_times = self.proc.cpu_times()
-        iowait = getattr(cpu_times, 'iowait', None)
+        iowait = getattr(cpu_times, "iowait", None)
         if iowait is None:
             return None
 
         return int(iowait)
 
-    def suspend(self, reason: str = '') -> None:
+    def suspend(self, reason: str = "") -> None:
         self.proc.suspend()
         self.status_note = reason
 
@@ -332,12 +352,14 @@ class Job:
         info = self.plotter.common_info()
         for dir in [info.tmpdir, info.tmp2dir, info.dstdir]:
             if dir is not None:
-                temp_files.update(glob.glob(os.path.join(dir, f"plot-*-{info.plot_id}*.tmp")))
+                temp_files.update(
+                    glob.glob(os.path.join(dir, f"plot-*-{info.plot_id}*.tmp"))
+                )
 
         return temp_files
 
     def cancel(self) -> None:
-        'Cancel an already running job'
+        "Cancel an already running job"
         # We typically suspend the job as the first action in killing it, so it
         # doesn't create more tmp files during death.  However, terminate() won't
         # complete if the job is supsended, so we also need to resume it.

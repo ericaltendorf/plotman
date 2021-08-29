@@ -14,6 +14,7 @@ def test_command_version_already_registered_raises() -> None:
         pass
 
     with pytest.raises(Exception, match=r"Version already registered:"):
+
         @commands.register(version=version)
         @click.command  # type: ignore[misc]
         def g() -> None:

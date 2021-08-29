@@ -81,7 +81,7 @@ def test_plotter_identifies_log(
 
 def test_plotter_not_identified() -> None:
     with pytest.raises(plotman.errors.UnableToIdentifyPlotterFromLogError):
-        plotman.plotters.get_plotter_from_log(lines=['a', 'b'])
+        plotman.plotters.get_plotter_from_log(lines=["a", "b"])
 
 
 @attr.frozen
@@ -92,43 +92,51 @@ class CommandLineExample:
     cwd: str = ""
 
 
-default_chia_network_arguments = dict(sorted({
-    "size": 32,
-    "override_k": False,
-    "num": 1,
-    "buffer": 3389,
-    "num_threads": 2,
-    "buckets": 128,
-    "alt_fingerprint": None,
-    "pool_contract_address": None,
-    "farmer_public_key": None,
-    "pool_public_key": None,
-    "tmp_dir": ".",
-    "tmp2_dir": None,
-    "final_dir": ".",
-    "plotid": None,
-    "memo": None,
-    "nobitfield": False,
-    "exclude_final_dir": False,
-}.items()))
+default_chia_network_arguments = dict(
+    sorted(
+        {
+            "size": 32,
+            "override_k": False,
+            "num": 1,
+            "buffer": 3389,
+            "num_threads": 2,
+            "buckets": 128,
+            "alt_fingerprint": None,
+            "pool_contract_address": None,
+            "farmer_public_key": None,
+            "pool_public_key": None,
+            "tmp_dir": ".",
+            "tmp2_dir": None,
+            "final_dir": ".",
+            "plotid": None,
+            "memo": None,
+            "nobitfield": False,
+            "exclude_final_dir": False,
+        }.items()
+    )
+)
 
 
-default_madmax_arguments = dict(sorted({
-    "size": 32,
-    "count": 1,
-    "threads": 4,
-    "buckets": 256,
-    "buckets3": 256,
-    "tmpdir": pathlib.PosixPath("."),
-    "tmpdir2": None,
-    "finaldir": pathlib.PosixPath("."),
-    "waitforcopy": False,
-    "poolkey": None,
-    "contract": None,
-    "farmerkey": None,
-    "tmptoggle": None,
-    "rmulti2": 1,
-}.items()))
+default_madmax_arguments = dict(
+    sorted(
+        {
+            "size": 32,
+            "count": 1,
+            "threads": 4,
+            "buckets": 256,
+            "buckets3": 256,
+            "tmpdir": pathlib.PosixPath("."),
+            "tmpdir2": None,
+            "finaldir": pathlib.PosixPath("."),
+            "waitforcopy": False,
+            "poolkey": None,
+            "contract": None,
+            "farmerkey": None,
+            "tmptoggle": None,
+            "rmulti2": 1,
+        }.items()
+    )
+)
 
 
 command_line_examples: typing.List[CommandLineExample] = [
