@@ -48,6 +48,7 @@ def get_validated_configs(
     config_text: str, config_path: str, preset_target_definitions_text: str
 ) -> "PlotmanConfig":
     """Return a validated instance of PlotmanConfig with data from plotman.yaml
+
     :raises ConfigurationException: Raised when plotman.yaml is either missing or malformed
     """
     schema = desert.schema(PlotmanConfig)
@@ -318,13 +319,6 @@ class Logging:
             time=time,
             directory=self.transfers,
             group="transfer",
-        )
-
-    def create_tdisk_space_log_path(self, time: pendulum.DateTime) -> str:
-        return self._create_log_path(
-            time=time,
-            directory=self.disk_spaces,
-            group="disk_space",
         )
 
     def create_tdisk_space_log_path(self, time: pendulum.DateTime) -> str:

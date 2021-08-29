@@ -18,10 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([#898](https://github.com/ericaltendorf/plotman/pull/898))
 - Output same entries to plotman.log from 'plotman interactive' and ' plotman plot/archive' "daemons".
   ([#878](https://github.com/ericaltendorf/plotman/pull/878))
-- `plotman graph` command to create a matplotlib plot for completed
-  plots ([#612](https://github.com/ericaltendorf/plotman/pull/612)). 
-  Creates a graph image showing plots over time, average plot rage,
-  average plot time, and total number of plots over time.
+- `plotman graph` command to create a matplotlib plot for completed plots. 
+  Creates a graph image showing plots over time, average plot rate, average plot time, and total number of plots over time.
+  ([#612](https://github.com/ericaltendorf/plotman/pull/612))
 
 ## [0.5.1] - 2021-07-15
 ### Fixed
