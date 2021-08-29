@@ -87,8 +87,8 @@ def spawn_archive_process(
 
             with open_log_file:
                 # start_new_sessions to make the job independent of this controlling tty.
-                p = subprocess.Popen(
-                    **args,  # type: ignore[call-overload]
+                p = subprocess.Popen(  # type: ignore[call-overload]
+                    **args,
                     shell=True,
                     stdout=open_log_file,
                     stderr=subprocess.STDOUT,

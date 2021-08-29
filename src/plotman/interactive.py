@@ -283,10 +283,12 @@ def curses_main(
         header_win.addnstr(" <A>rchival: ", linecap, curses.A_BOLD)
         header_win.addnstr(
             archiving_status_msg(
-                archiving_configured, archiving_active, archiving_status
+                archiving_configured,
+                archiving_active,
+                archiving_status,  # type: ignore[arg-type]
             ),
             linecap,
-        )  # type: ignore[arg-type]
+        )
 
         # Oneliner progress display
         header_win.addnstr(1, 0, "Jobs (%d): " % len(jobs), linecap)
