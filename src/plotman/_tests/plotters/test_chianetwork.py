@@ -105,6 +105,8 @@ def test_marked_log_matches() -> None:
         resource="chianetwork.plot.log",
     )
 
-    for marked_line, log_line in zip(marked_bytes.splitlines(keepends=True), log_bytes.splitlines(keepends=True)):
+    for marked_line, log_line in zip(
+        marked_bytes.splitlines(keepends=True), log_bytes.splitlines(keepends=True)
+    ):
         _, _, marked_just_line = marked_line.partition(b",")
         assert marked_just_line == log_line

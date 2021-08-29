@@ -202,7 +202,9 @@ class RegexLineHandlers(typing.Generic[T]):
         factory=lambda: collections.defaultdict(list),
     )
 
-    def register(self, expression: str) -> typing.Callable[[LineHandler[T]], LineHandler[T]]:
+    def register(
+        self, expression: str
+    ) -> typing.Callable[[LineHandler[T]], LineHandler[T]]:
         return functools.partial(self._decorator, expression=expression)
 
     def _decorator(self, handler: LineHandler[T], expression: str) -> LineHandler[T]:
@@ -280,16 +282,14 @@ def parse_command_line_with_click(
 ) -> plotman.job.ParsedChiaPlotsCreateCommand:
     # nice idea, but this doesn't include -h
     # help_option_names = command.get_help_option_names(ctx=context)
-    help_option_names = {'--help', '-h'}
+    help_option_names = {"--help", "-h"}
 
     command_arguments = [
-        argument
-        for argument in arguments
-        if argument not in help_option_names
+        argument for argument in arguments if argument not in help_option_names
     ]
 
     try:
-        context = command.make_context(info_name='', args=list(command_arguments))
+        context = command.make_context(info_name="", args=list(command_arguments))
     except click.ClickException as e:
         error = e
         params = {}
