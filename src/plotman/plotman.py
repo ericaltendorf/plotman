@@ -99,10 +99,10 @@ class PlotmanArgParser:
                 help='logfile(s) to analyze')
 
         p_graph = sp.add_parser('graph', help='create graph with plotting statistics')
-        p_graph.add_argument('logdir', type=str,
-                help='directory containing multiple logfiles to graph')
         p_graph.add_argument('figfile', type=str,
                 help='graph file produced as output (.png, .jpg, etc.)')
+        p_graph.add_argument('--logdir', type=str, default=None,
+                help='directory containing multiple logfiles to graph')
         p_graph.add_argument('--latest_k', type=int, default=None,
                 help='if passed, will only graph statistics for the latest k plots')
         p_graph.add_argument('--window', type=int, default=3,
@@ -235,6 +235,9 @@ def main() -> None:
         # Graphing of completed jobs
         #
         elif args.cmd == 'graph':
+            # If no logdir was passed, use the dir specified in cfg (this will almost always be the case)
+            if args.logdir is None:
+                args.logdir = cfg.logging.plots
             graph.graph(args.logdir, args.figfile, args.latest_k, args.window)
 
         #
