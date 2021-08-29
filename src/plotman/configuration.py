@@ -10,6 +10,7 @@ from typing import Dict, Generator, List, Mapping, Optional
 import appdirs
 import attr
 import desert
+
 # TODO: should be a desert.ib() but mypy doesn't understand it then, see below
 import desert._make
 import marshmallow
@@ -43,22 +44,26 @@ def read_configuration_text(config_path: str) -> str:
         ) from e
 
 
-def get_validated_configs(config_text: str, config_path: str, preset_target_definitions_text: str) -> "PlotmanConfig":
+def get_validated_configs(
+    config_text: str, config_path: str, preset_target_definitions_text: str
+) -> "PlotmanConfig":
     """Return a validated instance of PlotmanConfig with data from plotman.yaml
     :raises ConfigurationException: Raised when plotman.yaml is either missing or malformed
     """
     schema = desert.schema(PlotmanConfig)
     config_objects = yaml.load(config_text, Loader=yaml.SafeLoader)
 
-    version = config_objects.get('version', (0,))
+    version = config_objects.get("version", (0,))
 
     expected_major_version = 2
 
     if version[0] != expected_major_version:
-        message = textwrap.dedent(f"""\
+        message = textwrap.dedent(
+            f"""\
             Expected major version {expected_major_version}, found version {version}
                 See https://github.com/ericaltendorf/plotman/wiki/Configuration#versions
-        """)
+        """
+        )
 
         raise Exception(message)
 
@@ -78,7 +83,10 @@ def get_validated_configs(config_text: str, config_path: str, preset_target_defi
                 "chia selected as plotter but plotting: chia: was not specified in the config",
             )
 
-        if loaded.plotting.pool_pk is not None and loaded.plotting.pool_contract_address is not None:
+        if (
+            loaded.plotting.pool_pk is not None
+            and loaded.plotting.pool_contract_address is not None
+        ):
             raise ConfigurationException(
                 "Chia Network plotter accepts up to one of plotting: pool_pk: and pool_contract_address: but both are specified",
             )
@@ -99,11 +107,17 @@ def get_validated_configs(config_text: str, config_path: str, preset_target_defi
                 "madMAx selected as plotter but no plotting: farmer_pk: was specified in the config",
             )
 
-        if loaded.plotting.pool_pk is None and loaded.plotting.pool_contract_address is None:
+        if (
+            loaded.plotting.pool_pk is None
+            and loaded.plotting.pool_contract_address is None
+        ):
             raise ConfigurationException(
                 "madMAx plotter requires one of plotting: pool_pk: or pool_contract_address: to be specified but neither is",
             )
-        elif loaded.plotting.pool_pk is not None and loaded.plotting.pool_contract_address is not None:
+        elif (
+            loaded.plotting.pool_pk is not None
+            and loaded.plotting.pool_contract_address is not None
+        ):
             raise ConfigurationException(
                 "madMAx plotter accepts only one of plotting: pool_pk: and pool_contract_address: but both are specified",
             )
@@ -128,12 +142,20 @@ def get_validated_configs(config_text: str, config_path: str, preset_target_defi
 
     return loaded
 
+
 class CustomStringField(marshmallow.fields.String):
-    def _deserialize(self, value: object, attr: Optional[str], data: Optional[Mapping[str, object]], **kwargs: Dict[str, object]) -> str:
+    def _deserialize(
+        self,
+        value: object,
+        attr: Optional[str],
+        data: Optional[Mapping[str, object]],
+        **kwargs: Dict[str, object],
+    ) -> str:
         if isinstance(value, int):
             value = str(value)
 
         return super()._deserialize(value, attr, data, **kwargs)  # type: ignore[no-any-return]
+
 
 # Data models used to deserializing/formatting plotman.yaml files.
 
@@ -148,7 +170,7 @@ class ArchivingTarget:
         factory=dict,
         metadata={
             desert._make._DESERT_SENTINEL: {
-                'marshmallow_field': marshmallow.fields.Dict(
+                "marshmallow_field": marshmallow.fields.Dict(
                     keys=marshmallow.fields.String(),
                     values=CustomStringField(allow_none=True),
                 )
@@ -160,9 +182,11 @@ class ArchivingTarget:
     transfer_path: Optional[str] = None
     transfer_script: Optional[str] = None
 
+
 @attr.frozen
 class PresetTargetDefinitions:
     target_definitions: Dict[str, ArchivingTarget] = attr.ib(factory=dict)
+
 
 # TODO: bah, mutable?  bah.
 @attr.mutable
@@ -174,7 +198,7 @@ class Archiving:
         factory=dict,
         metadata={
             desert._make._DESERT_SENTINEL: {
-                'marshmallow_field': marshmallow.fields.Dict(
+                "marshmallow_field": marshmallow.fields.Dict(
                     keys=marshmallow.fields.String(),
                     values=CustomStringField(),
                 )
@@ -188,34 +212,34 @@ class Archiving:
         return self.target_definitions[self.target]
 
     def environment(
-            self,
-            source: Optional[str] = None,
-            destination: Optional[str] = None,
+        self,
+        source: Optional[str] = None,
+        destination: Optional[str] = None,
     ) -> Dict[str, str]:
         target = self.target_definition()
         maybe_complete = {**target.env, **self.env}
 
         complete = {
-            key: value
-            for key, value in maybe_complete.items()
-            if value is not None
+            key: value for key, value in maybe_complete.items() if value is not None
         }
 
         if len(complete) != len(maybe_complete):
             missing_mandatory_keys = sorted(maybe_complete.keys() - complete.keys())
             target_repr = repr(self.target)
-            missing = ', '.join(repr(key) for key in missing_mandatory_keys)
-            message = f'Missing env options for archival target {target_repr}: {missing}'
+            missing = ", ".join(repr(key) for key in missing_mandatory_keys)
+            message = (
+                f"Missing env options for archival target {target_repr}: {missing}"
+            )
             raise Exception(message)
 
         variables = {**os.environ, **complete}
-        complete['process_name'] = target.transfer_process_name.format(**variables)
+        complete["process_name"] = target.transfer_process_name.format(**variables)
 
         if source is not None:
-            complete['source'] = source
+            complete["source"] = source
 
         if destination is not None:
-            complete['destination'] = destination
+            complete["destination"] = destination
 
         return complete
 
@@ -225,12 +249,14 @@ class Archiving:
 
         if target.disk_space_path is None:
             if target.disk_space_script is None:
-                raise Exception(f"One of `disk_space_path` or `disk_space_script` must be specified.  Using target {self.target!r}")
+                raise Exception(
+                    f"One of `disk_space_path` or `disk_space_script` must be specified.  Using target {self.target!r}"
+                )
 
             with tempfile.NamedTemporaryFile(
-                mode='w',
-                encoding='utf-8',
-                prefix='plotman-disk-space-script',
+                mode="w",
+                encoding="utf-8",
+                prefix="plotman-disk-space-script",
                 delete=False,
                 dir=temp,
             ) as disk_space_script_file:
@@ -241,12 +267,14 @@ class Archiving:
 
         if target.transfer_path is None:
             if target.transfer_script is None:
-                raise Exception(f"One of `transfer_path` or `transfer_script` must be specified.  Using target {self.target!r}")
+                raise Exception(
+                    f"One of `transfer_path` or `transfer_script` must be specified.  Using target {self.target!r}"
+                )
 
             with tempfile.NamedTemporaryFile(
-                mode='w',
-                encoding='utf-8',
-                prefix='plotman-transfer-script',
+                mode="w",
+                encoding="utf-8",
+                prefix="plotman-transfer-script",
                 delete=False,
                 dir=temp,
             ) as transfer_script_file:
@@ -255,6 +283,7 @@ class Archiving:
             target.transfer_path = transfer_script_file.name
             os.chmod(target.transfer_path, rwx)
 
+
 @attr.frozen
 class TmpOverrides:
     tmpdir_stagger_phase_major: Optional[int] = None
@@ -262,13 +291,16 @@ class TmpOverrides:
     tmpdir_stagger_phase_limit: Optional[int] = None
     tmpdir_max_jobs: Optional[int] = None
 
+
 @attr.frozen
 class Logging:
-    plots: str = os.path.join(appdirs.user_data_dir("plotman"), 'plots')
-    transfers: str = os.path.join(appdirs.user_data_dir("plotman"), 'transfers')
-    application: str = os.path.join(appdirs.user_log_dir("plotman"), 'plotman.log')
-    disk_spaces: str = os.path.join(appdirs.user_log_dir("plotman"), 'plotman-disk_spaces.log')
-    
+    plots: str = os.path.join(appdirs.user_data_dir("plotman"), "plots")
+    transfers: str = os.path.join(appdirs.user_data_dir("plotman"), "transfers")
+    application: str = os.path.join(appdirs.user_log_dir("plotman"), "plotman.log")
+    disk_spaces: str = os.path.join(
+        appdirs.user_log_dir("plotman"), "plotman-disk_spaces.log"
+    )
+
     def setup(self) -> None:
         os.makedirs(self.plots, exist_ok=True)
         os.makedirs(self.transfers, exist_ok=True)
@@ -278,14 +310,21 @@ class Logging:
         return self._create_log_path(
             time=time,
             directory=self.plots,
-            group='plot',
+            group="plot",
         )
 
     def create_transfer_log_path(self, time: pendulum.DateTime) -> str:
         return self._create_log_path(
             time=time,
             directory=self.transfers,
-            group='transfer',
+            group="transfer",
+        )
+
+    def create_tdisk_space_log_path(self, time: pendulum.DateTime) -> str:
+        return self._create_log_path(
+            time=time,
+            directory=self.disk_spaces,
+            group="disk_space",
         )
     def create_tdisk_space_log_path(self, time: pendulum.DateTime) -> str:
         return self._create_log_path(
@@ -294,9 +333,12 @@ class Logging:
             group='disk_space',
         )
 
-    def _create_log_path(self, time: pendulum.DateTime, directory: str, group: str) -> str:
-        timestamp = time.isoformat(timespec='microseconds').replace(':', '_')
-        return os.path.join(directory, f'{timestamp}.{group}.log')
+    def _create_log_path(
+        self, time: pendulum.DateTime, directory: str, group: str
+    ) -> str:
+        timestamp = time.isoformat(timespec="microseconds").replace(":", "_")
+        return os.path.join(directory, f"{timestamp}.{group}.log")
+
 
 @attr.frozen
 class Directories:
@@ -321,6 +363,7 @@ class Directories:
 
         return self.dst  # type: ignore[return-value]
 
+
 @attr.frozen
 class Scheduling:
     global_max_jobs: int
@@ -329,8 +372,11 @@ class Scheduling:
     tmpdir_max_jobs: int
     tmpdir_stagger_phase_major: int
     tmpdir_stagger_phase_minor: int
-    tmpdir_stagger_phase_limit: int = 1  # If not explicit, "tmpdir_stagger_phase_limit" will default to 1
+    tmpdir_stagger_phase_limit: int = (
+        1  # If not explicit, "tmpdir_stagger_phase_limit" will default to 1
+    )
     tmp_overrides: Optional[Dict[str, TmpOverrides]] = None
+
 
 @attr.frozen
 class ChiaPlotterOptions:
@@ -342,6 +388,7 @@ class ChiaPlotterOptions:
     job_buffer: Optional[int] = 3389
     x: bool = False
 
+
 @attr.frozen
 class MadmaxPlotterOptions:
     executable: str = "chia_plot"
@@ -349,6 +396,7 @@ class MadmaxPlotterOptions:
     n_buckets: int = 256
     n_buckets3: int = 256
     n_rmulti2: int = 1
+
 
 @attr.frozen
 class Plotting:
@@ -359,7 +407,7 @@ class Plotting:
         default="chia",
         metadata={
             desert._make._DESERT_SENTINEL: {
-                'marshmallow_field': marshmallow.fields.String(
+                "marshmallow_field": marshmallow.fields.String(
                     validate=marshmallow.validate.OneOf(choices=["chia", "madmax"]),
                 ),
             },
@@ -368,18 +416,22 @@ class Plotting:
     chia: Optional[ChiaPlotterOptions] = None
     madmax: Optional[MadmaxPlotterOptions] = None
 
+
 @attr.frozen
 class UserInterface:
     use_stty_size: bool = True
+
 
 @attr.frozen
 class Interactive:
     autostart_plotting: bool = True
     autostart_archiving: bool = True
 
+
 @attr.frozen
 class Commands:
     interactive: Interactive = attr.ib(factory=Interactive)
+
 
 @attr.frozen
 class PlotmanConfig:
@@ -394,7 +446,7 @@ class PlotmanConfig:
 
     @contextlib.contextmanager
     def setup(self) -> Generator[None, None, None]:
-        if self.plotting.type == 'chia':
+        if self.plotting.type == "chia":
             if self.plotting.chia is None:
                 message = (
                     "internal plotman error, please report the full traceback and your"
@@ -403,19 +455,19 @@ class PlotmanConfig:
                 raise Exception(message)
             if self.plotting.pool_contract_address is not None:
                 completed_process = subprocess.run(
-                    args=[self.plotting.chia.executable, 'version'],
+                    args=[self.plotting.chia.executable, "version"],
                     capture_output=True,
                     check=True,
-                    encoding='utf-8',
+                    encoding="utf-8",
                 )
                 version = packaging.version.Version(completed_process.stdout)
-                required_version = packaging.version.Version('1.2')
+                required_version = packaging.version.Version("1.2")
                 if version < required_version:
                     raise Exception(
-                        f'Chia version {required_version} required for creating pool'
-                        f' plots but found: {version}'
+                        f"Chia version {required_version} required for creating pool"
+                        f" plots but found: {version}"
                     )
-        elif self.plotting.type == 'madmax':
+        elif self.plotting.type == "madmax":
             if self.plotting.madmax is None:
                 message = (
                     "internal plotman error, please report the full traceback and your"
@@ -425,18 +477,18 @@ class PlotmanConfig:
 
             if self.plotting.pool_contract_address is not None:
                 completed_process = subprocess.run(
-                    args=[self.plotting.madmax.executable, '--help'],
+                    args=[self.plotting.madmax.executable, "--help"],
                     capture_output=True,
                     check=True,
-                    encoding='utf-8',
+                    encoding="utf-8",
                 )
-                if '--contract' not in completed_process.stdout:
+                if "--contract" not in completed_process.stdout:
                     raise Exception(
-                        f'found madMAx version does not support the `--contract`'
-                        f' option for pools.'
+                        f"found madMAx version does not support the `--contract`"
+                        f" option for pools."
                     )
 
-        prefix = f'plotman-pid_{os.getpid()}-'
+        prefix = f"plotman-pid_{os.getpid()}-"
 
         self.logging.setup()
 

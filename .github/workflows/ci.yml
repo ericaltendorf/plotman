@@ -119,6 +119,15 @@ jobs:
             python:
               name: CPython 3.8
               action: 3.8
+          - task:
+              name: Check format
+              tox: check-format
+            os:
+              name: Linux
+              runs-on: ubuntu-latest
+            python:
+              name: CPython 3.8
+              action: 3.8
 
 
     env:
