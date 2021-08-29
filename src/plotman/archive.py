@@ -18,7 +18,7 @@ import texttable as tt
 from plotman import configuration, job, manager, plot_util
 
 
-logger = logging.getLogger(__name__)
+disk_space_logger = logging.getLogger("disk_space")
 
 _WINDOWS = sys.platform == 'win32'
 
@@ -164,15 +164,15 @@ def get_archdir_freebytes(arch_cfg: configuration.Archiving) -> typing.Tuple[typ
             archdir_freebytes[archdir.strip()] = freebytes
 
     for line in log_messages:
-        logger.info(line)
+        disk_space_logger.info(line)
 
-    logger.info('stdout from disk space script:')
+    disk_space_logger.info('stdout from disk space script:')
     for line in stdout.splitlines():
-        logger.info(f'    {line}')
+        disk_space_logger.info(f'    {line}')
 
-    logger.info('stderr from disk space script:')
+    disk_space_logger.info('stderr from disk space script:')
     for line in stderr.splitlines():
-        logger.info(f'    {line}')
+        disk_space_logger.info(f'    {line}')
 
     return archdir_freebytes, log_messages
 
