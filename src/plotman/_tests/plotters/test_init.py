@@ -139,7 +139,7 @@ default_madmax_arguments = dict(
 )
 
 
-command_line_examples: typing.List[CommandLineExample] = [
+chianetwork_command_line_examples: typing.List[CommandLineExample] = [
     CommandLineExample(
         line=["python", "chia", "plots", "create"],
         plotter=plotman.plotters.chianetwork.Plotter,
@@ -302,6 +302,61 @@ command_line_examples: typing.List[CommandLineExample] = [
         ),
     ),
     CommandLineExample(
+        line=plotman.plotters.chianetwork.create_command_line(
+            options=plotman.plotters.chianetwork.Options(),
+            tmpdir="/farm/tmp/dir",
+            tmp2dir=None,
+            dstdir="/farm/dst/dir",
+            farmer_public_key=None,
+            pool_public_key=None,
+            pool_contract_address=None,
+        ),
+        plotter=plotman.plotters.chianetwork.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=False,
+            parameters={
+                **default_chia_network_arguments,
+                "final_dir": "/farm/dst/dir",
+                "tmp_dir": "/farm/tmp/dir",
+            },
+        ),
+    ),
+    CommandLineExample(
+        line=plotman.plotters.chianetwork.create_command_line(
+            options=plotman.plotters.chianetwork.Options(
+                e=True,
+                x=True,
+            ),
+            tmpdir="/farm/tmp/dir",
+            tmp2dir="/farm/tmp2/dir",
+            dstdir="/farm/dst/dir",
+            farmer_public_key="farmerpublickey",
+            pool_public_key="poolpublickey",
+            pool_contract_address="poolcontractaddress",
+        ),
+        plotter=plotman.plotters.chianetwork.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=False,
+            parameters={
+                **default_chia_network_arguments,
+                "exclude_final_dir": True,
+                "nobitfield": True,
+                "farmer_public_key": "farmerpublickey",
+                "pool_public_key": "poolpublickey",
+                "pool_contract_address": "poolcontractaddress",
+                "final_dir": "/farm/dst/dir",
+                "tmp_dir": "/farm/tmp/dir",
+                "tmp2_dir": "/farm/tmp2/dir",
+            },
+        ),
+    ),
+]
+
+
+madmax_command_line_examples: typing.List[CommandLineExample] = [
+    CommandLineExample(
         line=["chia_plot"],
         plotter=plotman.plotters.madmax.Plotter,
         parsed=plotman.job.ParsedChiaPlotsCreateCommand(
@@ -382,6 +437,58 @@ command_line_examples: typing.List[CommandLineExample] = [
             },
         ),
     ),
+    CommandLineExample(
+        line=plotman.plotters.madmax.create_command_line(
+            options=plotman.plotters.madmax.Options(),
+            tmpdir="/farm/tmp/dir",
+            tmp2dir=None,
+            dstdir="/farm/dst/dir",
+            farmer_public_key=None,
+            pool_public_key=None,
+            pool_contract_address=None,
+        ),
+        plotter=plotman.plotters.madmax.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=False,
+            parameters={
+                **default_madmax_arguments,
+                "finaldir": pathlib.Path("/farm/dst/dir"),
+                "tmpdir": pathlib.Path("/farm/tmp/dir"),
+            },
+        ),
+    ),
+    CommandLineExample(
+        line=plotman.plotters.madmax.create_command_line(
+            options=plotman.plotters.madmax.Options(),
+            tmpdir="/farm/tmp/dir",
+            tmp2dir="/farm/tmp2/dir",
+            dstdir="/farm/dst/dir",
+            farmer_public_key="farmerpublickey",
+            pool_public_key="poolpublickey",
+            pool_contract_address="poolcontractaddress",
+        ),
+        plotter=plotman.plotters.madmax.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=False,
+            parameters={
+                **default_madmax_arguments,
+                "farmerkey": "farmerpublickey",
+                "poolkey": "poolpublickey",
+                "contract": "poolcontractaddress",
+                "finaldir": pathlib.Path("/farm/dst/dir"),
+                "tmpdir": pathlib.Path("/farm/tmp/dir"),
+                "tmpdir2": pathlib.Path("/farm/tmp2/dir"),
+            },
+        ),
+    ),
+]
+
+
+command_line_examples: typing.List[CommandLineExample] = [
+    *chianetwork_command_line_examples,
+    *madmax_command_line_examples,
 ]
 
 not_command_line_examples: typing.List[CommandLineExample] = [

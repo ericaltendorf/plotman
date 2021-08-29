@@ -2,7 +2,6 @@ import contextlib
 import importlib
 import os
 import stat
-import subprocess
 import tempfile
 import textwrap
 from typing import Dict, Generator, List, Mapping, Optional
@@ -16,11 +15,12 @@ import desert._make
 import marshmallow
 import marshmallow.fields
 import marshmallow.validate
-import packaging.version
 import pendulum
 import yaml
 
 from plotman import resources as plotman_resources
+import plotman.plotters.chianetwork
+import plotman.plotters.madmax
 
 
 class ConfigurationException(Exception):
@@ -374,26 +374,6 @@ class Scheduling:
 
 
 @attr.frozen
-class ChiaPlotterOptions:
-    executable: str = "chia"
-    n_threads: int = 2
-    n_buckets: int = 128
-    k: Optional[int] = 32
-    e: Optional[bool] = False
-    job_buffer: Optional[int] = 3389
-    x: bool = False
-
-
-@attr.frozen
-class MadmaxPlotterOptions:
-    executable: str = "chia_plot"
-    n_threads: int = 4
-    n_buckets: int = 256
-    n_buckets3: int = 256
-    n_rmulti2: int = 1
-
-
-@attr.frozen
 class Plotting:
     farmer_pk: Optional[str] = None
     pool_pk: Optional[str] = None
@@ -408,8 +388,8 @@ class Plotting:
             },
         },
     )
-    chia: Optional[ChiaPlotterOptions] = None
-    madmax: Optional[MadmaxPlotterOptions] = None
+    chia: Optional[plotman.plotters.chianetwork.Options] = None
+    madmax: Optional[plotman.plotters.madmax.Options] = None
 
 
 @attr.frozen
@@ -448,20 +428,11 @@ class PlotmanConfig:
                     + " full configuration file"
                 )
                 raise Exception(message)
-            if self.plotting.pool_contract_address is not None:
-                completed_process = subprocess.run(
-                    args=[self.plotting.chia.executable, "version"],
-                    capture_output=True,
-                    check=True,
-                    encoding="utf-8",
-                )
-                version = packaging.version.Version(completed_process.stdout)
-                required_version = packaging.version.Version("1.2")
-                if version < required_version:
-                    raise Exception(
-                        f"Chia version {required_version} required for creating pool"
-                        f" plots but found: {version}"
-                    )
+
+            plotman.plotters.chianetwork.check_configuration(
+                options=self.plotting.chia,
+                pool_contract_address=self.plotting.pool_contract_address,
+            )
         elif self.plotting.type == "madmax":
             if self.plotting.madmax is None:
                 message = (
@@ -470,18 +441,10 @@ class PlotmanConfig:
                 )
                 raise Exception(message)
 
-            if self.plotting.pool_contract_address is not None:
-                completed_process = subprocess.run(
-                    args=[self.plotting.madmax.executable, "--help"],
-                    capture_output=True,
-                    check=True,
-                    encoding="utf-8",
-                )
-                if "--contract" not in completed_process.stdout:
-                    raise Exception(
-                        f"found madMAx version does not support the `--contract`"
-                        f" option for pools."
-                    )
+            plotman.plotters.madmax.check_configuration(
+                options=self.plotting.madmax,
+                pool_contract_address=self.plotting.pool_contract_address,
+            )
 
         prefix = f"plotman-pid_{os.getpid()}-"
 

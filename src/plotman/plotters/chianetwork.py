@@ -3,10 +3,12 @@
 import collections
 import os
 import pathlib
+import subprocess
 import typing
 
 import attr
 import click
+import packaging.version
 import pendulum
 
 import plotman.job
@@ -18,6 +20,83 @@ def parse_chia_plot_time(s: str) -> pendulum.DateTime:
     # TODO: unignore once fixed upstream
     #       https://github.com/sdispater/pendulum/pull/548
     return pendulum.from_format(s, "ddd MMM DD HH:mm:ss YYYY", locale="en", tz=None)  # type: ignore[arg-type]
+
+
+@attr.frozen
+class Options:
+    executable: str = "chia"
+    n_threads: int = 2
+    n_buckets: int = 128
+    k: typing.Optional[int] = 32
+    e: typing.Optional[bool] = False
+    job_buffer: typing.Optional[int] = 3389
+    x: bool = False
+
+
+def check_configuration(
+    options: Options, pool_contract_address: typing.Optional[str]
+) -> None:
+    if pool_contract_address is not None:
+        completed_process = subprocess.run(
+            args=[options.executable, "version"],
+            capture_output=True,
+            check=True,
+            encoding="utf-8",
+        )
+        version = packaging.version.Version(completed_process.stdout)
+        required_version = packaging.version.Version("1.2")
+        if version < required_version:
+            raise Exception(
+                f"Chia version {required_version} required for creating pool"
+                f" plots but found: {version}"
+            )
+
+
+def create_command_line(
+    options: Options,
+    tmpdir: str,
+    tmp2dir: typing.Optional[str],
+    dstdir: str,
+    farmer_public_key: typing.Optional[str],
+    pool_public_key: typing.Optional[str],
+    pool_contract_address: typing.Optional[str],
+) -> typing.List[str]:
+    args = [
+        options.executable,
+        "plots",
+        "create",
+        "-k",
+        str(options.k),
+        "-r",
+        str(options.n_threads),
+        "-u",
+        str(options.n_buckets),
+        "-b",
+        str(options.job_buffer),
+        "-t",
+        tmpdir,
+        "-d",
+        dstdir,
+    ]
+    if options.e:
+        args.append("-e")
+    if options.x:
+        args.append("-x")
+    if tmp2dir is not None:
+        args.append("-2")
+        args.append(tmp2dir)
+
+    if farmer_public_key is not None:
+        args.append("-f")
+        args.append(farmer_public_key)
+    if pool_public_key is not None:
+        args.append("-p")
+        args.append(pool_public_key)
+    if pool_contract_address is not None:
+        args.append("-c")
+        args.append(pool_contract_address)
+
+    return args
 
 
 @plotman.plotters.check_SpecificInfo
