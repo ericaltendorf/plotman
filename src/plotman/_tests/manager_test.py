@@ -61,17 +61,12 @@ def test_permit_new_job_override_tmp_dir(sched_cfg: configuration.Scheduling, di
         dir_cfg)
 
 @patch('plotman.job.Job')
-def job_w_tmpdir_phase(tmpdir: str, phase: job.Phase, MockJob: typing.Any) -> typing.Any:
-    j = MockJob()
-    j.progress.return_value = phase
-    j.tmpdir = tmpdir
-    return j
-
-@patch('plotman.job.Job')
 def job_w_dstdir_phase(dstdir: str, phase: job.Phase, MockJob: typing.Any) -> typing.Any:
     j = MockJob()
     j.progress.return_value = phase
-    j.dstdir = dstdir
+    i = MockJob()
+    j.plotter.common_info.return_value = i
+    i.dstdir = dstdir
     return j
 
 def test_dstdirs_to_furthest_phase() -> None:

@@ -1,118 +1,46 @@
-# TODO do we use all these?
-import argparse
 import contextlib
 import functools
-import logging
 import os
-import random
-import re
-import sys
 import glob
 import time
 from datetime import datetime
-from enum import Enum, auto
-from subprocess import call
 import typing
 
 import attr
 import click
-import pendulum
 import psutil
 
-from plotman import chia, madmax
+import plotman.errors
+if typing.TYPE_CHECKING:
+    import plotman.errors
 
 
 def job_phases_for_tmpdir(d: str, all_jobs: typing.List["Job"]) -> typing.List["Phase"]:
     '''Return phase 2-tuples for jobs running on tmpdir d'''
-    return sorted([j.progress() for j in all_jobs if os.path.normpath(j.tmpdir) == os.path.normpath(d)])
+    return sorted([j.progress() for j in all_jobs if os.path.normpath(j.plotter.common_info().tmpdir) == os.path.normpath(d)])
 
 def job_phases_for_dstdir(d: str, all_jobs: typing.List["Job"]) -> typing.List["Phase"]:
     '''Return phase 2-tuples for jobs outputting to dstdir d'''
-    return sorted([j.progress() for j in all_jobs if os.path.normpath(j.dstdir) == os.path.normpath(d)])
+    return sorted([j.progress() for j in all_jobs if os.path.normpath(j.plotter.common_info().dstdir) == os.path.normpath(d)])
 
-def is_plotting_cmdline(cmdline: typing.List[str]) -> bool:
-    if len(cmdline) == 0:
-        return False
 
-    if 'chia_plot' == os.path.basename(cmdline[0].lower()):  # Madmax plotter
-        # TODO: use the configured executable
-        return True
-    else:
-        if 'python' in cmdline[0].lower():  # Stock Chia plotter
-            cmdline = cmdline[1:]
+@attr.frozen
+class ParsedChiaPlotsCreateCommand:
+    error: typing.Optional[click.ClickException]
+    help: bool
+    parameters: typing.Dict[str, object]
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, type(self)):
+            return False
+
         return (
-            len(cmdline) >= 3
-            # TODO: use the configured executable
-            and 'chia' in cmdline[0]
-            and 'plots' == cmdline[1]
-            and 'create' == cmdline[2]
+            type(self.error) == type(other.error)
+            and str(self.error) == str(other.error)
+            and self.help == other.help
+            and self.parameters == other.parameters
         )
 
-def parse_chia_plot_time(s: str) -> pendulum.DateTime:
-    # This will grow to try ISO8601 as well for when Chia logs that way
-    # TODO: unignore once fixed upstream
-    #       https://github.com/sdispater/pendulum/pull/548
-    return pendulum.from_format(s, 'ddd MMM DD HH:mm:ss YYYY', locale='en', tz=None)  # type: ignore[arg-type]
-
-def parse_chia_plots_create_command_line(
-    command_line: typing.List[str],
-) -> "ParsedChiaPlotsCreateCommand":
-    command_line = list(command_line)
-    # Parse command line args
-
-    if 'chia_plot' == os.path.basename(command_line[0].lower()):  # Madmax plotter
-        # TODO: use the configured executable
-        all_command_arguments = command_line[1:]
-        command = madmax.commands.latest_command()
-    else:
-        if 'python' in command_line[0].lower():  # Stock Chia plotter
-            command_line = command_line[1:]
-        assert len(command_line) >= 3
-        # TODO: use the configured executable
-        assert 'chia' in command_line[0]
-        assert 'plots' == command_line[1]
-        assert 'create' == command_line[2]
-        all_command_arguments = command_line[3:]
-        # TODO: We could at some point do chia version detection and pick the
-        #       associated command.  For now we'll just use the latest one we have
-        #       copied.
-        command = chia.commands.latest_command()
-
-    # nice idea, but this doesn't include -h
-    # help_option_names = command.get_help_option_names(ctx=context)
-    help_option_names = {'--help', '-h'}
-
-    command_arguments = [
-        argument
-        for argument in all_command_arguments
-        if argument not in help_option_names
-    ]
-
-    try:
-        context = command.make_context(info_name='', args=list(command_arguments))
-    except click.ClickException as e:
-        error = e
-        params = {}
-    else:
-        error = None
-        params = context.params
-
-    return ParsedChiaPlotsCreateCommand(
-        error=error,
-        help=len(all_command_arguments) > len(command_arguments),
-        parameters=params,
-    )
-
-class ParsedChiaPlotsCreateCommand:
-    def __init__(
-        self,
-        error: click.ClickException,
-        help: bool,
-        parameters: typing.Dict[str, object],
-    ) -> None:
-        self.error = error
-        self.help = help
-        self.parameters = parameters
 
 @functools.total_ordering
 @attr.frozen(order=False)
@@ -157,22 +85,11 @@ class Phase:
 class Job:
     'Represents a plotter job'
 
+    plotter: "plotman.plotters.Plotter"
+
     logfile: str = ''
-    jobfile: str = ''
     job_id: int = 0
-    plot_id: str = '--------'
-    plotter: str = ''
     proc: psutil.Process
-    k: int
-    r: int
-    u: int
-    v: int
-    rmulti2: int
-    b: int
-    n: int
-    tmpdir: str
-    tmp2dir: str
-    dstdir: str
 
     @classmethod
     def get_running_jobs(
@@ -197,7 +114,9 @@ class Job:
                 # iteration and data access.
                 with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied):
                     exit_stack.enter_context(process.oneshot())
-                    if is_plotting_cmdline(process.cmdline()):
+                    # TODO: handle import loop
+                    import plotman.plotters
+                    if plotman.plotters.is_plotting_command_line(process.cmdline()):
                         ppids.add(process.ppid())
                         pids.add(process.pid)
                         processes.append(process)
@@ -227,18 +146,31 @@ class Job:
                             if len(command_line) == 0:
                                 # https://github.com/ericaltendorf/plotman/issues/610
                                 continue
-                            parsed_command = parse_chia_plots_create_command_line(
+                            # TODO: handle import loop
+                            import plotman.plotters
+                            plotter_type = plotman.plotters.get_plotter_from_command_line(
                                 command_line=command_line,
                             )
-                            if parsed_command.error is not None:
+                            plotter = plotter_type()
+                            plotter.parse_command_line(command_line=command_line, cwd=proc.cwd())
+
+                            if plotter.parsed_command_line is None:
                                 continue
+                            if plotter.parsed_command_line.error is not None:
+                                continue
+                            if plotter.parsed_command_line.help:
+                                continue
+
                             job = cls(
                                 proc=proc,
-                                parsed_command=parsed_command,
+                                # parsed_command=plotter.parsed_command_line,
+                                plotter=plotter,
                                 logroot=logroot,
                             )
-                            if job.help:
-                                continue
+                            # TODO: stop reloading every time...
+                            with open(job.logfile, 'rb') as f:
+                                r = f.read()
+                            job.plotter.update(chunk=r)
                             jobs.append(job)
 
         return jobs
@@ -247,64 +179,13 @@ class Job:
     def __init__(
         self,
         proc: psutil.Process,
-        parsed_command: ParsedChiaPlotsCreateCommand,
+        plotter: "plotman.plotters.Plotter",
+        # parsed_command: ParsedChiaPlotsCreateCommand,
         logroot: str,
     ) -> None:
         '''Initialize from an existing psutil.Process object.  must know logroot in order to understand open files'''
         self.proc = proc
-        # These are dynamic, cached, and need to be udpated periodically
-        self.phase = Phase(known=False)
-
-        self.help = parsed_command.help
-        self.args = parsed_command.parameters
-
-        # an example as of 1.0.5
-        # {
-        #     'size': 32,
-        #     'num_threads': 4,
-        #     'buckets': 128,
-        #     'buffer': 6000,
-        #     'tmp_dir': '/farm/yards/901',
-        #     'final_dir': '/farm/wagons/801',
-        #     'override_k': False,
-        #     'num': 1,
-        #     'alt_fingerprint': None,
-        #     'pool_contract_address': None,
-        #     'farmer_public_key': None,
-        #     'pool_public_key': None,
-        #     'tmp2_dir': None,
-        #     'plotid': None,
-        #     'memo': None,
-        #     'nobitfield': False,
-        #     'exclude_final_dir': False,
-        # }
-        # TODO: use the configured executable
-        if proc.name().startswith("chia_plot"): # MADMAX
-            self.k = 32
-            self.r = self.args['threads']  # type: ignore[assignment]
-            self.u = self.args['buckets']  # type: ignore[assignment]
-            self.v = self.args['buckets3']  # type: ignore[assignment]
-            self.rmulti2 = self.args['rmulti2']  # type: ignore[assignment]
-            self.b = 0
-            self.n = self.args['count']  # type: ignore[assignment]
-            self.tmpdir = self.args['tmpdir']  # type: ignore[assignment]
-            self.tmp2dir = self.args['tmpdir2']  # type: ignore[assignment]
-            self.dstdir = self.args['finaldir']  # type: ignore[assignment]
-        else: # CHIA
-            self.k = self.args['size']  # type: ignore[assignment]
-            self.r = self.args['num_threads']  # type: ignore[assignment]
-            self.u = self.args['buckets']  # type: ignore[assignment]
-            self.b = self.args['buffer']  # type: ignore[assignment]
-            self.n = self.args['num']  # type: ignore[assignment]
-            self.tmpdir = self.args['tmp_dir']  # type: ignore[assignment]
-            self.tmp2dir = self.args['tmp2_dir']  # type: ignore[assignment]
-            self.dstdir = self.args['final_dir']  # type: ignore[assignment]
-
-        plot_cwd: str = self.proc.cwd()
-        self.tmpdir = os.path.join(plot_cwd, self.tmpdir)
-        if self.tmp2dir is not None:
-            self.tmp2dir = os.path.join(plot_cwd, self.tmp2dir)
-        self.dstdir = os.path.join(plot_cwd, self.dstdir)
+        self.plotter = plotter
 
         # Find logfile (whatever file is open under the log root).  The
         # file may be open more than once, e.g. for STDOUT and STDERR.
@@ -316,168 +197,40 @@ class Job:
                     self.logfile = f.path
                 break
 
-        if self.logfile:
-            # Initialize data that needs to be loaded from the logfile
-            self.init_from_logfile()
-# TODO: turn this into logging or somesuch
-#         else:
-#             print('Found plotting process PID {pid}, but could not find '
-#                     'logfile in its open files:'.format(pid = self.proc.pid))
-#             for f in self.proc.open_files():
-#                 print(f.path)
-
-
-
-    def init_from_logfile(self) -> None:
-        '''Read plot ID and job start time from logfile.  Return true if we
-           find all the info as expected, false otherwise'''
-        assert self.logfile
-        # Try reading for a while; it can take a while for the job to get started as it scans
-        # existing plot dirs (especially if they are NFS).
-        found_id = False
-        found_log = False
-        for attempt_number in range(3):
-            with open(self.logfile, 'r') as f:
-                with contextlib.suppress(UnicodeDecodeError):
-                    for line in f:
-                        m = re.match('^ID: ([0-9a-f]*)', line)
-                        if m: # CHIA
-                            self.plot_id = m.group(1)
-                            self.plotter = 'chia'
-                            found_id = True
-                        else: 
-                            m = re.match(r"^Plot Name: plot-k(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\w+)$", line)
-                            if m: # MADMAX
-                                self.plot_id = m.group(7)
-                                self.plotter = 'madmax'
-                                self.start_time = pendulum.from_timestamp(os.path.getctime(self.logfile))
-                                found_id = True
-                                found_log = True
-                                break
-
-                        m = re.match(r'^Starting phase 1/4:.*\.\.\. (.*)', line)
-                        if m: # CHIA
-                            # Mon Nov  2 08:39:53 2020
-                            self.start_time = parse_chia_plot_time(m.group(1))
-                            found_log = True
-                            break  # Stop reading lines in file
-
-            if found_id and found_log:
-                break  # Stop trying
-            else:
-                time.sleep(1)  # Sleep and try again
-
-        # If we couldn't find the line in the logfile, the job is probably just getting started
-        # (and being slow about it).  In this case, use the last metadata change as the start time.
-        # TODO: we never come back to this; e.g. plot_id may remain uninitialized.
-        # TODO: should we just use the process start time instead?
-        if not found_log:
-            self.start_time = pendulum.from_timestamp(os.path.getctime(self.logfile))
-
-        # Load things from logfile that are dynamic
-        self.update_from_logfile()
-
-    def update_from_logfile(self) -> None:
-        self.set_phase_from_logfile()
-
-    def set_phase_from_logfile(self) -> None:
-        assert self.logfile
-
-        # Map from phase number to subphase number reached in that phase.
-        # Phase 1 subphases are <started>, table1, table2, ...
-        # Phase 2 subphases are <started>, table7, table6, ...
-        # Phase 3 subphases are <started>, tables1&2, tables2&3, ...
-        # Phase 4 subphases are <started>
-        phase_subphases = {}
-
-        with open(self.logfile, 'r') as f:
-            with contextlib.suppress(UnicodeDecodeError):
-                for line in f:
-                    if self.plotter == "madmax":
-
-                        # MADMAX reports after completion of phases so increment the reported subphases
-                        # and assume that phase 1 has already started
-                        m = re.match(r'^\[P(\d)-?(1|2)?\] Table (\d) (rewrite)?', line)
-                        if m:
-                            phase = int(m.group(1))
-                            phase_subphases[phase] = int(m.group(3))
-
-                            if phase == 2:
-                                phase_subphases[phase] = 9 - phase_subphases[phase] + (m.lastindex == 4)
-                            elif phase != 3 or m.group(2) and m.group(2) == '2':
-                                phase_subphases[phase] += 1
-                            
-                            if phase_subphases[phase] > 7:
-                                phase += 1
-                                phase_subphases[phase] = 2 * (phase < 4)
-
-                        else:
-                            m = re.match(r'^\[P4\] (Starting)?(Finished writing C2)?', line)
-                            if m and m.lastindex:
-                                phase = 3 + int(m.lastindex)
-                                phase_subphases[phase] = 0
-
-                    else:                    
-                        # CHIA: "Starting phase 1/4: Forward Propagation into tmp files... Sat Oct 31 11:27:04 2020"
-                        m = re.match(r'^Starting phase (\d).*', line)
-                        if m:
-                            phase = int(m.group(1))
-                            phase_subphases[phase] = 0
-                        
-                        # CHIA: Phase 1: "Computing table 2"
-                        m = re.match(r'^Computing table (\d).*', line)
-                        if m:
-                            phase_subphases[1] = max(phase_subphases[1], int(m.group(1)))
-                        
-                        # CHIA: Phase 2: "Backpropagating on table 2"
-                        m = re.match(r'^Backpropagating on table (\d).*', line)
-                        if m:
-                            phase_subphases[2] = max(phase_subphases[2], 7 - int(m.group(1)))
-
-                        # CHIA: Phase 3: "Compressing tables 4 and 5"
-                        m = re.match(r'^Compressing tables (\d) and (\d).*', line)
-                        if m:
-                            phase_subphases[3] = max(phase_subphases[3], int(m.group(1)))
-                    
-                    # TODO also collect timing info:
-
-                    # "Time for phase 1 = 22796.7 seconds. CPU (98%) Tue Sep 29 17:57:19 2020"
-                    # for phase in ['1', '2', '3', '4']:
-                        # m = re.match(r'^Time for phase ' + phase + ' = (\d+.\d+) seconds..*', line)
-                            # data.setdefault....
-
-                    # Total time = 49487.1 seconds. CPU (97.26%) Wed Sep 30 01:22:10 2020
-                    # m = re.match(r'^Total time = (\d+.\d+) seconds.*', line)
-                    # if m:
-                        # data.setdefault(key, {}).setdefault('total time', []).append(float(m.group(1)))
-
-        if phase_subphases:
-            phase = max(phase_subphases.keys())
-            self.phase = Phase(major=phase, minor=phase_subphases[phase])
-        else:
-            self.phase = Phase(major=0, minor=0)
-
     def progress(self) -> Phase:
         '''Return a 2-tuple with the job phase and subphase (by reading the logfile)'''
-        return self.phase
+        return self.plotter.common_info().phase
 
     def plot_id_prefix(self) -> str:
-        return self.plot_id[:8]
+        plot_id = self.plotter.common_info().plot_id
+        if plot_id is None:
+            return '--------'
+
+        return plot_id[:8]
 
     # TODO: make this more useful and complete, and/or make it configurable
     def status_str_long(self) -> str:
-        return '{plot_id}\nk={k} r={r} b={b} u={u}\npid:{pid}\ntmp:{tmp}\ntmp2:{tmp2}\ndst:{dst}\nlogfile:{logfile}'.format(
-            plot_id = self.plot_id,
-            k = self.k,
-            r = self.r,
-            b = self.b,
-            u = self.u,
+        # TODO: get the rest of this filled out
+        info = self.plotter.common_info()
+        return '{plot_id}\npid:{pid}\ntmp:{tmp}\ndst:{dst}\nlogfile:{logfile}'.format(
+            plot_id = info.plot_id,
             pid = self.proc.pid,
-            tmp = self.tmpdir,
-            tmp2 = self.tmp2dir,
-            dst = self.dstdir,
+            tmp = info.tmpdir,
+            dst = info.dstdir,
             logfile = self.logfile
             )
+        # return '{plot_id}\nk={k} r={r} b={b} u={u}\npid:{pid}\ntmp:{tmp}\ntmp2:{tmp2}\ndst:{dst}\nlogfile:{logfile}'.format(
+        #     plot_id = info.plot_id,
+        #     # k = self.k,
+        #     # r = self.r,
+        #     # b = self.b,
+        #     # u = self.u,
+        #     pid = self.proc.pid,
+        #     tmp = info.tmpdir,
+        #     # tmp2 = self.tmp2dir,
+        #     dst = info.dstdir,
+        #     logfile = self.logfile
+        #     )
 
     def print_logs(self, follow: bool = False) -> None:
         with open(self.logfile, 'r') as f:
@@ -497,11 +250,13 @@ class Job:
 
     def to_dict(self) -> typing.Dict[str, object]:
         '''Exports important information as dictionary.'''
+        info = self.plotter.common_info()
+        # TODO: get the rest of this filled out
         return dict(
-            plot_id=self.plot_id[:8],
-            k=self.k,
-            tmp_dir=self.tmpdir,
-            dst_dir=self.dstdir,
+            plot_id=self.plot_id_prefix(),
+            # k=self.k,
+            tmp_dir=info.tmpdir,
+            dst_dir=info.dstdir,
             progress=str(self.progress()),
             tmp_usage=self.get_tmp_usage(),
             pid=self.proc.pid,
@@ -520,11 +275,12 @@ class Job:
 
     def get_tmp_usage(self) -> int:
         total_bytes = 0
+        info = self.plotter.common_info()
         with contextlib.suppress(FileNotFoundError):
             # The directory might not exist at this name, or at all, anymore
-            with os.scandir(self.tmpdir) as it:
+            with os.scandir(info.tmpdir) as it:
                 for entry in it:
-                    if self.plot_id in entry.name:
+                    if info.plot_id is not None and info.plot_id in entry.name:
                         with contextlib.suppress(FileNotFoundError):
                             # The file might disappear; this being an estimate we don't care
                             total_bytes += entry.stat().st_size
@@ -573,9 +329,10 @@ class Job:
         # Prevent duplicate file paths by using set.
         temp_files = set([])
 
-        for dir in [self.tmpdir, self.tmp2dir, self.dstdir]:
+        info = self.plotter.common_info()
+        for dir in [info.tmpdir, info.tmp2dir, info.dstdir]:
             if dir is not None:
-                temp_files.update(glob.glob(os.path.join(dir, f"plot-*-{self.plot_id}*.tmp")))
+                temp_files.update(glob.glob(os.path.join(dir, f"plot-*-{info.plot_id}*.tmp")))
 
         return temp_files
 
