@@ -13,6 +13,7 @@ from plotman.job import Job
 
 root_logger = logging.getLogger()
 
+
 class TerminalTooSmallError(Exception):
     pass
 

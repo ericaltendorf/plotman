@@ -326,11 +326,12 @@ class Logging:
             directory=self.disk_spaces,
             group="disk_space",
         )
+
     def create_tdisk_space_log_path(self, time: pendulum.DateTime) -> str:
         return self._create_log_path(
             time=time,
             directory=self.disk_spaces,
-            group='disk_space',
+            group="disk_space",
         )
 
     def _create_log_path(
