@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([#885](https://github.com/ericaltendorf/plotman/pull/885))
 - `supervisord` now used in Docker image.
   ([#898](https://github.com/ericaltendorf/plotman/pull/898))
+- `plotman graph` command to create a matplotlib plot for completed
+  plots ([#612](https://github.com/ericaltendorf/plotman/pull/612)). 
+  Creates a graph image showing plots over time, average plot rage,
+  average plot time, and total number of plots over time.
 
 ## [0.5.1] - 2021-07-15
 ### Fixed
