@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([#869](https://github.com/ericaltendorf/plotman/pull/869))
 - A combined major/minor value for Prometheus status output.
   ([#885](https://github.com/ericaltendorf/plotman/pull/885))
+- `supervisord` now used in Docker image.
+  ([#898](https://github.com/ericaltendorf/plotman/pull/898))
+- Output same entries to plotman.log from 'plotman interactive' and ' plotman plot/archive' "daemons".
+  ([#878](https://github.com/ericaltendorf/plotman/pull/878))
 
 ## [0.5.1] - 2021-07-15
 ### Fixed

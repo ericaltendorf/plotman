@@ -3,3 +3,4 @@
 .coveragerc
 .gitignore
 docker
+!docker/supervisord.conf
