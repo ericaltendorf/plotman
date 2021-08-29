@@ -3,6 +3,7 @@
 import collections
 import os.path
 import pathlib
+import subprocess
 import typing
 
 import attr
@@ -11,6 +12,77 @@ import pendulum
 
 import plotman.job
 import plotman.plotters
+
+
+@attr.frozen
+class Options:
+    executable: str = "chia_plot"
+    n_threads: int = 4
+    n_buckets: int = 256
+    n_buckets3: int = 256
+    n_rmulti2: int = 1
+
+
+def check_configuration(
+    options: Options, pool_contract_address: typing.Optional[str]
+) -> None:
+    if pool_contract_address is not None:
+        completed_process = subprocess.run(
+            args=[options.executable, "--help"],
+            capture_output=True,
+            check=True,
+            encoding="utf-8",
+        )
+        if "--contract" not in completed_process.stdout:
+            raise Exception(
+                f"found madMAx version does not support the `--contract`"
+                f" option for pools."
+            )
+
+
+def create_command_line(
+    options: Options,
+    tmpdir: str,
+    tmp2dir: typing.Optional[str],
+    dstdir: str,
+    farmer_public_key: typing.Optional[str],
+    pool_public_key: typing.Optional[str],
+    pool_contract_address: typing.Optional[str],
+) -> typing.List[str]:
+    args = [
+        options.executable,
+        "-n",
+        str(1),
+        "-r",
+        str(options.n_threads),
+        "-u",
+        str(options.n_buckets),
+        "-t",
+        tmpdir if tmpdir.endswith("/") else (tmpdir + "/"),
+        "-d",
+        dstdir if dstdir.endswith("/") else (dstdir + "/"),
+    ]
+    if tmp2dir is not None:
+        args.append("-2")
+        args.append(tmp2dir if tmp2dir.endswith("/") else (tmp2dir + "/"))
+    if options.n_buckets3 is not None:
+        args.append("-v")
+        args.append(str(options.n_buckets3))
+    if options.n_rmulti2 is not None:
+        args.append("-K")
+        args.append(str(options.n_rmulti2))
+
+    if farmer_public_key is not None:
+        args.append("-f")
+        args.append(farmer_public_key)
+    if pool_public_key is not None:
+        args.append("-p")
+        args.append(pool_public_key)
+    if pool_contract_address is not None:
+        args.append("-c")
+        args.append(pool_contract_address)
+
+    return args
 
 
 # @plotman.plotters.ProtocolChecker[plotman.plotters.SpecificInfo]()

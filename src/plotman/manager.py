@@ -18,6 +18,9 @@ from plotman import (
 )  # for get_archdir_freebytes(). TODO: move to avoid import loop
 from plotman import job, plot_util
 import plotman.configuration
+import plotman.plotters.chianetwork
+import plotman.plotters.madmax
+
 
 # Constants
 MIN = 60  # Seconds
@@ -186,70 +189,29 @@ def maybe_start_new_plot(
                     raise Exception(
                         "madmax plotter selected but not configured, report this as a plotman bug",
                     )
-                plot_args = [
-                    plotting_cfg.madmax.executable,
-                    "-n",
-                    str(1),
-                    "-r",
-                    str(plotting_cfg.madmax.n_threads),
-                    "-u",
-                    str(plotting_cfg.madmax.n_buckets),
-                    "-t",
-                    tmpdir if tmpdir.endswith("/") else (tmpdir + "/"),
-                    "-d",
-                    dstdir if dstdir.endswith("/") else (dstdir + "/"),
-                ]
-                if dir_cfg.tmp2 is not None:
-                    plot_args.append("-2")
-                    plot_args.append(
-                        dir_cfg.tmp2
-                        if dir_cfg.tmp2.endswith("/")
-                        else (dir_cfg.tmp2 + "/")
-                    )
-                if plotting_cfg.madmax.n_buckets3 is not None:
-                    plot_args.append("-v")
-                    plot_args.append(str(plotting_cfg.madmax.n_buckets3))
-                if plotting_cfg.madmax.n_rmulti2 is not None:
-                    plot_args.append("-K")
-                    plot_args.append(str(plotting_cfg.madmax.n_rmulti2))
+                plot_args = plotman.plotters.madmax.create_command_line(
+                    options=plotting_cfg.madmax,
+                    tmpdir=tmpdir,
+                    tmp2dir=dir_cfg.tmp2,
+                    dstdir=dstdir,
+                    farmer_public_key=plotting_cfg.farmer_pk,
+                    pool_public_key=plotting_cfg.pool_pk,
+                    pool_contract_address=plotting_cfg.pool_contract_address,
+                )
             else:
                 if plotting_cfg.chia is None:
                     raise Exception(
                         "chia plotter selected but not configured, report this as a plotman bug",
                     )
-                plot_args = [
-                    plotting_cfg.chia.executable,
-                    "plots",
-                    "create",
-                    "-k",
-                    str(plotting_cfg.chia.k),
-                    "-r",
-                    str(plotting_cfg.chia.n_threads),
-                    "-u",
-                    str(plotting_cfg.chia.n_buckets),
-                    "-b",
-                    str(plotting_cfg.chia.job_buffer),
-                    "-t",
-                    tmpdir,
-                    "-d",
-                    dstdir,
-                ]
-                if plotting_cfg.chia.e:
-                    plot_args.append("-e")
-                if plotting_cfg.chia.x:
-                    plot_args.append("-x")
-                if dir_cfg.tmp2 is not None:
-                    plot_args.append("-2")
-                    plot_args.append(dir_cfg.tmp2)
-            if plotting_cfg.farmer_pk is not None:
-                plot_args.append("-f")
-                plot_args.append(plotting_cfg.farmer_pk)
-            if plotting_cfg.pool_pk is not None:
-                plot_args.append("-p")
-                plot_args.append(plotting_cfg.pool_pk)
-            if plotting_cfg.pool_contract_address is not None:
-                plot_args.append("-c")
-                plot_args.append(plotting_cfg.pool_contract_address)
+                plot_args = plotman.plotters.chianetwork.create_command_line(
+                    options=plotting_cfg.chia,
+                    tmpdir=tmpdir,
+                    tmp2dir=dir_cfg.tmp2,
+                    dstdir=dstdir,
+                    farmer_public_key=plotting_cfg.farmer_pk,
+                    pool_public_key=plotting_cfg.pool_pk,
+                    pool_contract_address=plotting_cfg.pool_contract_address,
+                )
 
             logmsg = "Starting plot job: %s ; logging to %s" % (
                 " ".join(plot_args),
