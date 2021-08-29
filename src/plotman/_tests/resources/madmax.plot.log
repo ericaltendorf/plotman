@@ -1,0 +1,59 @@
+Multi-threaded pipelined Chia k32 plotter - 974d6e5
+(Sponsored by Flexpool.io - Check them out if you're looking for a secure and scalable Chia pool)
+
+Final Directory: /farm/yards/902/fake_dst/
+Number of Plots: 1
+Crafting plot 1 out of 1
+Process ID: 190552
+Number of Threads: 8
+Number of Buckets P1:    2^8 (256)
+Number of Buckets P3+P4: 2^8 (256)
+Pool Puzzle Hash:  e1fff5096ebc3399568dd714209655dfe62bba19c606fe980e8153f52c92a71f
+Farmer Public Key: b0a374845f4f4d6eab62fc4c5e17965d82ad7eee105818e5bd0cfcb46275a16acc4cd30955779bec841a716473416b21
+Working Directory:   /farm/yards/902/
+Working Directory 2: /farm/yards/902/fake_tmp2/
+Plot Name: plot-k32-2021-07-14-21-56-522acbd6308af7e229281352f746449134126482cfabd51d38e0f89745d21698
+[P1] Table 1 took 24.6839 sec
+[P1] Table 2 took 300.748 sec, found 4295036171 matches
+[P1] Table 3 took 345.724 sec, found 4295004796 matches
+[P1] Table 4 took 426.064 sec, found 4295077044 matches
+[P1] Table 5 took 424.572 sec, found 4295076857 matches
+[P1] Table 6 took 389.573 sec, found 4295015692 matches
+[P1] Table 7 took 286.065 sec, found 4294961988 matches
+Phase 1 took 2197.52 sec
+[P2] max_table_size = 4295077044
+[P2] Table 7 scan took 39.6625 sec
+[P2] Table 7 rewrite took 95.6021 sec, dropped 0 entries (0 %)
+[P2] Table 6 scan took 105.963 sec
+[P2] Table 6 rewrite took 142.273 sec, dropped 581280956 entries (13.5338 %)
+[P2] Table 5 scan took 106.798 sec
+[P2] Table 5 rewrite took 132.968 sec, dropped 762014431 entries (17.7416 %)
+[P2] Table 4 scan took 99.019 sec
+[P2] Table 4 rewrite took 129.953 sec, dropped 828921602 entries (19.2993 %)
+[P2] Table 3 scan took 87.3119 sec
+[P2] Table 3 rewrite took 151.927 sec, dropped 855040283 entries (19.9078 %)
+[P2] Table 2 scan took 103.825 sec
+[P2] Table 2 rewrite took 159.486 sec, dropped 865588810 entries (20.1532 %)
+Phase 2 took 1363.42 sec
+Wrote plot header with 252 bytes
+[P3-1] Table 2 took 134.927 sec, wrote 3429447361 right entries
+[P3-2] Table 2 took 101.677 sec, wrote 3429447361 left entries, 3429447361 final
+[P3-1] Table 3 took 149.549 sec, wrote 3439964513 right entries
+[P3-2] Table 3 took 81.7904 sec, wrote 3439964513 left entries, 3439964513 final
+[P3-1] Table 4 took 120.011 sec, wrote 3466155442 right entries
+[P3-2] Table 4 took 78.9534 sec, wrote 3466155442 left entries, 3466155442 final
+[P3-1] Table 5 took 124.946 sec, wrote 3533062426 right entries
+[P3-2] Table 5 took 82.0401 sec, wrote 3533062426 left entries, 3533062426 final
+[P3-1] Table 6 took 129.488 sec, wrote 3713734736 right entries
+[P3-2] Table 6 took 85.6095 sec, wrote 3713734736 left entries, 3713734736 final
+[P3-1] Table 7 took 125.34 sec, wrote 4294961988 right entries
+[P3-2] Table 7 took 104.142 sec, wrote 4294961988 left entries, 4294961988 final
+Phase 3 took 1320.47 sec, wrote 21877326466 entries to final plot
+[P4] Starting to write C1 and C3 tables
+[P4] Finished writing C1 and C3 tables
+[P4] Writing C2 table
+[P4] Finished writing C2 table
+Phase 4 took 86.9555 sec, final plot size is 108836238815 bytes
+Total plot creation time was 4968.41 sec (82.8069 min)
+Started copy to /farm/yards/902/fake_dst/plot-k32-2021-07-14-21-56-522acbd6308af7e229281352f746449134126482cfabd51d38e0f89745d21698.plot
+Renamed final plot to /farm/yards/902/fake_dst/plot-k32-2021-07-14-21-56-522acbd6308af7e229281352f746449134126482cfabd51d38e0f89745d21698.plot

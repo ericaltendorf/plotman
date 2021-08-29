@@ -29,8 +29,9 @@ def dstdirs_to_furthest_phase(all_jobs: typing.List[job.Job]) -> typing.Dict[str
        that is emitting to that dst dir.'''
     result: typing.Dict[str, job.Phase] = {}
     for j in all_jobs:
-        if not j.dstdir in result.keys() or result[j.dstdir] < j.progress():
-            result[j.dstdir] = j.progress()
+        dstdir = j.plotter.common_info().dstdir
+        if not dstdir in result.keys() or result[dstdir] < j.progress():
+            result[dstdir] = j.progress()
     return result
 
 def dstdirs_to_youngest_phase(all_jobs: typing.List[job.Job]) -> typing.Dict[str, job.Phase]:
@@ -38,10 +39,11 @@ def dstdirs_to_youngest_phase(all_jobs: typing.List[job.Job]) -> typing.Dict[str
        that is emitting to that dst dir.'''
     result: typing.Dict[str, job.Phase] = {}
     for j in all_jobs:
-        if j.dstdir is None:
+        dstdir = j.plotter.common_info().dstdir
+        if dstdir is None:
             continue
-        if not j.dstdir in result.keys() or result[j.dstdir] > j.progress():
-            result[j.dstdir] = j.progress()
+        if not dstdir in result.keys() or result[dstdir] > j.progress():
+            result[dstdir] = j.progress()
     return result
 
 def phases_permit_new_job(phases: typing.List[job.Phase], d: str, sched_cfg: plotman.configuration.Scheduling, dir_cfg: plotman.configuration.Directories) -> bool:
@@ -154,6 +156,12 @@ def maybe_start_new_plot(dir_cfg: plotman.configuration.Directories, sched_cfg: 
                 if dir_cfg.tmp2 is not None:
                     plot_args.append('-2')
                     plot_args.append(dir_cfg.tmp2 if dir_cfg.tmp2.endswith('/') else (dir_cfg.tmp2 + '/'))
+                if plotting_cfg.madmax.n_buckets3 is not None:
+                    plot_args.append('-v')
+                    plot_args.append(str(plotting_cfg.madmax.n_buckets3))
+                if plotting_cfg.madmax.n_rmulti2 is not None:
+                    plot_args.append('-K')
+                    plot_args.append(str(plotting_cfg.madmax.n_rmulti2))
             else:
                 if plotting_cfg.chia is None:
                     raise Exception(
@@ -239,6 +247,9 @@ def maybe_start_new_plot(dir_cfg: plotman.configuration.Directories, sched_cfg: 
 def select_jobs_by_partial_id(jobs: typing.List[job.Job], partial_id: str) -> typing.List[job.Job]:
     selected = []
     for j in jobs:
-        if j.plot_id.startswith(partial_id):
+        plot_id = j.plotter.common_info().plot_id
+        if plot_id is None:
+            continue
+        if plot_id.startswith(partial_id):
             selected.append(j)
     return selected

@@ -4,3 +4,7 @@ venv
 .vscode
 *.code-workspace
 src/plotman.egg-info
+.coverage
+.idea
+.tox
+coverage.xml
