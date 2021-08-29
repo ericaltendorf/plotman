@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 
-from plotman.log_parser import PlotLogParser
+import plotman.plotters
 
 
 def create_ax_dumbbell(
@@ -141,20 +141,32 @@ def graph(logdir: str, figfile: str, latest_k: int, window: int) -> None:
 
     # For each log file, extract the start, end, and duration
     time_catter = []
-    parser = PlotLogParser()
     for logfilename in logfilenames:
-        with open(logfilename, "r") as f:
-            info = parser.parse(f)
-            if info.total_time_raw != 0:
-                time_catter.append(
-                    [
-                        info.started_at.timestamp(),
-                        info.started_at.timestamp() + info.total_time_raw,
-                        info.total_time_raw,
-                    ]
-                )
+        with open(logfilename) as file:
+            try:
+                plotter_type = plotman.plotters.get_plotter_from_log(lines=file)
+            except plotman.errors.UnableToIdentifyPlotterFromLogError:
+                continue
 
-    assert len(time_catter) > 0, "No valid log files found, need a finished plot"
+        parser = plotter_type()
+
+        with open(logfilename, "rb") as binary_file:
+            read_bytes = binary_file.read()
+
+        parser.update(chunk=read_bytes)
+        info = parser.common_info()
+
+        # Extract timing information
+        if info.total_time_raw != 0:
+            time_catter.append(
+                [
+                    info.started_at.timestamp(),
+                    info.started_at.timestamp() + info.total_time_raw,
+                    info.total_time_raw,
+                ]
+            )
+
+    assert len(time_catter) > 0, "No valid log files found"
 
     # This array will hold start and end data (in hours)
     data_started_ended = np.array(time_catter) / (60 * 60)
