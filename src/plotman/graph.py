@@ -1,19 +1,13 @@
 import os
-import time, datetime
-import re
-import statistics
-import sys
-import argparse
 
 import numpy as np
-
 import matplotlib
 import matplotlib.pyplot as plt
 
 from plotman.log_parser import PlotLogParser
 
 
-def create_ax_dumbbell(ax, data, max_stacked=50) -> None: 
+def create_ax_dumbbell(ax : matplotlib.pyplot.axis, data : np.array, max_stacked: int = 50) -> None: 
     '''
         Create a dumbbell plot of concurrent plot instances over time.
         Parameters:
@@ -21,8 +15,8 @@ def create_ax_dumbbell(ax, data, max_stacked=50) -> None:
             data: numpy arrary with [start times, end times].
     '''
 
-    def newline(p1, p2, color='r'):
-        l = matplotlib.lines.Line2D([p1[0],p2[0]], [p1[1],p2[1]], color=color)
+    def newline(p1 : float, p2 : float) -> matplotlib.lines.Line2D:
+        l = matplotlib.lines.Line2D([p1[0],p2[0]], [p1[1],p2[1]], color='r')
         ax.add_line(l)
         return l
 
@@ -44,7 +38,7 @@ def create_ax_dumbbell(ax, data, max_stacked=50) -> None:
     ax.set_xlim(np.min(data[:,0])-2, np.max(data[:,1])+2)
 
 
-def create_ax_plotrate(ax, data, end=True, window=3) -> None: 
+def create_ax_plotrate(ax : matplotlib.pyplot.axis, data : np.array, end : bool = True, window : int = 3) -> None: 
     '''
         Create a plot showing the rate of plotting over time. Can be computed
             with respect to the plot start (this is rate of plot creation) or
@@ -56,7 +50,7 @@ def create_ax_plotrate(ax, data, end=True, window=3) -> None:
             window: Window to compute rate over.
     '''
 
-    def estimate_rate(data, window): 
+    def estimate_rate(data : np.array, window : int) -> np.array: 
         rate_list = []
         window_list = []
         # This takes care of when we dont have a full window
@@ -83,7 +77,7 @@ def create_ax_plotrate(ax, data, end=True, window=3) -> None:
     ax.set_xlim(np.min(data[:,0])-2, np.max(data[:,1])+2)
 
 
-def create_ax_plottime(ax, data, window=3) -> None: 
+def create_ax_plottime(ax : matplotlib.pyplot.axis, data : np.array, window : int = 3) -> None: 
     '''
         Create a plot showing the average time to create a single plot. This is
             computed using a moving average. Note that the plot may not be
@@ -108,7 +102,7 @@ def create_ax_plottime(ax, data, window=3) -> None:
     ax.set_xlim(np.min(data[:,0])-2, np.max(data[:,1])+2)
 
 
-def create_ax_plotcumulative(ax, data) -> None:
+def create_ax_plotcumulative(ax : matplotlib.pyplot.axis, data : np.array) -> None:
     '''
         Create a plot showing the cumulative number of plots over time.
         Parameters:
@@ -122,7 +116,7 @@ def create_ax_plotcumulative(ax, data) -> None:
 
 
 def graph(logdir : str, figfile : str, latest_k : int, window : int) -> None: 
-    assert window >= 2, "Cannot compute moving average over such a small window"
+    assert window >= 2, "Cannot compute moving average over a window less than 3"
     assert os.path.isdir(logdir)
 
     # Build a list of the logfiles
