@@ -233,7 +233,7 @@ jobs:
         path: dist/
 
     - name: Download Coverage
-      if: matrix.task.coverage
+      if: matrix.task.download_coverage
       uses: actions/download-artifact@v2
       with:
         name: coverage
@@ -268,14 +268,14 @@ jobs:
         tox --skip-pkg-install -- --compare-branch="${BASE_REF}"
 
     - name: Coverage Processing
-      if: always() && matrix.task.coverage
+      if: always()
       run: |
         mkdir all_coverage_report
         cp .coverage "all_coverage_report/.coverage.all"
         cp coverage.xml "all_coverage_report/coverage.all.xml"
 
     - name: Upload Coverage
-      if: always() && matrix.task.coverage
+      if: always()
       uses: actions/upload-artifact@v2
       with:
         name: coverage
