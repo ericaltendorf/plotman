@@ -1,0 +1,1 @@
+./chia_plot --count 1 --threads 8 --buckets 256 --buckets3 256 --tmpdir /farm/yards/902/ --tmpdir2 /farm/yards/902/fake_tmp2/ --finaldir /farm/yards/902/fake_dst/ --contract xch1u8ll2ztwhseej45d6u2zp9j4mlnzhwseccr0axqws9fl2tyj5u0svdy04y --farmerkey b0a374845f4f4d6eab62fc4c5e17965d82ad7eee105818e5bd0cfcb46275a16acc4cd30955779bec841a716473416b21 --rmulti2 2 &> /farm/logs/plots/red
