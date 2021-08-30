@@ -24,6 +24,7 @@ from plotman import (
     plot_util,
     reporting,
     csv_exporter,
+    graph,
 )
 from plotman import resources as plotman_resources
 from plotman.job import Job
@@ -155,6 +156,29 @@ class PlotmanArgParser:
         )
         p_analyze.add_argument(
             "logfile", type=str, nargs="+", help="logfile(s) to analyze"
+        )
+
+        p_graph = sp.add_parser("graph", help="create graph with plotting statistics")
+        p_graph.add_argument(
+            "figfile", type=str, help="graph file produced as output (.png, .jpg, etc.)"
+        )
+        p_graph.add_argument(
+            "--logdir",
+            type=str,
+            default=None,
+            help="directory containing multiple logfiles to graph",
+        )
+        p_graph.add_argument(
+            "--latest_k",
+            type=int,
+            default=None,
+            help="if passed, will only graph statistics for the latest k plots",
+        )
+        p_graph.add_argument(
+            "--window",
+            type=int,
+            default=3,
+            help="window size to compute moving average over",
         )
 
         args = parser.parse_args()
@@ -295,6 +319,15 @@ def main() -> None:
             analyzer.analyze(
                 args.logfile, args.clipterminals, args.bytmp, args.bybitfield
             )
+
+        #
+        # Graphing of completed jobs
+        #
+        elif args.cmd == "graph":
+            # If no logdir was passed, use the dir specified in cfg (this will almost always be the case)
+            if args.logdir is None:
+                args.logdir = cfg.logging.plots
+            graph.graph(args.logdir, args.figfile, args.latest_k, args.window)
 
         #
         # Exports log metadata to CSV
