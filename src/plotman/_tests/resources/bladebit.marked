@@ -1,0 +1,129 @@
+0:0,Creating 1 plots:
+0:0, Output path           : /mnt/tmp/01/manual-transfer/
+0:0, Thread count          : 88
+0:0, Warm start enabled    : false
+0:0, Farmer public key     : b0a374845f4f4d6eab62fc4c5e17965d82ad7eee105818e5bd0cfcb46275a16acc4cd30955779bec841a716473416b21
+0:0, Pool contract address : xch1u8ll2ztwhseej45d6u2zp9j4mlnzhwseccr0axqws9fl2tyj5u0svdy04y
+0:0,
+0:0,System Memory: 348/503 GiB.
+0:0,Memory required: 416 GiB.
+0:0,Warning: Not enough memory available. Buffer allocation may fail.
+0:1,Allocating buffers.
+0:2,Generating plot 1 / 1: 1fc7b57baae24da78e3bea44d58ab51f162a3ed4d242bab2fbcc24f6577d88b3
+0:2,
+1:0,Running Phase 1
+1:0,Generating F1...
+1:1,Finished F1 generation in 6.93 seconds.
+1:1,Sorting F1...
+1:1,Finished F1 sort in 18.23 seconds.
+1:2,Forward propagating to table 2...
+1:2,  Pairing L/R groups...
+1:2,  Finished pairing L/R groups in 13.2870 seconds. Created 4294962218 pairs.
+1:2,  Average of 236.1403 pairs per group.
+1:2,  Computing Fx...
+1:2,  Finished computing Fx in 9.0360 seconds.
+1:2,  Sorting entries...
+1:2,  Finished sorting in 33.83 seconds.
+1:2,Finished forward propagating table 2 in 56.61 seconds.
+1:3,Forward propagating to table 3...
+1:3,  Pairing L/R groups...
+1:3,  Finished pairing L/R groups in 10.9170 seconds. Created 4294967296 pairs.
+1:3,  Average of 236.1406 pairs per group.
+1:3,  Computing Fx...
+1:3,  Finished computing Fx in 8.6420 seconds.
+1:3,  Sorting entries...
+1:3,  Finished sorting in 33.37 seconds.
+1:3,Finished forward propagating table 3 in 53.39 seconds.
+1:4,Forward propagating to table 4...
+1:4,  Pairing L/R groups...
+1:4,  Finished pairing L/R groups in 10.9450 seconds. Created 4294947733 pairs.
+1:4,  Average of 236.1396 pairs per group.
+1:4,  Computing Fx...
+1:4,  Finished computing Fx in 9.3490 seconds.
+1:4,  Sorting entries...
+1:4,  Finished sorting in 32.60 seconds.
+1:4,Finished forward propagating table 4 in 53.35 seconds.
+1:5,Forward propagating to table 5...
+1:5,  Pairing L/R groups...
+1:5,  Finished pairing L/R groups in 10.8420 seconds. Created 4294889963 pairs.
+1:5,  Average of 236.1364 pairs per group.
+1:5,  Computing Fx...
+1:5,  Finished computing Fx in 9.5180 seconds.
+1:5,  Sorting entries...
+1:5,  Finished sorting in 32.60 seconds.
+1:5,Finished forward propagating table 5 in 53.42 seconds.
+1:6,Forward propagating to table 6...
+1:6,  Pairing L/R groups...
+1:6,  Finished pairing L/R groups in 10.9870 seconds. Created 4294907255 pairs.
+1:6,  Average of 236.1373 pairs per group.
+1:6,  Computing Fx...
+1:6,  Finished computing Fx in 8.5110 seconds.
+1:6,  Sorting entries...
+1:6,  Finished sorting in 31.58 seconds.
+1:6,Finished forward propagating table 6 in 51.54 seconds.
+1:7,Forward propagating to table 7...
+1:7,  Pairing L/R groups...
+1:7,  Finished pairing L/R groups in 11.0050 seconds. Created 4294773122 pairs.
+1:7,  Average of 236.1300 pairs per group.
+1:7,  Computing Fx...
+1:7,  Finished computing Fx in 9.0510 seconds.
+1:7,Finished forward propagating table 7 in 20.51 seconds.
+2:0,Finished Phase 1 in 313.98 seconds.
+2:0,Running Phase 2
+2:1,  Prunning table 6...
+2:1,  Finished prunning table 6 in 0.59 seconds.
+2:2,  Prunning table 5...
+2:2,  Finished prunning table 5 in 11.53 seconds.
+2:3,  Prunning table 4...
+2:3,  Finished prunning table 4 in 10.86 seconds.
+2:4,  Prunning table 3...
+2:4,  Finished prunning table 3 in 10.57 seconds.
+2:5,  Prunning table 2...
+2:5,  Finished prunning table 2 in 10.60 seconds.
+3:0,Finished Phase 2 in 44.60 seconds.
+3:0,Running Phase 3
+3:1,  Compressing tables 1 and 2...
+3:1,  Finished compressing tables 1 and 2 in 31.20 seconds
+3:1,  Table 1 now has 3429423491 / 4294962218 entries ( 79.85% ).
+3:2,  Compressing tables 2 and 3...
+3:2,  Finished compressing tables 2 and 3 in 35.05 seconds
+3:2,  Table 2 now has 3439923954 / 4294967296 entries ( 80.09% ).
+3:3,  Compressing tables 3 and 4...
+3:3,  Finished compressing tables 3 and 4 in 32.41 seconds
+3:3,  Table 3 now has 3466101892 / 4294947733 entries ( 80.70% ).
+3:4,  Compressing tables 4 and 5...
+3:4,  Finished compressing tables 4 and 5 in 33.40 seconds
+3:4,  Table 4 now has 3532981230 / 4294889963 entries ( 82.26% ).
+3:5,  Compressing tables 5 and 6...
+3:5,  Finished compressing tables 5 and 6 in 34.78 seconds
+3:5,  Table 5 now has 3713621551 / 4294907255 entries ( 86.47% ).
+3:6,  Compressing tables 6 and 7...
+3:6,  Finished compressing tables 6 and 7 in 36.41 seconds
+3:6,  Table 6 now has 4294773122 / 4294773122 entries ( 100.00% ).
+4:0,Finished Phase 3 in 203.26 seconds.
+4:0,Running Phase 4
+4:1,  Writing P7.
+4:1,  Finished writing P7 in 0.71 seconds.
+4:2,  Writing C1 table.
+4:2,  Finished writing C1 table in 0.00 seconds.
+4:3,  Writing C2 table.
+4:3,  Finished writing C2 table in 0.00 seconds.
+4:4,  Writing C3 table.
+4:4,  Finished writing C3 table in 0.40 seconds.
+5:0,Finished Phase 4 in 1.11 seconds.
+5:1,Writing final plot tables to disk
+5:1,
+5:1,Plot /mnt/tmp/01/manual-transfer/plot-k32-2021-08-29-22-22-1fc7b57baae24da78e3bea44d58ab51f162a3ed4d242bab2fbcc24f6577d88b3.plot finished writing to disk:
+5:1,  Table 1 pointer  :             4096 ( 0x0000000000001000 )
+5:1,  Table 2 pointer  :      14839635968 ( 0x000000037482e000 )
+5:1,  Table 3 pointer  :      28822732800 ( 0x00000006b5f80000 )
+5:1,  Table 4 pointer  :      42912239616 ( 0x00000009fdc4d000 )
+5:1,  Table 5 pointer  :      57273606144 ( 0x0000000d55c5e000 )
+5:1,  Table 6 pointer  :      72369262592 ( 0x00000010d98b5000 )
+5:1,  Table 7 pointer  :      89827270656 ( 0x00000014ea1f6000 )
+5:1,  C1 table pointer :     107543220224 ( 0x000000190a135000 )
+5:1,  C2 table pointer :     107544940544 ( 0x000000190a2d9000 )
+5:1,  C3 table pointer :     107544944640 ( 0x000000190a2da000 )
+5:1,
+5:1,Finished writing tables to disk in 19.96 seconds.
+5:1,Finished plotting in 582.91 seconds (9.72 minutes).

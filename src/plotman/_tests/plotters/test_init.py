@@ -10,6 +10,7 @@ import _pytest
 import plotman.errors
 import plotman.job
 import plotman.plotters
+import plotman.plotters.bladebit
 import plotman.plotters.chianetwork
 import plotman.plotters.madmax
 import plotman._tests.resources
@@ -92,6 +93,24 @@ class CommandLineExample:
     cwd: str = ""
 
 
+default_bladebit_arguments = dict(
+    sorted(
+        {
+            "threads": None,
+            "count": 1,
+            "farmer_key": None,
+            "pool_key": None,
+            "pool_contract": None,
+            "warm_start": False,
+            "plot_id": None,
+            "verbose": False,
+            "no_numa": False,
+            "out_dir": pathlib.PosixPath("."),
+        }.items()
+    )
+)
+
+
 default_chia_network_arguments = dict(
     sorted(
         {
@@ -137,6 +156,129 @@ default_madmax_arguments = dict(
         }.items()
     )
 )
+
+
+bladebit_command_line_examples: typing.List[CommandLineExample] = [
+    CommandLineExample(
+        line=["bladebit"],
+        plotter=plotman.plotters.bladebit.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=False,
+            parameters={**default_bladebit_arguments},
+        ),
+    ),
+    CommandLineExample(
+        line=["bladebit", "-h"],
+        plotter=plotman.plotters.bladebit.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=True,
+            parameters={**default_bladebit_arguments},
+        ),
+    ),
+    CommandLineExample(
+        line=["bladebit", "--help"],
+        plotter=plotman.plotters.bladebit.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=True,
+            parameters={**default_bladebit_arguments},
+        ),
+    ),
+    CommandLineExample(
+        line=["bladebit", "--invalid-option"],
+        plotter=plotman.plotters.bladebit.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=click.NoSuchOption("--invalid-option"),
+            help=False,
+            parameters={},
+        ),
+    ),
+    CommandLineExample(
+        line=["bladebit", "--pool-contract", "xch123abc", "--farmer-key", "abc123"],
+        plotter=plotman.plotters.bladebit.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=False,
+            parameters={
+                **default_bladebit_arguments,
+                "pool_contract": "xch123abc",
+                "farmer_key": "abc123",
+            },
+        ),
+    ),
+    CommandLineExample(
+        line=["here/there/bladebit"],
+        plotter=plotman.plotters.bladebit.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=False,
+            parameters={**default_bladebit_arguments},
+        ),
+    ),
+    CommandLineExample(
+        line=[
+            "bladebit",
+            "final/dir",
+        ],
+        cwd="/cwd",
+        plotter=plotman.plotters.bladebit.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=False,
+            parameters={
+                **default_bladebit_arguments,
+                "out_dir": pathlib.Path("/", "cwd", "final", "dir"),
+            },
+        ),
+    ),
+    CommandLineExample(
+        line=plotman.plotters.bladebit.create_command_line(
+            options=plotman.plotters.bladebit.Options(),
+            tmpdir=None,
+            tmp2dir=None,
+            dstdir="/farm/dst/dir",
+            farmer_public_key=None,
+            pool_public_key=None,
+            pool_contract_address=None,
+        ),
+        plotter=plotman.plotters.bladebit.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=False,
+            parameters={
+                **default_bladebit_arguments,
+                "verbose": True,
+                "out_dir": pathlib.Path("/farm/dst/dir"),
+            },
+        ),
+    ),
+    CommandLineExample(
+        line=plotman.plotters.bladebit.create_command_line(
+            options=plotman.plotters.bladebit.Options(),
+            tmpdir="/farm/tmp/dir",
+            tmp2dir="/farm/tmp2/dir",
+            dstdir="/farm/dst/dir",
+            farmer_public_key="farmerpublickey",
+            pool_public_key="poolpublickey",
+            pool_contract_address="poolcontractaddress",
+        ),
+        plotter=plotman.plotters.bladebit.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=False,
+            parameters={
+                **default_bladebit_arguments,
+                "farmer_key": "farmerpublickey",
+                "pool_key": "poolpublickey",
+                "pool_contract": "poolcontractaddress",
+                "verbose": True,
+                "out_dir": pathlib.Path("/farm/dst/dir"),
+            },
+        ),
+    ),
+]
 
 
 chianetwork_command_line_examples: typing.List[CommandLineExample] = [
@@ -487,6 +629,7 @@ madmax_command_line_examples: typing.List[CommandLineExample] = [
 
 
 command_line_examples: typing.List[CommandLineExample] = [
+    *bladebit_command_line_examples,
     *chianetwork_command_line_examples,
     *madmax_command_line_examples,
 ]
