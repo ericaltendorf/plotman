@@ -236,7 +236,7 @@ bladebit_command_line_examples: typing.List[CommandLineExample] = [
     CommandLineExample(
         line=plotman.plotters.bladebit.create_command_line(
             options=plotman.plotters.bladebit.Options(),
-            tmpdir=None,
+            tmpdir="",
             tmp2dir=None,
             dstdir="/farm/dst/dir",
             farmer_public_key=None,
