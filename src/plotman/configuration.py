@@ -19,6 +19,7 @@ import pendulum
 import yaml
 
 from plotman import resources as plotman_resources
+import plotman.plotters.bladebit
 import plotman.plotters.chianetwork
 import plotman.plotters.madmax
 
@@ -383,11 +384,14 @@ class Plotting:
         metadata={
             desert._make._DESERT_SENTINEL: {
                 "marshmallow_field": marshmallow.fields.String(
-                    validate=marshmallow.validate.OneOf(choices=["chia", "madmax"]),
+                    validate=marshmallow.validate.OneOf(
+                        choices=["bladebit", "chia", "madmax"]
+                    ),
                 ),
             },
         },
     )
+    bladebit: Optional[plotman.plotters.bladebit.Options] = None
     chia: Optional[plotman.plotters.chianetwork.Options] = None
     madmax: Optional[plotman.plotters.madmax.Options] = None
 
