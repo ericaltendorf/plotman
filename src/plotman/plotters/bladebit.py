@@ -89,7 +89,7 @@ class SpecificInfo:
     plot_id: str = ""
     threads: int = 0
     # buffer: int = 0
-    plot_size: int = 0
+    plot_size: int = 32
     dst_dir: str = ""
     phase1_duration_raw: float = 0
     phase2_duration_raw: float = 0
