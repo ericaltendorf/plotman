@@ -77,6 +77,7 @@ def get_validated_configs(
             f"Config file at: '{config_path}' is malformed"
         ) from e
 
+    # TODO: add bladebit
     if loaded.plotting.type == "chia":
         if loaded.plotting.chia is None:
             # TODO: fix all the `TODO: use the configured executable` so this is not
@@ -447,6 +448,18 @@ class PlotmanConfig:
 
             plotman.plotters.madmax.check_configuration(
                 options=self.plotting.madmax,
+                pool_contract_address=self.plotting.pool_contract_address,
+            )
+        elif self.plotting.type == "bladebit":
+            if self.plotting.bladebit is None:
+                message = (
+                    "internal plotman error, please report the full traceback and your"
+                    + " full configuration file"
+                )
+                raise Exception(message)
+
+            plotman.plotters.bladebit.check_configuration(
+                options=self.plotting.bladebit,
                 pool_contract_address=self.plotting.pool_contract_address,
             )
 

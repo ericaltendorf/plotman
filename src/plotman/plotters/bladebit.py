@@ -32,7 +32,12 @@ def check_configuration(
             check=True,
             encoding="utf-8",
         )
-        if "--pool-contract" not in completed_process.stdout:
+        # TODO: report upstream
+        if (
+            "--pool-contract" not in completed_process.stdout
+            and "--pool-contract" not in completed_process.stderr
+        ):
+            print(completed_process.stdout)
             raise Exception(
                 f"found BladeBit version does not support the `--pool-contract`"
                 f" option for pools."
@@ -53,7 +58,6 @@ def create_command_line(
         "-v",
         "-n",
         "1",
-        dstdir,
     ]
 
     if options.threads is not None:
@@ -69,6 +73,8 @@ def create_command_line(
     if pool_contract_address is not None:
         args.append("-c")
         args.append(pool_contract_address)
+
+    args.append(dstdir)
 
     return args
 
@@ -96,7 +102,7 @@ class SpecificInfo:
 
     def common(self) -> plotman.plotters.CommonInfo:
         return plotman.plotters.CommonInfo(
-            type="madmax",
+            type="bladebit",
             dstdir=self.dst_dir,
             phase=self.phase,
             tmpdir="",
