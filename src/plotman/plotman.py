@@ -162,12 +162,7 @@ class PlotmanArgParser:
 
 
 def get_term_width() -> int:
-    try:
-        (rows_string, columns_string) = os.popen("stty size", "r").read().split()
-        columns = int(columns_string)
-    except:
-        columns = 120  # 80 is typically too narrow.  TODO: make a command line arg.
-    return columns
+    return 120 # Disable tty usage to prevent blocking on calls from other processes
 
 
 class Iso8601Formatter(logging.Formatter):
