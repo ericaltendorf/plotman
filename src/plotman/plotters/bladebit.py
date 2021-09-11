@@ -25,6 +25,20 @@ class Options:
 def check_configuration(
     options: Options, pool_contract_address: typing.Optional[str]
 ) -> None:
+    completed_process = subprocess.run(
+        args=[options.executable, "--version"],
+        capture_output=True,
+        check=True,
+        encoding="utf-8",
+    )
+    version = packaging.version.Version(completed_process.stdout)
+    required_version = packaging.version.Version("1.0.1")
+    if version < required_version:
+        raise Exception(
+            f"BladeBit version {required_version} required for monitoring logs but"
+            f" found: {version}"
+        )
+
     if pool_contract_address is not None:
         completed_process = subprocess.run(
             args=[options.executable, "--help"],
