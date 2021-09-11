@@ -8,3 +8,4 @@ src/plotman.egg-info
 .idea
 .tox
 coverage.xml
+docs/build
