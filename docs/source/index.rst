@@ -10,6 +10,7 @@ Welcome to plotman's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   configuration.rst
 
 
 Indices and tables

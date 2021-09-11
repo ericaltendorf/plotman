@@ -9,3 +9,5 @@ src/plotman.egg-info
 .tox
 coverage.xml
 docs/build
+docs/source/jsonschema.json
+docs/source/openapi.yaml

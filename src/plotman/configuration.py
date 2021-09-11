@@ -56,8 +56,6 @@ def get_validated_configs(
 
     version = config_objects.get("version", (0,))
 
-    expected_major_version = 2
-
     if version[0] != expected_major_version:
         message = textwrap.dedent(
             f"""\
@@ -406,6 +404,9 @@ class Interactive:
 @attr.frozen
 class Commands:
     interactive: Interactive = attr.ib(factory=Interactive)
+
+
+expected_major_version = 2
 
 
 @attr.frozen
