@@ -32,7 +32,7 @@ def check_configuration(
         encoding="utf-8",
     )
     version = packaging.version.Version(completed_process.stdout)
-    required_version = packaging.version.Version("1.0.1")
+    required_version = packaging.version.Version("1.1.0")
     if version < required_version:
         raise Exception(
             f"BladeBit version {required_version} required for monitoring logs but"
