@@ -1,0 +1,17 @@
+# https://docs.readthedocs.io/en/latest/config-file/v2.html
+version: 2
+
+formats:
+  - htmlzip
+  - epub
+
+build:
+  image: latest
+
+python:
+  version: 3.8
+  install:
+    - method: pip
+      path: .
+      extra_requirements:
+        - docs
