@@ -241,10 +241,12 @@ check_Plotter = ProtocolChecker[Plotter]()
 
 def all_plotters() -> typing.List[typing.Type[Plotter]]:
     # TODO: maybe avoid the import loop some other way
+    import plotman.plotters.bladebit
     import plotman.plotters.chianetwork
     import plotman.plotters.madmax
 
     return [
+        plotman.plotters.bladebit.Plotter,
         plotman.plotters.chianetwork.Plotter,
         plotman.plotters.madmax.Plotter,
     ]

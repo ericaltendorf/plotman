@@ -184,7 +184,21 @@ def maybe_start_new_plot(
             log_file_path = log_cfg.create_plot_log_path(time=pendulum.now())
 
             plot_args: typing.List[str]
-            if plotting_cfg.type == "madmax":
+            if plotting_cfg.type == "bladebit":
+                if plotting_cfg.bladebit is None:
+                    raise Exception(
+                        "bladebit plotter selected but not configured, report this as a plotman bug",
+                    )
+                plot_args = plotman.plotters.bladebit.create_command_line(
+                    options=plotting_cfg.bladebit,
+                    tmpdir=tmpdir,
+                    tmp2dir=dir_cfg.tmp2,
+                    dstdir=dstdir,
+                    farmer_public_key=plotting_cfg.farmer_pk,
+                    pool_public_key=plotting_cfg.pool_pk,
+                    pool_contract_address=plotting_cfg.pool_contract_address,
+                )
+            elif plotting_cfg.type == "madmax":
                 if plotting_cfg.madmax is None:
                     raise Exception(
                         "madmax plotter selected but not configured, report this as a plotman bug",
