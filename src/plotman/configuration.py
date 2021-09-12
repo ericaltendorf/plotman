@@ -77,8 +77,28 @@ def get_validated_configs(
             f"Config file at: '{config_path}' is malformed"
         ) from e
 
-    # TODO: add bladebit
-    if loaded.plotting.type == "chia":
+    if loaded.plotting.type == "bladebit":
+        if loaded.plotting.bladebit is None:
+            # TODO: fix all the `TODO: use the configured executable` so this is not
+            #       needed.
+            raise ConfigurationException(
+                "BladeBit selected as plotter but plotting: bladebit: was not specified in the config",
+            )
+
+        if (
+            loaded.plotting.pool_pk is not None
+            and loaded.plotting.pool_contract_address is not None
+        ):
+            raise ConfigurationException(
+                "BladeBit plotter accepts up to one of plotting: pool_pk: and pool_contract_address: but both are specified",
+            )
+
+        executable_name = os.path.basename(loaded.plotting.bladebit.executable)
+        if executable_name != "bladebit":
+            raise ConfigurationException(
+                "plotting: bladebit: executable: must refer to an executable named bladebit"
+            )
+    elif loaded.plotting.type == "chia":
         if loaded.plotting.chia is None:
             # TODO: fix all the `TODO: use the configured executable` so this is not
             #       needed.
