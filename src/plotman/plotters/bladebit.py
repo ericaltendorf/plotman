@@ -422,7 +422,7 @@ def _cli_f3fbfff43ce493ec9e02db6f72c3b44f656ef137() -> None:
 
 
 # BladeBit Git on 2021-08-29 -> https://github.com/harold-b/bladebit/commit/b48f262336362acd6f23c5ca9a43cfd6d244cb88
-@commands.register(version=(1,1,0))
+@commands.register(version=(1, 1, 0))
 @click.command()
 # https://github.com/harold-b/bladebit/blob/b48f262336362acd6f23c5ca9a43cfd6d244cb88/LICENSE
 # https://github.com/harold-b/bladebit/blob/b48f262336362acd6f23c5ca9a43cfd6d244cb88/src/main.cpp#L77-L119
