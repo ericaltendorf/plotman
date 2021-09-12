@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([#898](https://github.com/ericaltendorf/plotman/pull/898))
 - Output same entries to plotman.log from 'plotman interactive' and ' plotman plot/archive' "daemons".
   ([#878](https://github.com/ericaltendorf/plotman/pull/878))
-- Add [BladeBit](https://github.com/harold-b/bladebit) support.
+- [BladeBit](https://github.com/harold-b/bladebit) support.
   Requires BladeBit v1.1.0 for proper log monitoring.
   ([#916](https://github.com/ericaltendorf/plotman/pull/916))
 
