@@ -166,11 +166,13 @@ def maybe_start_new_plot(
             else:
                 # Select the dst dir least recently selected
                 dir2ph = {
-                    d: ph
+                    d.rstrip("/"): ph
                     for (d, ph) in dstdirs_to_youngest_phase(jobs).items()
                     if d in dst_dirs and ph is not None
                 }
-                unused_dirs = [d for d in dst_dirs if d not in dir2ph.keys()]
+                unused_dirs = [
+                    d.rstrip("/") for d in dst_dirs if d not in dir2ph.keys()
+                ]
                 dstdir = ""
                 if unused_dirs:
                     dstdir = random.choice(unused_dirs)
