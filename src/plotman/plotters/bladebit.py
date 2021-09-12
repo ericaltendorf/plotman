@@ -270,10 +270,14 @@ def phase_4_writing(match: typing.Match[str], info: SpecificInfo) -> SpecificInf
     return attr.evolve(info, phase=plotman.job.Phase(major=4, minor=minor))
 
 
-@handlers.register(expression=r"^Generating plot")
+@handlers.register(expression=r"^Generating plot .*: (?P<plot_id>[^ ]+)")
 def generating_plot(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # Generating plot 1 / 1: 1fc7b57baae24da78e3bea44d58ab51f162a3ed4d242bab2fbcc24f6577d88b3
-    return attr.evolve(info, phase=plotman.job.Phase(major=0, minor=2))
+    return attr.evolve(
+        info,
+        phase=plotman.job.Phase(major=0, minor=2),
+        plot_id=match.group("plot_id"),
+    )
 
 
 @handlers.register(expression=r"^Writing final plot tables to disk$")
