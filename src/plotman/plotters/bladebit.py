@@ -419,3 +419,120 @@ commands = plotman.plotters.core.Commands()
 )
 def _cli_f3fbfff43ce493ec9e02db6f72c3b44f656ef137() -> None:
     pass
+
+
+# BladeBit Git on 2021-08-29 -> https://github.com/harold-b/bladebit/commit/b48f262336362acd6f23c5ca9a43cfd6d244cb88
+@commands.register(version=(1,1,0))
+@click.command()
+# https://github.com/harold-b/bladebit/blob/b48f262336362acd6f23c5ca9a43cfd6d244cb88/LICENSE
+# https://github.com/harold-b/bladebit/blob/b48f262336362acd6f23c5ca9a43cfd6d244cb88/src/main.cpp#L77-L119
+@click.option(
+    "-t",
+    "--threads",
+    help=(
+        "Maximum number of threads to use."
+        "  For best performance, use all available threads (default behavior)."
+        "  Values below 2 are not recommended."
+    ),
+    type=int,
+    show_default=True,
+)
+@click.option(
+    "-n",
+    "--count",
+    help="Number of plots to create. Default = 1.",
+    type=int,
+    default=1,
+    show_default=True,
+)
+@click.option(
+    "-f",
+    "--farmer-key",
+    help="Farmer public key, specified in hexadecimal format.",
+    type=str,
+)
+@click.option(
+    "-p",
+    "--pool-key",
+    help=(
+        "Pool public key, specified in hexadecimal format."
+        "  Either a pool public key or a pool contract address must be specified."
+    ),
+    type=str,
+)
+@click.option(
+    "-c",
+    "--pool-contract",
+    help=(
+        "Pool contract address, specified in hexadecimal format."
+        "  Address where the pool reward will be sent to."
+        "  Only used if pool public key is not specified."
+    ),
+    type=str,
+)
+@click.option(
+    "-w",
+    "--warm-start",
+    help="Touch all pages of buffer allocations before starting to plot.",
+    is_flag=True,
+    type=bool,
+    default=False,
+)
+@click.option(
+    "-i",
+    "--plot-id",
+    help="Specify a plot id for debugging.",
+    type=str,
+)
+@click.option(
+    "--memo",
+    help="Specify a plot memo for debugging.",
+    type=str,
+)
+@click.option(
+    "--show-memo",
+    help="Output the memo of the next plot the be plotted.",
+    is_flag=True,
+    type=bool,
+    default=False,
+)
+@click.option(
+    "-v",
+    "--verbose",
+    help="Enable verbose output.",
+    is_flag=True,
+    type=bool,
+    default=False,
+)
+@click.option(
+    "-m",
+    "--no-numa",
+    help=(
+        "Disable automatic NUMA aware memory binding."
+        "  If you set this parameter in a NUMA system you will likely get degraded performance."
+    ),
+    is_flag=True,
+    type=bool,
+    default=False,
+)
+@click.option(
+    "--no-cpu-affinity",
+    help=(
+        "Disable assigning automatic thread affinity."
+        "  This is useful when running multiple simultaneous instances of bladebit as you can manually assign thread affinity yourself when launching bladebit."
+    ),
+    is_flag=True,
+    type=bool,
+    default=False,
+)
+@click.argument(
+    "out_dir",
+    # help=(
+    #     "Output directory in which to output the plots." "  This directory must exist."
+    # ),
+    type=click.Path(),
+    default=pathlib.Path("."),
+    # show_default=True,
+)
+def _cli_b48f262336362acd6f23c5ca9a43cfd6d244cb88() -> None:
+    pass

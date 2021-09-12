@@ -103,8 +103,11 @@ default_bladebit_arguments = dict(
             "pool_contract": None,
             "warm_start": False,
             "plot_id": None,
+            "memo": None,
+            "show_memo": False,
             "verbose": False,
             "no_numa": False,
+            "no_cpu_affinity": False,
             "out_dir": pathlib.PosixPath("."),
         }.items()
     )
