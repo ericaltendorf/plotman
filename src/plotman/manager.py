@@ -154,7 +154,7 @@ def maybe_start_new_plot(
             # Plot to oldest tmpdir.
             tmpdir = max(rankable, key=operator.itemgetter(1))[0]
 
-            dst_dirs = dir_cfg.get_dst_directories()
+            dst_dirs = [d.rstrip("/") for d in dir_cfg.get_dst_directories()]
 
             dstdir: str
             if dir_cfg.dst_is_tmp2():
@@ -168,7 +168,7 @@ def maybe_start_new_plot(
                 dir2ph = {
                     d.rstrip("/"): ph
                     for (d, ph) in dstdirs_to_youngest_phase(jobs).items()
-                    if d in dst_dirs and ph is not None
+                    if d.rstrip("/") in dst_dirs and ph is not None
                 }
                 unused_dirs = [
                     d.rstrip("/") for d in dst_dirs if d not in dir2ph.keys()
