@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Temp files are correctly identified for cleanup.
   ([#912](https://github.com/ericaltendorf/plotman/pull/913))
+- Correct where trailing `/` on dst directories resulted in them being considered unused.
+  ([#920](https://github.com/ericaltendorf/plotman/pull/920))
 ### Added
 - `-v`/`--buckets3` and `-K`/`--rmulti2` are configurable for madMAx.
   ([#869](https://github.com/ericaltendorf/plotman/pull/869))
@@ -18,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([#898](https://github.com/ericaltendorf/plotman/pull/898))
 - Output same entries to plotman.log from 'plotman interactive' and ' plotman plot/archive' "daemons".
   ([#878](https://github.com/ericaltendorf/plotman/pull/878))
+- [BladeBit](https://github.com/harold-b/bladebit) support.
+  Requires BladeBit v1.1.0 for proper log monitoring.
+  ([#916](https://github.com/ericaltendorf/plotman/pull/916))
 
 ## [0.5.1] - 2021-07-15
 ### Fixed
