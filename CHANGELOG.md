@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 ### Fixed
-- Regression in v0.5.2 where plots lacking log files caused a traceback.
+- Regression in v0.5.2 where plotting processes that lack log files caused a traceback.
   ([#926](https://github.com/ericaltendorf/plotman/pull/926))
 ### Added
 
