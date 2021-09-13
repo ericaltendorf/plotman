@@ -175,3 +175,9 @@ plotting:
                 # executable: /path/to/chia_plot
                 n_threads: 4          # Default is 4, crank up if you have many cores
                 n_buckets: 256        # Default is 256
+                n_buckets3: 256       # Default is 256
+                n_rmulti2: 1          # Default is 1 
+        bladebit:
+                # executable: /path/to/bladebit/.bin/release/bladebit
+                threads: 2
+                no_numa: false

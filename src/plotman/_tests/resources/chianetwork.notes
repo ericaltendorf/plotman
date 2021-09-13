@@ -1,0 +1,11 @@
+This sample log file was created from a real log file.  It has had the
+following values replaced by naively randomly generated hexadecimal
+characters.
+
+pool public key
+farmer public key
+memo
+id
+
+
+chia plots create --size 32 --num 1 --buffer 5000 --num_threads 4 --buckets 128 --pool_contract_address xch1u8ll2ztwhseej45d6u2zp9j4mlnzhwseccr0axqws9fl2tyj5u0svdy04y --farmer_public_key a55d8fdada643a43d86a889c2c746ce848c0e2d00f7c012fc4c6e77d1e2f9f54a99dd38af59f8284f2178b810ecc7a95 --tmp_dir /farm/yards/902 --tmp2_dir /farm/yards/902/fake_tmp2 --final_dir /farm/yards/902/fake_dst --exclude_final_dir &> /farm/logs/plots/x
