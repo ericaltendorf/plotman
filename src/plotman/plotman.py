@@ -236,7 +236,8 @@ def main() -> None:
     config_path = configuration.get_path()
     config_text = configuration.read_configuration_text(config_path)
     preset_target_definitions_text = importlib.resources.read_text(
-        plotman_resources, "target_definitions.yaml",
+        plotman_resources,
+        "target_definitions.yaml",
     )
 
     cfg = configuration.get_validated_configs(
