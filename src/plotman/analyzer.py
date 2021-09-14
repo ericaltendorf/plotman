@@ -14,7 +14,7 @@ def analyze(
     clipterminals: bool, 
     bytmp: bool, 
     bybitfield: bool, 
-    columns: int
+    columns: int,
 ) -> None:
     data: typing.Dict[str, typing.Dict[str, typing.List[float]]] = {}
     for logfilename in logfilenames:

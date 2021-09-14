@@ -301,7 +301,7 @@ def main() -> None:
                 args.clipterminals, 
                 args.bytmp, 
                 args.bybitfield, 
-                get_term_width(cfg)
+                get_term_width(cfg),
             )
 
         #
