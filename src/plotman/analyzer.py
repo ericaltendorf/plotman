@@ -10,7 +10,11 @@ from plotman import plot_util
 
 
 def analyze(
-    logfilenames: typing.List[str], clipterminals: bool, bytmp: bool, bybitfield: bool, columns: int
+    logfilenames: typing.List[str], 
+    clipterminals: bool, 
+    bytmp: bool, 
+    bybitfield: bool, 
+    columns: int
 ) -> None:
     data: typing.Dict[str, typing.Dict[str, typing.List[float]]] = {}
     for logfilename in logfilenames:

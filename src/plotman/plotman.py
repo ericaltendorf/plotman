@@ -161,7 +161,7 @@ class PlotmanArgParser:
         return args
 
 
-def get_term_width(cfg) -> int:
+def get_term_width(cfg: configuration.PlotmanConfig) -> int:
     default_columns = 120  # 80 is typically too narrow.
     if cfg.user_interface.use_stty_size:
         try:
@@ -297,7 +297,11 @@ def main() -> None:
         elif args.cmd == "analyze":
 
             analyzer.analyze(
-                args.logfile, args.clipterminals, args.bytmp, args.bybitfield, get_term_width(cfg)
+                args.logfile, 
+                args.clipterminals, 
+                args.bytmp, 
+                args.bybitfield, 
+                get_term_width(cfg)
             )
 
         #
