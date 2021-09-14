@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 ### Fixed
+### Added
+
+## [0.5.2] - 2021-09-12
+### Fixed
 - Temp files are correctly identified for cleanup.
   ([#912](https://github.com/ericaltendorf/plotman/pull/913))
 - Correct where trailing `/` on dst directories resulted in them being considered unused.
