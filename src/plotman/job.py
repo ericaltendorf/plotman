@@ -4,6 +4,7 @@ import os
 import glob
 import time
 from datetime import datetime
+import sys
 import typing
 
 import attr
@@ -105,7 +106,7 @@ class Job:
 
     plotter: "plotman.plotters.Plotter"
 
-    logfile: str = ""
+    logfile: typing.Optional[str] = None
     job_id: int = 0
     proc: psutil.Process
 
@@ -189,10 +190,11 @@ class Job:
                                 plotter=plotter,
                                 logroot=logroot,
                             )
-                            # TODO: stop reloading every time...
-                            with open(job.logfile, "rb") as f:
-                                r = f.read()
-                            job.plotter.update(chunk=r)
+                            if job.logfile is not None:
+                                # TODO: stop reloading every time...
+                                with open(job.logfile, "rb") as f:
+                                    r = f.read()
+                                job.plotter.update(chunk=r)
                             jobs.append(job)
 
         return jobs
@@ -254,6 +256,10 @@ class Job:
         #     )
 
     def print_logs(self, follow: bool = False) -> None:
+        if self.logfile is None:
+            print("no log file available for this plotting process", file=sys.stderr)
+            return
+
         with open(self.logfile, "r") as f:
             if follow:
                 line = ""
