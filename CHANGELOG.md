@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Regression in v0.5.2 where plotting processes that lack log files caused a traceback.
   ([#926](https://github.com/ericaltendorf/plotman/pull/926))
+- Create the directory for the new disk spaces log file.
+  ([#929](https://github.com/ericaltendorf/plotman/pull/929))
 ### Added
 
 ## [0.5.2] - 2021-09-12
