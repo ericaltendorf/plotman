@@ -328,6 +328,7 @@ class Logging:
         os.makedirs(self.plots, exist_ok=True)
         os.makedirs(self.transfers, exist_ok=True)
         os.makedirs(os.path.dirname(self.application), exist_ok=True)
+        os.makedirs(os.path.dirname(self.disk_spaces), exist_ok=True)
 
     def create_plot_log_path(self, time: pendulum.DateTime) -> str:
         return self._create_log_path(
@@ -341,13 +342,6 @@ class Logging:
             time=time,
             directory=self.transfers,
             group="transfer",
-        )
-
-    def create_tdisk_space_log_path(self, time: pendulum.DateTime) -> str:
-        return self._create_log_path(
-            time=time,
-            directory=self.disk_spaces,
-            group="disk_space",
         )
 
     def _create_log_path(
