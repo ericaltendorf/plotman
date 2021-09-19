@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [unreleased]
+## [0.5.3] - 2021-09-19
 ### Fixed
 - Regression in v0.5.2 where plotting processes that lack log files caused a traceback.
   ([#926](https://github.com/ericaltendorf/plotman/pull/926))
@@ -13,7 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([#929](https://github.com/ericaltendorf/plotman/pull/929))
 - Better handle non-interactive uses that had trouble while detecting the (non-existant) terminal size.
   ([#918](https://github.com/ericaltendorf/plotman/pull/918))
-### Added
 
 ## [0.5.2] - 2021-09-12
 ### Fixed
