@@ -7,12 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 ### Fixed
+- Regression in v0.5.2 where plotting processes that lack log files caused a traceback.
+  ([#926](https://github.com/ericaltendorf/plotman/pull/926))
+- Create the directory for the new disk spaces log file.
+  ([#929](https://github.com/ericaltendorf/plotman/pull/929))
 ### Added
 
 ## [0.5.2] - 2021-09-12
 ### Fixed
 - Temp files are correctly identified for cleanup.
-  ([#912](https://github.com/ericaltendorf/plotman/pull/913))
+  ([#912](https://github.com/ericaltendorf/plotman/pull/912))
 - Correct where trailing `/` on dst directories resulted in them being considered unused.
   ([#920](https://github.com/ericaltendorf/plotman/pull/920))
 ### Added
