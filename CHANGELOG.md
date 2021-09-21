@@ -7,13 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 ### Fixed
+### Added
+
+## [0.5.3] - 2021-09-19
+### Fixed
 - Regression in v0.5.2 where plotting processes that lack log files caused a traceback.
   ([#926](https://github.com/ericaltendorf/plotman/pull/926))
 - Create the directory for the new disk spaces log file.
   ([#929](https://github.com/ericaltendorf/plotman/pull/929))
 - Better handle non-interactive uses that had trouble while detecting the (non-existant) terminal size.
   ([#918](https://github.com/ericaltendorf/plotman/pull/918))
-### Added
 
 ## [0.5.2] - 2021-09-12
 ### Fixed
