@@ -10,7 +10,11 @@ from plotman import plot_util
 
 
 def analyze(
-    logfilenames: typing.List[str], clipterminals: bool, bytmp: bool, bybitfield: bool
+    logfilenames: typing.List[str],
+    clipterminals: bool,
+    bytmp: bool,
+    bybitfield: bool,
+    columns: int,
 ) -> None:
     data: typing.Dict[str, typing.Dict[str, typing.List[float]]] = {}
     for logfilename in logfilenames:
@@ -165,7 +169,6 @@ def analyze(
 
         tab.add_row(row)
 
-    (rows, columns) = os.popen("stty size", "r").read().split()
     tab.set_max_width(int(columns))
     s = tab.draw()
     print(s)

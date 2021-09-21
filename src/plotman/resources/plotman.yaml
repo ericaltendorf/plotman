@@ -3,14 +3,17 @@
 # https://github.com/ericaltendorf/plotman/wiki/Configuration#versions
 version: [2]
 
-logging:
-        # One directory in which to store all plot job logs (the STDOUT/
-        # STDERR of all plot jobs).  In order to monitor progress, plotman
-        # reads these logs on a regular basis, so using a fast drive is
-        # recommended.
-        plots: /home/chia/chia/logs
-        # transfers:
-        # application:
+#logging:
+#        # One directory in which to store all plot job logs (the STDOUT/
+#        # STDERR of all plot jobs).  In order to monitor progress, plotman
+#        # reads these logs on a regular basis, so using a fast drive is
+#        # recommended.
+#        # For Linux, these paths default to a directory under ~/.local/share/plotman/
+#         plots: <directory>
+#         transfers: <directory>
+#        # For Linux, these paths default to a file at ~/.cache/plotman/log/
+#         application: <file>
+#         disk_spaces: <file>
 
 # Options for display and rendering
 user_interface:

@@ -161,12 +161,16 @@ class PlotmanArgParser:
         return args
 
 
-def get_term_width() -> int:
-    try:
-        (rows_string, columns_string) = os.popen("stty size", "r").read().split()
-        columns = int(columns_string)
-    except:
-        columns = 120  # 80 is typically too narrow.  TODO: make a command line arg.
+def get_term_width(cfg: configuration.PlotmanConfig) -> int:
+    default_columns = 120  # 80 is typically too narrow.
+    if cfg.user_interface.use_stty_size:
+        try:
+            (rows_string, columns_string) = os.popen("stty size", "r").read().split()
+            columns = int(columns_string)
+        except:
+            columns = default_columns
+    else:
+        columns = default_columns
     return columns
 
 
@@ -293,7 +297,11 @@ def main() -> None:
         elif args.cmd == "analyze":
 
             analyzer.analyze(
-                args.logfile, args.clipterminals, args.bytmp, args.bybitfield
+                args.logfile,
+                args.clipterminals,
+                args.bytmp,
+                args.bybitfield,
+                get_term_width(cfg),
             )
 
         #
@@ -317,7 +325,7 @@ def main() -> None:
                     result = reporting.json_report(jobs)
                 else:
                     result = "{0}\n\n{1}\n\nUpdated at: {2}".format(
-                        reporting.status_report(jobs, get_term_width()),
+                        reporting.status_report(jobs, get_term_width(cfg)),
                         reporting.summary(jobs),
                         datetime.datetime.today().strftime("%c"),
                     )
@@ -335,7 +343,7 @@ def main() -> None:
                         cfg.directories,
                         cfg.archiving,
                         cfg.scheduling,
-                        get_term_width(),
+                        get_term_width(cfg),
                     )
                 )
 
