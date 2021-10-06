@@ -55,6 +55,12 @@ def get_validated_configs(
     schema = desert.schema(PlotmanConfig)
     config_objects = yaml.load(config_text, Loader=yaml.SafeLoader)
 
+    if not isinstance(config_objects, dict):
+        raise Exception(
+            "plotman requires the top level configuration file object type be dict, got:"
+            " {type(config_objects)}"
+        )
+
     version = config_objects.get("version", (0,))
 
     expected_major_version = 2
