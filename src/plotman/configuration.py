@@ -58,7 +58,7 @@ def get_validated_configs(
     if not isinstance(config_objects, dict):
         raise Exception(
             f"plotman requires the top level configuration file object type be dict, got:"
-            f" {type(config_objects)}"
+            f" {type(config_objects).__name__}"
             f"\n    This could be due to an empty or corrupt config file."
         )
 
