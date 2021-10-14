@@ -17,7 +17,7 @@ import plotman.plotters
 @attr.frozen
 class Options:
     executable: str = "chia_plot"
-    k: typing.Optional[int] = 32
+    k: int = 32
     n_threads: int = 4
     n_buckets: int = 256
     n_buckets3: int = 256
