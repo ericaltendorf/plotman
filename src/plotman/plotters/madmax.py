@@ -17,6 +17,7 @@ import plotman.plotters
 @attr.frozen
 class Options:
     executable: str = "chia_plot"
+    n: int = 1
     k: int = 32
     n_threads: int = 4
     n_buckets: int = 256
@@ -53,9 +54,9 @@ def create_command_line(
     pool_contract_address: typing.Optional[str],
 ) -> typing.List[str]:
     args = [
-        options.executable,
+        options.executable if options.k <= 32 else 'chia_plot_k34',
         "-n",
-        str(1),
+        str(options.n),
          "-k",
         str(options.k),
         "-r",
@@ -164,13 +165,13 @@ class Plotter:
         if len(command_line) == 0:
             return False
 
-        return "chia_plot" == os.path.basename(command_line[0]).lower()
+        return os.path.basename(command_line[0]).lower().startswith("chia_plot")
 
     def common_info(self) -> plotman.plotters.CommonInfo:
         return self.info.common()
 
     def parse_command_line(self, command_line: typing.List[str], cwd: str) -> None:
-        # drop the chia_plot
+        # drop the chia_plot or chia_plot_k34
         arguments = command_line[1:]
 
         # TODO: We could at some point do chia version detection and pick the
@@ -661,15 +662,15 @@ def _cli_974d6e5f1440f68c48492122ca33828a98864dfc() -> None:
 def _cli_aaa3214d4abbd49bb99c2ec087e27c765424cd65() -> None:
     pass
 
-# Madmax Git on 2021-10-12 -> https://github.com/madMAx43v3r/chia-plotter/commit/a9f35cd605517a8c134e7bb4e2af88dd3d3ac236
+# Madmax Git on 2021-10-28 -> https://github.com/madMAx43v3r/chia-plotter/commit/8332d625220b9a54c097d85d6eb4c6b0c9464214
 @commands.register(version=(3,))
 @click.command()
-# https://github.com/madMAx43v3r/chia-plotter/blob/a9f35cd605517a8c134e7bb4e2af88dd3d3ac236/LICENSE
-# https://github.com/madMAx43v3r/chia-plotter/blob/a9f35cd605517a8c134e7bb4e2af88dd3d3ac236/src/chia_plot.cpp#L238-L253
+# https://github.com/madMAx43v3r/chia-plotter/blob/8332d625220b9a54c097d85d6eb4c6b0c9464214/LICENSE
+# https://github.com/madMAx43v3r/chia-plotter/blob/8332d625220b9a54c097d85d6eb4c6b0c9464214/src/chia_plot.cpp#L238-L253
 @click.option(
     "-k",
     "--size",
-    help="K size (default = 32, k <= 32)",
+    help="K size (default = 32, supports 29,30,31,32,34)",
     type=int,
     default=32,
     show_default=True,
@@ -763,5 +764,5 @@ def _cli_aaa3214d4abbd49bb99c2ec087e27c765424cd65() -> None:
     type=int,
     default=1,
 )
-def _cli_a9f35cd605517a8c134e7bb4e2af88dd3d3ac236() -> None:
+def _cli_8332d625220b9a54c097d85d6eb4c6b0c9464214() -> None:
     pass
