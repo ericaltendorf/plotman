@@ -162,7 +162,7 @@ class PlotmanArgParser:
 
 
 def get_term_width(cfg: configuration.PlotmanConfig) -> int:
-    default_columns = 120  # 80 is typically too narrow.
+    default_columns = 160  # 80 is typically too narrow, support wider consoles.
     if cfg.user_interface.use_stty_size:
         try:
             (rows_string, columns_string) = os.popen("stty size", "r").read().split()
