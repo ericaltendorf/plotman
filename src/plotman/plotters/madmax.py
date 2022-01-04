@@ -349,10 +349,11 @@ def tmp2_dir(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
 
 
 @handlers.register(
-    expression=r"^Plot Name: (?P<name>plot-k(?P<size>\d+)-(?P<year>\d+)-(?P<month>\d+)-(?P<day>\d+)-(?P<hour>\d+)-(?P<minute>\d+)-(?P<plot_id>\w+))$"
+    expression=r"^Plot Name: (?P<name>plot(-mmx)?-k(?P<size>\d+)-(?P<year>\d+)-(?P<month>\d+)-(?P<day>\d+)-(?P<hour>\d+)-(?P<minute>\d+)-(?P<plot_id>\w+))$"
 )
 def plot_name_line(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # Plot Name: plot-k32-2021-07-11-16-52-3a3872f5a124497a17fb917dfe027802aa1867f8b0a8cbac558ed12aa5b697b2
+    # Plot Name: plot-mmx-k30-2022-01-03-19-44-06982c6179c6242979b68d81950577017d4594f59ec0e6859e83c7f9141cbc35
     return attr.evolve(
         info,
         plot_size=int(match.group("size")),
