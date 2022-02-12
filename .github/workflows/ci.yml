@@ -8,6 +8,9 @@ on:
     tags: [ "**" ]
   pull_request:
     branches: [ "**" ]
+  schedule:
+    # Daily at 05:47
+    - cron: '47 5 * * *'
 
 defaults:
   run:
