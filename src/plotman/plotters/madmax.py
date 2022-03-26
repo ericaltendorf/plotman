@@ -17,10 +17,18 @@ import plotman.plotters
 @attr.frozen
 class Options:
     executable: str = "chia_plot"
+    executable_k34: str = "chia_plot_k34"
+    k: int = 32
     n_threads: int = 4
     n_buckets: int = 256
     n_buckets3: int = 256
     n_rmulti2: int = 1
+
+    def chosen_executable(self) -> str:
+        if self.k > 32:
+            return self.executable_k34
+
+        return self.executable
 
 
 def check_configuration(
@@ -28,7 +36,7 @@ def check_configuration(
 ) -> None:
     if pool_contract_address is not None:
         completed_process = subprocess.run(
-            args=[options.executable, "--help"],
+            args=[options.chosen_executable(), "--help"],
             capture_output=True,
             check=True,
             encoding="utf-8",
@@ -50,7 +58,9 @@ def create_command_line(
     pool_contract_address: typing.Optional[str],
 ) -> typing.List[str]:
     args = [
-        options.executable,
+        options.chosen_executable(),
+        "-k",
+        str(options.k),
         "-n",
         str(1),
         "-r",
@@ -153,7 +163,7 @@ class Plotter:
         if len(command_line) == 0:
             return False
 
-        return "chia_plot" == os.path.basename(command_line[0]).lower()
+        return os.path.basename(command_line[0]).lower() in {"chia_plot", "chia_plot_k34"}
 
     def common_info(self) -> plotman.plotters.CommonInfo:
         return self.info.common()
@@ -648,4 +658,124 @@ def _cli_974d6e5f1440f68c48492122ca33828a98864dfc() -> None:
     default=1,
 )
 def _cli_aaa3214d4abbd49bb99c2ec087e27c765424cd65() -> None:
+    pass
+
+
+# Madmax Git on 2022-03-26 -> https://github.com/madMAx43v3r/chia-plotter/commit/ecec17d25cd547fa4bb64b2eb7455b831c8a2882
+@commands.register(version=(3,))
+@click.command()
+# https://github.com/madMAx43v3r/chia-plotter/blob/ecec17d25cd547fa4bb64b2eb7455b831c8a2882/LICENSE
+# https://github.com/madMAx43v3r/chia-plotter/blob/ecec17d25cd547fa4bb64b2eb7455b831c8a2882/src/chia_plot.cpp#L257-L277
+@click.option(
+    "-k",
+    "--size",
+    help="K size (default = 32, k <= 34)",
+    type=int,
+    default=32,
+    show_default=True,
+)
+@click.option(
+    "-x",
+    "--port",
+    help="Network port (default = 8444, chives = 9699, mmx = 11337)",
+    type=int,
+    default=8444,
+    show_default=True,
+)
+@click.option(
+    "-n",
+    "--count",
+    help="Number of plots to create (default = 1, -1 = infinite)",
+    type=int,
+    default=1,
+    show_default=True,
+)
+@click.option(
+    "-r",
+    "--threads",
+    help="Number of threads (default = 4)",
+    type=int,
+    default=4,
+    show_default=True,
+)
+@click.option(
+    "-u",
+    "--buckets",
+    help="Number of buckets (default = 256)",
+    type=int,
+    default=256,
+    show_default=True,
+)
+@click.option(
+    "-v",
+    "--buckets3",
+    help="Number of buckets for phase 3+4 (default = buckets)",
+    type=int,
+    default=256,
+)
+@click.option(
+    "-t",
+    "--tmpdir",
+    help="Temporary directory, needs ~220 GiB (default = $PWD)",
+    type=click.Path(),
+    default=pathlib.Path("."),
+    show_default=True,
+)
+@click.option(
+    "-2",
+    "--tmpdir2",
+    help="Temporary directory 2, needs ~110 GiB [RAM] (default = <tmpdir>)",
+    type=click.Path(),
+    default=None,
+)
+@click.option(
+    "-d",
+    "--finaldir",
+    help="Final directory (default = <tmpdir>)",
+    type=click.Path(),
+    default=pathlib.Path("."),
+    show_default=True,
+)
+@click.option(
+    "-s",
+    "--stagedir",
+    help="Stage directory (default = <tmpdir>)",
+    type=click.Path(),
+    default=None,
+    show_default=True,
+)
+@click.option(
+    "-w",
+    "--waitforcopy",
+    help="Wait for copy to start next plot",
+    type=bool,
+    default=False,
+    show_default=True,
+)
+@click.option(
+    "-p", "--poolkey", help="Pool Public Key (48 bytes)", type=str, default=None
+)
+@click.option(
+    "-c", "--contract", help="Pool Contract Address (62 chars)", type=str, default=None
+)
+@click.option(
+    "-f", "--farmerkey", help="Farmer Public Key (48 bytes)", type=str, default=None
+)
+@click.option(
+    "-G", "--tmptoggle", help="Alternate tmpdir/tmpdir2", type=str, default=None
+)
+@click.option(
+    "-D", "--directout", help="Create plot directly in finaldir (default = false)", type=bool, default=False
+)
+@click.option(
+    "-Z", "--unique", help="Make unique plot (default = false)", type=bool, default=False
+)
+@click.option(
+    "-K",
+    "--rmulti2",
+    help="Thread multiplier for P2 (default = 1)",
+    type=int,
+    default=1,
+)
+def _cli_ecec17d25cd547fa4bb64b2eb7455b831c8a2882() -> None:
     pass

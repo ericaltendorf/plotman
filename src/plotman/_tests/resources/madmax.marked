@@ -1,4 +1,4 @@
-0:0,Multi-threaded pipelined Chia k32 plotter - 974d6e5
+0:0,Multi-threaded pipelined Chia k33 plotter - 974d6e5
 0:0,(Sponsored by Flexpool.io - Check them out if you're looking for a secure and scalable Chia pool)
 0:0,
 0:0,Final Directory: /farm/yards/902/fake_dst/
@@ -12,7 +12,7 @@
 0:0,Farmer Public Key: b0a374845f4f4d6eab62fc4c5e17965d82ad7eee105818e5bd0cfcb46275a16acc4cd30955779bec841a716473416b21
 0:0,Working Directory:   /farm/yards/902/
 0:0,Working Directory 2: /farm/yards/902/fake_tmp2/
-1:1,Plot Name: plot-k32-2021-07-14-21-56-522acbd6308af7e229281352f746449134126482cfabd51d38e0f89745d21698
+1:1,Plot Name: plot-k33-2021-07-14-21-56-522acbd6308af7e229281352f746449134126482cfabd51d38e0f89745d21698
 1:2,[P1] Table 1 took 24.6839 sec
 1:3,[P1] Table 2 took 300.748 sec, found 4295036171 matches
 1:4,[P1] Table 3 took 345.724 sec, found 4295004796 matches
@@ -55,5 +55,5 @@
 4:2,[P4] Finished writing C2 table
 5:0,Phase 4 took 86.9555 sec, final plot size is 108836238815 bytes
 5:0,Total plot creation time was 4968.41 sec (82.8069 min)
-5:1,Started copy to /farm/yards/902/fake_dst/plot-k32-2021-07-14-21-56-522acbd6308af7e229281352f746449134126482cfabd51d38e0f89745d21698.plot
-5:2,Renamed final plot to /farm/yards/902/fake_dst/plot-k32-2021-07-14-21-56-522acbd6308af7e229281352f746449134126482cfabd51d38e0f89745d21698.plot
+5:1,Started copy to /farm/yards/902/fake_dst/plot-k33-2021-07-14-21-56-522acbd6308af7e229281352f746449134126482cfabd51d38e0f89745d21698.plot
+5:2,Renamed final plot to /farm/yards/902/fake_dst/plot-k33-2021-07-14-21-56-522acbd6308af7e229281352f746449134126482cfabd51d38e0f89745d21698.plot
