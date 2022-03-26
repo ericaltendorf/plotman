@@ -163,7 +163,10 @@ class Plotter:
         if len(command_line) == 0:
             return False
 
-        return os.path.basename(command_line[0]).lower() in {"chia_plot", "chia_plot_k34"}
+        return os.path.basename(command_line[0]).lower() in {
+            "chia_plot",
+            "chia_plot_k34",
+        }
 
     def common_info(self) -> plotman.plotters.CommonInfo:
         return self.info.common()
@@ -765,10 +768,18 @@ def _cli_aaa3214d4abbd49bb99c2ec087e27c765424cd65() -> None:
     "-G", "--tmptoggle", help="Alternate tmpdir/tmpdir2", type=str, default=None
 )
 @click.option(
-    "-D", "--directout", help="Create plot directly in finaldir (default = false)", type=bool, default=False
+    "-D",
+    "--directout",
+    help="Create plot directly in finaldir (default = false)",
+    type=bool,
+    default=False,
 )
 @click.option(
-    "-Z", "--unique", help="Make unique plot (default = false)", type=bool, default=False
+    "-Z",
+    "--unique",
+    help="Make unique plot (default = false)",
+    type=bool,
+    default=False,
 )
 @click.option(
     "-K",
