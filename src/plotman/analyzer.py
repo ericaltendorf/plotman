@@ -163,7 +163,9 @@ def analyze(
                     )
                 )
             elif len(values) == 1:
-                row.append(plot_util.human_format(values[0], 1))
+                row.append(values[0])  # Use exact time in seconds.
+                # Due to Madmax and Bladebit speed, don't round times in seconds to nearest thousands
+                #row.append(plot_util.human_format(values[0], 1))
             else:
                 row.append("N/A")
 
