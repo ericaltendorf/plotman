@@ -44,6 +44,8 @@ class ParsedChiaPlotsCreateCommand:
     error: typing.Optional[click.ClickException]
     help: bool
     parameters: typing.Dict[str, object]
+    subcommand_name: typing.Optional[str] = None
+    subparameters: typing.Dict[str, object] = {}
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, type(self)):
@@ -54,6 +56,7 @@ class ParsedChiaPlotsCreateCommand:
             and str(self.error) == str(other.error)
             and self.help == other.help
             and self.parameters == other.parameters
+            and self.subparameters == other.subparameters
         )
 
 

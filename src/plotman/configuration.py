@@ -20,6 +20,7 @@ import yaml
 
 from plotman import resources as plotman_resources
 import plotman.plotters.bladebit
+import plotman.plotters.bladebit2disk
 import plotman.plotters.chianetwork
 import plotman.plotters.madmax
 
@@ -407,6 +408,7 @@ class Plotting:
         },
     )
     bladebit: Optional[plotman.plotters.bladebit.Options] = None
+    bladebit2disk: Optional[plotman.plotters.bladebit2disk.Options] = None
     chia: Optional[plotman.plotters.chianetwork.Options] = None
     madmax: Optional[plotman.plotters.madmax.Options] = None
 

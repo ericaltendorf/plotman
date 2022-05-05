@@ -1,0 +1,131 @@
+Increasing the file limit from 1024 to 262144
+[Bladebit Disk Plotter]
+ Heap size      : 3.97 GiB ( 4062.88 MiB )
+ Cache size     : 200.00 GiB ( 204800.00 MiB )
+ Bucket count   : 256
+ F1  threads    : 18
+ FP  threads    : 62
+ C   threads    : 32
+ P2  threads    : 36
+ P3  threads    : 56
+ I/O threads    : 1
+ Temp1 block sz : 4096
+ Temp2 block sz : 4096
+ Allocating memory
+WARNING: Forcing warm start for testing.
+Warm start: Pre-faulting memory pages...
+Memory initialized.
+
+[Global Plotting Config]
+ Will create 1 plots.
+ Thread count          : 64
+ Warm start enabled    : true
+ NUMA disabled         : false
+ CPU affinity disabled : false
+ Farmer public key     : ade0cc43610ce7540ab96a524d0ab17f5df7866ef13d1221a7203e5d10ad2a4ae37f7b73f6cdfd6ddf4122e8a1c2f8ef
+ Pool public key       : 80a836a74b077cabaca7a76d1c3c9f269f7f3a8f2fa196a65ee8953eb81274eb8b7328d474982617af5a0fe71b47e9b8
+
+Generating plot 1 / 1: 8f781fecff9d78b83b7116580af550b62530a623750738a19dcea498a7a73010
+
+Started plot.
+Running Phase 1
+Generating f1...
+F1 working heap @ 256 buckets: 193.01 / 4062.88 MiB
+Minimum IO buffer size required per bucket @ 256 buckets: 124.00 MiB
+F1 IO size @ 256 buckets: 3869.87 MiB
+Finished f1 generation in 7.11 seconds.
+Table 1 I/O wait time: 0.00 seconds.
+Table 2
+Completed table 2 in 52.96 seconds with 4294924903 entries.
+Table 2 I/O wait time: 0.01 seconds.
+Table 3
+Completed table 3 in 82.82 seconds with 4294885589 entries.
+Table 3 I/O wait time: 0.09 seconds.
+Table 4
+Completed table 4 in 100.69 seconds with 4294792464 entries.
+Table 4 I/O wait time: 0.60 seconds.
+Table 5
+Completed table 5 in 99.26 seconds with 4294512846 entries.
+Table 5 I/O wait time: 0.02 seconds.
+Table 6
+Completed table 6 in 93.73 seconds with 4293981322 entries.
+Table 6 I/O wait time: 0.02 seconds.
+Table 7
+Completed table 7 in 69.05 seconds with 4293153516 entries.
+Table 7 I/O wait time: 0.02 seconds.
+ Phase 1 Total I/O wait time: 0.76
+Processing f7s and writing C tables to plot file.
+Completed C processing tables in 20.65 seconds.
+C Tables I/O wait time: 0.41.
+Finished Phase 1 in 526.48 seconds ( 8.8 minutes ).
+Running Phase 2
+Finished marking table 6 in 3.37 seconds.
+Table 6 I/O wait time: 0.00 seconds.
+Finished marking table 5 in 24.28 seconds.
+Table 5 I/O wait time: 0.00 seconds.
+Finished marking table 4 in 24.05 seconds.
+Table 4 I/O wait time: 0.00 seconds.
+Finished marking table 3 in 24.29 seconds.
+Table 3 I/O wait time: 0.00 seconds.
+Finished marking table 2 in 24.19 seconds.
+Table 2 I/O wait time: 0.00 seconds.
+ Phase 2 Total I/O wait time: 0.00 seconds.
+Finished Phase 2 in 100.36 seconds ( 1.7 minutes ).
+Running Phase 3
+Compressing tables 1 and 2.
+Allocated 2764.63 / 4062.88 MiB
+Step 2 using 1.68 / 3.97 GiB.
+Table 1 now has 3429320695 / 4294924903 ( 79.85% ) entries.
+Table 1 I/O wait time: 0.44 seconds.
+Finished compressing tables 1 and 2 in 87.02 seconds.
+Compressing tables 2 and 3.
+Allocated 3251.01 / 4062.88 MiB
+Step 2 using 1.67 / 3.97 GiB.
+Table 2 now has 3439759509 / 4294885589 ( 80.09% ) entries.
+Table 2 I/O wait time: 0.21 seconds.
+Finished compressing tables 2 and 3 in 91.79 seconds.
+Compressing tables 3 and 4.
+Allocated 3251.00 / 4062.88 MiB
+Step 2 using 1.67 / 3.97 GiB.
+Table 3 now has 3465852261 / 4294792464 ( 80.70% ) entries.
+Table 3 I/O wait time: 0.22 seconds.
+Finished compressing tables 3 and 4 in 92.17 seconds.
+Compressing tables 4 and 5.
+Allocated 3250.96 / 4062.88 MiB
+Step 2 using 1.67 / 3.97 GiB.
+Table 4 now has 3532434319 / 4294512846 ( 82.25% ) entries.
+Table 4 I/O wait time: 0.19 seconds.
+Finished compressing tables 4 and 5 in 93.36 seconds.
+Compressing tables 5 and 6.
+Allocated 3250.90 / 4062.88 MiB
+Step 2 using 1.67 / 3.97 GiB.
+Table 5 now has 3712639798 / 4293981322 ( 86.46% ) entries.
+Table 5 I/O wait time: 0.18 seconds.
+Finished compressing tables 5 and 6 in 96.05 seconds.
+Compressing tables 6 and 7.
+Allocated 3250.80 / 4062.88 MiB
+Step 2 using 1.67 / 3.97 GiB.
+Table 6 now has 4293153516 / 4293153516 ( 100.00% ) entries.
+Table 6 I/O wait time: 2.79 seconds.
+Finished compressing tables 6 and 7 in 88.97 seconds.
+Writing P7 parks.
+Finished writing P7 parks in 13.57 seconds.
+P7 I/O wait time: 1.81 seconds
+Finished Phase 3 in 562.95 seconds ( 9.4 minutes ).
+Total plot I/O wait time: 6.60 seconds.
+Waiting for plot file to complete pending writes...
+Completed pending writes in 0.00 seconds.
+Finished writing plot plot-k32-2022-05-04-00-44-8f781fecff9d78b83b7116580af550b62530a623750738a19dcea498a7a73010.plot.tmp.
+Final plot table pointers:
+ Table 1:       1289665712 ( 0x000000004cdebcb0 )
+ Table 2:      16128845438 ( 0x00000003c15aa67e )
+ Table 3:      30111274013 ( 0x0000000702c5941d )
+ Table 4:      44199763088 ( 0x0000000a4a82dc90 )
+ Table 5:      58558906238 ( 0x0000000da261ff7e )
+ Table 6:      73650574463 ( 0x0000001125ea947f )
+ Table 7:      91101997238 ( 0x00000015361a28b6 )
+ C 1    :              268 ( 0x000000000000010c )
+ C 2    :          1717536 ( 0x00000000001a3520 )
+ C 3    :          1717712 ( 0x00000000001a35d0 )
+
+Finished plotting in 1189.79 seconds ( 19.8 minutes ).
