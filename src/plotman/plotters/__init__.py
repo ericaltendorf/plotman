@@ -296,7 +296,7 @@ def parse_command_line_with_click(
     ]
 
     params = {}
-    subcommand_found = False
+    subcommand_name = None
     subparams = {}
     try:
         # TODO: sounds interesting resilient_parsing=True
@@ -310,7 +310,7 @@ def parse_command_line_with_click(
         elif subcommand.name not in context.protected_args:
             error = Exception("not the requested subcommand")
         else:
-            subcommand_found = True
+            subcommand_name = subcommand.name
             try:
                 subcontext = subcommand.make_context(
                     info_name="",
@@ -327,7 +327,7 @@ def parse_command_line_with_click(
         error=error,
         help=len(arguments) > len(command_arguments),
         parameters=dict(sorted(params.items())),
-        subcommand_name=subcommand.name if subcommand_found else None,
+        subcommand_name=subcommand_name,
         subparameters=dict(sorted(subparams.items())),
     )
 

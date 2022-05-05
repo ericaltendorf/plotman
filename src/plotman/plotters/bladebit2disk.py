@@ -98,7 +98,7 @@ def create_command_line(
     # TODO: handle all the specific options
 
     args.append("-b")
-    args.append(options.buckets)
+    args.append(str(options.buckets))
     args.append("-t1")
     args.append(os.fspath(tmpdir))
     if tmp2dir is not None:
@@ -113,19 +113,19 @@ def create_command_line(
         args.append(options.cache)
     if options.threads.f1 is not None:
         args.append("--f1-threads")
-        args.append(options.threads.f1)
+        args.append(str(options.threads.f1))
     if options.threads.fp is not None:
         args.append("--fp-threads")
-        args.append(options.threads.fp)
+        args.append(str(options.threads.fp))
     if options.threads.c is not None:
         args.append("--c-threads")
-        args.append(options.threads.c)
+        args.append(str(options.threads.c))
     if options.threads.p2 is not None:
         args.append("--p2-threads")
-        args.append(options.threads.p2)
+        args.append(str(options.threads.p2))
     if options.threads.p3 is not None:
         args.append("--p3-threads")
-        args.append(options.threads.p3)
+        args.append(str(options.threads.p3))
 
     args.append(dstdir)
 
@@ -274,19 +274,19 @@ def phase_finished(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo
 
 
 @handlers.register(expression=r"^\s*Allocating memory$")
-def allocating_buffers(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+def allocating_memory(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # Allocating buffers.
     return attr.evolve(info, phase=plotman.job.Phase(major=0, minor=1))
 
 
 @handlers.register(expression=r"^WARNING: *Forcing warm start for testing\.$")
-def allocating_buffers(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+def forcing_warm_start(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # Allocating buffers.
     return attr.evolve(info, phase=plotman.job.Phase(major=0, minor=2))
 
 
 @handlers.register(expression=r"^\s*Memory initialized\.$")
-def allocating_buffers(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+def memory_initialized(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # Allocating buffers.
     return attr.evolve(info, phase=plotman.job.Phase(major=0, minor=3))
 
@@ -302,7 +302,7 @@ def generating_plot(match: typing.Match[str], info: SpecificInfo) -> SpecificInf
 
 
 @handlers.register(expression=r"^Started plot\.$")
-def allocating_buffers(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+def started_plot(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # Allocating buffers.
     return attr.evolve(info, phase=plotman.job.Phase(major=0, minor=5))
 

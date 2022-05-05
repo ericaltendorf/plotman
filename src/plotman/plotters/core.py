@@ -5,11 +5,16 @@ import click
 import typing_extensions
 
 
+# TODO: this is getting to seem a bit fishy
 class CommandProtocol(typing_extensions.Protocol):
+    name: typing.Optional[str]
+    command: "CommandProtocol"
+    commands: typing.Dict[str, "CommandProtocol"]
+
     def make_context(self, info_name: str, args: typing.List[str]) -> click.Context:
         ...
 
-    def __call__(self) -> None:
+    def __call__(self, name: str = "") -> "CommandProtocol":
         ...
 
 
@@ -34,7 +39,7 @@ class Commands:
         # self.by_version = dict(sorted(self.by_version.items()))
         return command
 
-    def __getitem__(self, item: typing.Sequence[int]) -> typing.Callable[[], None]:
+    def __getitem__(self, item: typing.Sequence[int]) -> CommandProtocol:
         return self.by_version[item]
 
     def latest_command(self) -> CommandProtocol:
