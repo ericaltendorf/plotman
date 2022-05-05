@@ -387,7 +387,14 @@ bladebit2disk_command_line_examples: typing.List[CommandLineExample] = [
         ),
     ),
     CommandLineExample(
-        line=["bladebit", "--pool-contract", "xch123abc", "--farmer-key", "abc123", "diskplot"],
+        line=[
+            "bladebit",
+            "--pool-contract",
+            "xch123abc",
+            "--farmer-key",
+            "abc123",
+            "diskplot",
+        ],
         plotter=plotman.plotters.bladebit2disk.Plotter,
         parsed=plotman.job.ParsedChiaPlotsCreateCommand(
             error=None,

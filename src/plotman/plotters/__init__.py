@@ -312,7 +312,10 @@ def parse_command_line_with_click(
         else:
             subcommand_found = True
             try:
-                subcontext = subcommand.make_context(info_name="", args=list(context.args))
+                subcontext = subcommand.make_context(
+                    info_name="",
+                    args=list(context.args),
+                )
             except click.ClickException as e:
                 error = e
             else:

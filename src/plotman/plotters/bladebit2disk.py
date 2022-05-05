@@ -194,7 +194,10 @@ class Plotter:
         if len(command_line) == 0:
             return False
 
-        return "bladebit" == os.path.basename(command_line[0]).lower() and "diskplot" in command_line
+        return (
+            "bladebit" == os.path.basename(command_line[0]).lower()
+            and "diskplot" in command_line
+        )
 
     def common_info(self) -> plotman.plotters.CommonInfo:
         return self.info.common()
@@ -220,9 +223,9 @@ class Plotter:
         for key in ["out_dir", "temp1", "temp2"]:
             original: os.PathLike[str] = self.parsed_command_line.subparameters.get(key)  # type: ignore[assignment]
             if original is not None:
-                self.parsed_command_line.subparameters[key] = pathlib.Path(cwd).joinpath(
-                    original
-                )
+                cwd_path = pathlib.Path(cwd)
+                joined = cwd_path.joinpath(original)
+                self.parsed_command_line.subparameters[key] = joined
 
     def update(self, chunk: bytes) -> SpecificInfo:
         new_lines = self.decoder.update(chunk=chunk)
@@ -318,7 +321,10 @@ def table(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
 
 
 @handlers.register(expression=r"^\s+Phase (?P<phase>\d+) Total I/O wait time")
-def phase_total_io_wait_time(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+def phase_total_io_wait_time(
+    match: typing.Match[str],
+    info: SpecificInfo,
+) -> SpecificInfo:
     # Phase 1 Total I/O wait time: 0.76
     major = int(match.group("phase"))
     minor = {
@@ -336,7 +342,9 @@ def forward_propagating(match: typing.Match[str], info: SpecificInfo) -> Specifi
     return attr.evolve(info, phase=plotman.job.Phase(major=1, minor=minor))
 
 
-@handlers.register(expression=r"^Table (?P<table>\d+) I/O wait time: (?P<duration>[^ ]+) seconds")
+@handlers.register(
+    expression=r"^Table (?P<table>\d+) I/O wait time: (?P<duration>[^ ]+) seconds",
+)
 def table_io_wait_time(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     # Table 6 I/O wait time: 0.00 seconds
     if info.phase.major != 2:
@@ -356,32 +364,49 @@ def compressing_tables(match: typing.Match[str], info: SpecificInfo) -> Specific
 
 
 @handlers.register(expression=r"^Finished compressing tables (?P<table>\d+)")
-def finished_compressing_tables(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+def finished_compressing_tables(
+    match: typing.Match[str],
+    info: SpecificInfo,
+) -> SpecificInfo:
     # Finished compressing tables 1 and 2 in 87.02 seconds.
     minor = int(match.group("table")) + 1
     return attr.evolve(info, phase=plotman.job.Phase(major=3, minor=minor))
 
 
 @handlers.register(expression=r"^Writing P7 parks.$")
-def phase_4_writing_p7_parks(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+def phase_4_writing_p7_parks(
+    match: typing.Match[str],
+    info: SpecificInfo,
+) -> SpecificInfo:
     #   Writing P7 parks.
     return attr.evolve(info, phase=attr.evolve(info.phase, minor=7))
 
 
 @handlers.register(expression=r"^P7 I/O wait time: ")
-def phase_4_writing_p7_io_wait(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+def phase_4_writing_p7_io_wait(
+    match: typing.Match[str],
+    info: SpecificInfo,
+) -> SpecificInfo:
     # P7 I/O wait time: 1.81 seconds
     return attr.evolve(info, phase=attr.evolve(info.phase, minor=8))
 
 
 @handlers.register(expression=r"^Waiting for plot file to complete pending writes...$")
-def waiting_for_pending_writes(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+def waiting_for_pending_writes(
+    match: typing.Match[str],
+    info: SpecificInfo,
+) -> SpecificInfo:
     # Waiting for plot file to complete pending writes...
     return attr.evolve(info, phase=plotman.job.Phase(major=4, minor=1))
 
 
-@handlers.register(expression=r"^Completed pending writes in (?P<duration>[^ ]+) seconds.$")
-def completed_pending_writes(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+@handlers.register(
+    expression=r"^Completed pending writes in (?P<duration>[^ ]+) seconds.$"
+)
+def completed_pending_writes(
+    match: typing.Match[str],
+    info: SpecificInfo,
+) -> SpecificInfo:
     # Completed pending writes in 0.00 seconds.
     return attr.evolve(info, phase=plotman.job.Phase(major=4, minor=2))
 
@@ -457,10 +482,7 @@ commands = plotman.plotters.core.Commands()
 @click.option(
     "-f",
     "--farmer-key",
-    help=(
-         "Farmer public key, specified in hexadecimal format."
-         "  *REQUIRED*"
-    ),
+    help="Farmer public key, specified in hexadecimal format.  *REQUIRED*",
     type=str,
 )
 @click.option(
@@ -548,9 +570,7 @@ commands = plotman.plotters.core.Commands()
 )
 @click.option(
     "--memory-json",
-    help=(
-        "Same as --memory, but formats the output as json."
-    ),
+    help="Same as --memory, but formats the output as json.",
     type=bool,
     default=False,
 )
@@ -579,10 +599,7 @@ def _cli_2d53d324d1910af9c2a3c324bf5e8d238f7541bd() -> None:
 @click.option(
     "-t1",
     "--temp1",
-    help=(
-        "The temporary directory to use when plotting."
-        "  *REQUIRED*"
-    ),
+    help="The temporary directory to use when plotting.  *REQUIRED*",
     type=click.Path(),
 )
 @click.option(
@@ -596,18 +613,14 @@ def _cli_2d53d324d1910af9c2a3c324bf5e8d238f7541bd() -> None:
 )
 @click.option(
     "--no-t1-direct",
-    help=(
-        "Disable direct I/O on the temp 1 directory."
-    ),
+    help="Disable direct I/O on the temp 1 directory.",
     is_flag=True,
     type=bool,
     default=False,
 )
 @click.option(
     "--no-t2-direct",
-    help=(
-        "Disable direct I/O on the temp 2 directory."
-    ),
+    help="Disable direct I/O on the temp 2 directory.",
     is_flag=True,
     type=bool,
     default=False,
@@ -636,16 +649,12 @@ def _cli_2d53d324d1910af9c2a3c324bf5e8d238f7541bd() -> None:
 )
 @click.option(
     "--f1-threads",
-    help=(
-        "Override the thread count for F1 generation."
-    ),
+    help="Override the thread count for F1 generation.",
     type=int,
 )
 @click.option(
     "--fp-threads",
-    help=(
-        "Override the thread count for forward propagation."
-    ),
+    help="Override the thread count for forward propagation.",
     type=int,
 )
 @click.option(
@@ -658,16 +667,12 @@ def _cli_2d53d324d1910af9c2a3c324bf5e8d238f7541bd() -> None:
 )
 @click.option(
     "--p2-threads",
-    help=(
-        "Override the thread count for Phase 2."
-    ),
+    help="Override the thread count for Phase 2.",
     type=int,
 )
 @click.option(
     "--p3-threads",
-    help=(
-        "Override the thread count for Phase 3."
-    ),
+    help="Override the thread count for Phase 3.",
     type=int,
 )
 @click.argument(
@@ -681,5 +686,6 @@ def _cli_2d53d324d1910af9c2a3c324bf5e8d238f7541bd() -> None:
 )
 def _cli_diskplot_2d53d324d1910af9c2a3c324bf5e8d238f7541bd() -> None:
     pass
+
 
 # TODO: do we need to add entries for other subcommands to avoid failure if such processes are found?

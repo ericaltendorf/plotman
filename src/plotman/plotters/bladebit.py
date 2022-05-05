@@ -155,7 +155,10 @@ class Plotter:
         if len(command_line) == 0:
             return False
 
-        return "bladebit" == os.path.basename(command_line[0]).lower() and "diskplot" not in command_line
+        return (
+            "bladebit" == os.path.basename(command_line[0]).lower()
+            and "diskplot" not in command_line
+        )
 
     def common_info(self) -> plotman.plotters.CommonInfo:
         return self.info.common()
