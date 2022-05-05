@@ -104,6 +104,10 @@ def create_command_line(
     if tmp2dir is not None:
         args.append("-t2")
         args.append(os.fspath(tmp2dir))
+    if options.no_t1_direct:
+        args.append("--no-t1-direct")
+    if options.no_t1_direct:
+        args.append("--no-t2-direct")
     if options.cache is not None:
         args.append("--cache")
         args.append(options.cache)
