@@ -109,6 +109,8 @@ jobs:
             coverage: true
           - name: Check hints
             tox: check-hints
+          - name: Install with Chia
+            tox: install-with-chia
         include:
           - task:
               name: Check manifest
