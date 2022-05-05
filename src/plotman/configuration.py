@@ -408,7 +408,7 @@ class Plotting:
             desert._make._DESERT_SENTINEL: {
                 "marshmallow_field": marshmallow.fields.String(
                     validate=marshmallow.validate.OneOf(
-                        choices=["bladebit", "chia", "madmax"]
+                        choices=["bladebit", "bladebit2disk", "chia", "madmax"]
                     ),
                 ),
             },
