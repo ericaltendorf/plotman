@@ -143,6 +143,8 @@ class SpecificInfo:
     threads: int = 0
     # buffer: int = 0
     plot_size: int = 32
+    tmp1_dir: str = ""
+    tmp2_dir: str = ""
     dst_dir: str = ""
     phase1_duration_raw: float = 0
     phase2_duration_raw: float = 0
@@ -158,8 +160,8 @@ class SpecificInfo:
             type="bladebit2disk",
             dstdir=self.dst_dir,
             phase=self.phase,
-            tmpdir="",
-            tmp2dir="",
+            tmpdir=self.tmp1_dir,
+            tmp2dir=self.tmp2_dir,
             started_at=self.started_at,
             plot_id=self.plot_id,
             plot_size=self.plot_size,
@@ -418,13 +420,6 @@ def total_duration(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo
     return attr.evolve(info, total_time_raw=duration)
 
 
-@handlers.register(expression=r"^ *Output path *: *(.+)")
-def dst_dir(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
-    assert False
-    #  Output path           : /mnt/tmp/01/manual-transfer/
-    return attr.evolve(info, dst_dir=match.group(1))
-
-
 @handlers.register(
     expression=r"^Finished writing plot (?P<filename>(?P<name>plot-k(?P<size>\d+)-(?P<year>\d+)-(?P<month>\d+)-(?P<day>\d+)-(?P<hour>\d+)-(?P<minute>\d+)-(?P<plot_id>\w+)).*)\."
 )
@@ -451,6 +446,24 @@ def plot_name_line(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo
 def threads(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     #  Thread count          : 88
     return attr.evolve(info, threads=int(match.group(1)))
+
+
+@handlers.register(expression=r"^ *Temp1 path *: *(.+)")
+def temp1_path(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+    #  Temp1 path     : /farm/yards/907/1
+    return attr.evolve(info, tmp1_dir=match.group(1))
+
+
+@handlers.register(expression=r"^ *Temp2 path *: *(.+)")
+def temp1_path(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+    #  Temp2 path     : /farm/yards/907/2
+    return attr.evolve(info, tmp2_dir=match.group(1))
+
+
+@handlers.register(expression=r"^ *Output path *: *(.+)")
+def out_path(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+    #  Output path     : /farm/yards/907/d
+    return attr.evolve(info, dst_dir=match.group(1))
 
 
 commands = plotman.plotters.core.Commands()

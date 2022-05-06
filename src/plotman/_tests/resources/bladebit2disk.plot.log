@@ -11,6 +11,8 @@ Increasing the file limit from 1024 to 262144
  I/O threads    : 1
  Temp1 block sz : 4096
  Temp2 block sz : 4096
+ Temp1 path     : /farm/yards/907/1
+ Temp2 path     : /farm/yards/907/2
  Allocating memory
 WARNING: Forcing warm start for testing.
 Warm start: Pre-faulting memory pages...
@@ -24,6 +26,7 @@ Memory initialized.
  CPU affinity disabled : false
  Farmer public key     : ade0cc43610ce7540ab96a524d0ab17f5df7866ef13d1221a7203e5d10ad2a4ae37f7b73f6cdfd6ddf4122e8a1c2f8ef
  Pool public key       : 80a836a74b077cabaca7a76d1c3c9f269f7f3a8f2fa196a65ee8953eb81274eb8b7328d474982617af5a0fe71b47e9b8
+ Output path           : /farm/yards/907/d
 
 Generating plot 1 / 1: 8f781fecff9d78b83b7116580af550b62530a623750738a19dcea498a7a73010
 

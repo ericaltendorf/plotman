@@ -11,6 +11,8 @@
 0:0, I/O threads    : 1
 0:0, Temp1 block sz : 4096
 0:0, Temp2 block sz : 4096
+0:0, Temp1 path     : /farm/yards/907/1
+0:0, Temp2 path     : /farm/yards/907/2
 0:1, Allocating memory
 0:2,WARNING: Forcing warm start for testing.
 0:2,Warm start: Pre-faulting memory pages...
@@ -24,6 +26,7 @@
 0:3, CPU affinity disabled : false
 0:3, Farmer public key     : ade0cc43610ce7540ab96a524d0ab17f5df7866ef13d1221a7203e5d10ad2a4ae37f7b73f6cdfd6ddf4122e8a1c2f8ef
 0:3, Pool public key       : 80a836a74b077cabaca7a76d1c3c9f269f7f3a8f2fa196a65ee8953eb81274eb8b7328d474982617af5a0fe71b47e9b8
+0:3, Output path           : /farm/yards/907/d
 0:3,
 0:4,Generating plot 1 / 1: 8f781fecff9d78b83b7116580af550b62530a623750738a19dcea498a7a73010
 0:4,
