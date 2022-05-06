@@ -455,7 +455,7 @@ def temp1_path(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
 
 
 @handlers.register(expression=r"^ *Temp2 path *: *(.+)")
-def temp1_path(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
+def temp2_path(match: typing.Match[str], info: SpecificInfo) -> SpecificInfo:
     #  Temp2 path     : /farm/yards/907/2
     return attr.evolve(info, tmp2_dir=match.group(1))
 
