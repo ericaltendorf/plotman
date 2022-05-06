@@ -457,7 +457,8 @@ commands = plotman.plotters.core.Commands()
 
 
 # BladeBit2 Disk Git (disk-plot branch) on 2022-05-04 -> https://github.com/Chia-Network/bladebit/commit/2d53d324d1910af9c2a3c324bf5e8d238f7541bd
-@commands.register(version=(1,))
+# 2.0.0-alpha1
+@commands.register(version=(2, 0, 0, 0, 1))
 @click.group()
 # https://github.com/Chia-Network/bladebit/blob/2d53d324d1910af9c2a3c324bf5e8d238f7541bd/LICENSE
 # https://github.com/Chia-Network/bladebit/blob/2d53d324d1910af9c2a3c324bf5e8d238f7541bd/src/main.cpp#L403-L464
