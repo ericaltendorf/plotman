@@ -23,6 +23,7 @@ class Options:
     n_buckets: int = 256
     n_buckets3: int = 256
     n_rmulti2: int = 1
+    port: int = 8444
 
     def chosen_executable(self) -> str:
         if self.k > 32:
@@ -63,6 +64,8 @@ def create_command_line(
         str(options.k),
         "-n",
         str(1),
+        "-x",
+        str(options.port),
         "-r",
         str(options.n_threads),
         "-u",
