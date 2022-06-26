@@ -160,6 +160,14 @@ def get_validated_configs(
                 "plotting: madmax: executable: must refer to an executable named chia_plot"
             )
 
+        executable_k34_name = os.path.basename(loaded.plotting.madmax.executable_k34)
+        if executable_k34_name != "chia_plot_k34":
+            # TODO: fix all the `TODO: use the configured executable` so this is not
+            #       needed.
+            raise ConfigurationException(
+                "plotting: madmax: executable_k34: must refer to an executable named chia_plot_k34"
+            )
+
     if loaded.archiving is not None:
         preset_target_objects = yaml.safe_load(preset_target_definitions_text)
         preset_target_schema = desert.schema(PresetTargetDefinitions)
