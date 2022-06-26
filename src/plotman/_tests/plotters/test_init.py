@@ -191,6 +191,7 @@ default_madmax_arguments = dict(
     sorted(
         {
             "size": 32,
+            "port": 8444,
             "count": 1,
             "threads": 4,
             "buckets": 256,
@@ -198,11 +199,14 @@ default_madmax_arguments = dict(
             "tmpdir": pathlib.PosixPath("."),
             "tmpdir2": None,
             "finaldir": pathlib.PosixPath("."),
+            "stagedir": None,
             "waitforcopy": False,
             "poolkey": None,
             "contract": None,
             "farmerkey": None,
             "tmptoggle": None,
+            "directout": False,
+            "unique": False,
             "rmulti2": 1,
         }.items()
     )
@@ -726,6 +730,24 @@ madmax_command_line_examples: typing.List[CommandLineExample] = [
         ),
     ),
     CommandLineExample(
+        line=["chia_plot_k34"],
+        plotter=plotman.plotters.madmax.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=False,
+            parameters={**default_madmax_arguments},
+        ),
+    ),
+    CommandLineExample(
+        line=["chia_plot"],
+        plotter=plotman.plotters.madmax.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=False,
+            parameters={**default_madmax_arguments},
+        ),
+    ),
+    CommandLineExample(
         line=["chia_plot", "-h"],
         plotter=plotman.plotters.madmax.Plotter,
         parsed=plotman.job.ParsedChiaPlotsCreateCommand(
@@ -842,6 +864,19 @@ madmax_command_line_examples: typing.List[CommandLineExample] = [
                 "tmpdir2": pathlib.Path("/farm/tmp2/dir"),
             },
         ),
+    ),
+    *(
+        CommandLineExample(
+            line=[executable, "-k", str(k)],
+            plotter=plotman.plotters.madmax.Plotter,
+            parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+                error=None,
+                help=False,
+                parameters={**default_madmax_arguments, "size": k},
+            ),
+        )
+        for executable in ["chia_plot", "chia_plot_k34"]
+        for k in [32, 33, 34]
     ),
 ]
 

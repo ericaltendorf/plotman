@@ -27,7 +27,7 @@ def test_byte_by_byte_full_load() -> None:
         p1_buckets=256,
         p34_buckets=256,
         threads=8,
-        plot_size=32,
+        plot_size=33,
         tmp_dir="/farm/yards/902/",
         tmp2_dir="/farm/yards/902/fake_tmp2/",
         dst_dir="/farm/yards/902/fake_dst/",
@@ -37,7 +37,7 @@ def test_byte_by_byte_full_load() -> None:
         phase4_duration_raw=86.9555,
         total_time_raw=4968.41,
         filename="",
-        plot_name="plot-k32-2021-07-14-21-56-522acbd6308af7e229281352f746449134126482cfabd51d38e0f89745d21698",
+        plot_name="plot-k33-2021-07-14-21-56-522acbd6308af7e229281352f746449134126482cfabd51d38e0f89745d21698",
     )
 
 
