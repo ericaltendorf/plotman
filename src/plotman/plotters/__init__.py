@@ -290,6 +290,7 @@ def parse_command_line_with_click(
         argument for argument in arguments if argument not in help_option_names
     ]
 
+    error: typing.Optional[click.ClickException]
     try:
         context = command.make_context(info_name="", args=list(command_arguments))
     except click.ClickException as e:
