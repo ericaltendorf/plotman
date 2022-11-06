@@ -106,9 +106,6 @@ jobs:
           - name: CPython 3.10
             tox: py310
             action: '3.10'
-          - name: CPython 3.11
-            tox: py311
-            action: '3.11'
         task:
           - name: Test
             tox: test
