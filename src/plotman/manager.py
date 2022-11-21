@@ -263,7 +263,7 @@ def maybe_start_new_plot(
             # allowing handling of just the log file opening error.
 
             if sys.platform == "win32":
-                creationflags = subprocess.CREATE_NO_WINDOW
+                creationflags = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW
                 nice = psutil.BELOW_NORMAL_PRIORITY_CLASS
             else:
                 creationflags = 0
