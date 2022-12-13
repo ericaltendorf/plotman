@@ -55,6 +55,13 @@ def get_validated_configs(
     schema = desert.schema(PlotmanConfig)
     config_objects = yaml.load(config_text, Loader=yaml.SafeLoader)
 
+    if not isinstance(config_objects, dict):
+        raise Exception(
+            f"plotman requires the top level configuration file object type be dict, got:"
+            f" {type(config_objects).__name__}"
+            f"\n    This could be due to an empty or corrupt config file."
+        )
+
     version = config_objects.get("version", (0,))
 
     expected_major_version = 2
@@ -151,6 +158,14 @@ def get_validated_configs(
             #       needed.
             raise ConfigurationException(
                 "plotting: madmax: executable: must refer to an executable named chia_plot"
+            )
+
+        executable_k34_name = os.path.basename(loaded.plotting.madmax.executable_k34)
+        if executable_k34_name != "chia_plot_k34":
+            # TODO: fix all the `TODO: use the configured executable` so this is not
+            #       needed.
+            raise ConfigurationException(
+                "plotting: madmax: executable_k34: must refer to an executable named chia_plot_k34"
             )
 
     if loaded.archiving is not None:

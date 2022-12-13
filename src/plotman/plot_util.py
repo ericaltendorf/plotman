@@ -119,7 +119,7 @@ def _get_probability_of_entries_kept(k: int, table_index: int) -> float:
     if table_index > 5:
         return 1
 
-    pow_2_k = 2 ** k
+    pow_2_k = 2**k
 
     if table_index == 5:
         # p5

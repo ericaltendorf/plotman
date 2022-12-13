@@ -9,14 +9,14 @@ def test_command_version_already_registered_raises() -> None:
     version = (1, 2, 3)
 
     @commands.register(version=version)
-    @click.command  # type: ignore[misc]
+    @click.command
     def f() -> None:
         pass
 
     with pytest.raises(Exception, match=r"Version already registered:"):
 
         @commands.register(version=version)
-        @click.command  # type: ignore[misc]
+        @click.command
         def g() -> None:
             pass
 
@@ -33,7 +33,7 @@ def test_command_getitem_works() -> None:
     version = (1, 2, 3)
 
     @commands.register(version=version)
-    @click.command  # type: ignore[misc]
+    @click.command
     def f() -> None:
         pass
 
