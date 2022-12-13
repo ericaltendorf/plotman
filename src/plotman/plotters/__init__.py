@@ -283,9 +283,9 @@ def get_plotter_from_command_line(
 
 
 def parse_command_line_with_click(
-    command: "plotman.plotters.core.CommandProtocol",
+    command: click.Command,
     arguments: typing.List[str],
-    subcommand: typing.Optional["plotman.plotters.core.CommandProtocol"] = None,
+    subcommand: typing.Optional[click.Command] = None,
 ) -> plotman.job.ParsedChiaPlotsCreateCommand:
     # nice idea, but this doesn't include -h
     # help_option_names = command.get_help_option_names(ctx=context)
@@ -309,7 +309,7 @@ def parse_command_line_with_click(
         if subcommand is None:
             error = None
         elif subcommand.name not in context.protected_args:
-            error = Exception("not the requested subcommand")
+            error = click.ClickException("not the requested subcommand")
         else:
             subcommand_name = subcommand.name
             try:

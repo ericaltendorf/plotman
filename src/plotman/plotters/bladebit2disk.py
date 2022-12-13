@@ -213,6 +213,9 @@ class Plotter:
         #       copied.
         command = commands.latest_command()
 
+        if not isinstance(command, click.Group):
+            raise Exception("bladebit2 command object must be a group")
+
         self.parsed_command_line = plotman.plotters.parse_command_line_with_click(
             command=command,
             subcommand=command.commands["diskplot"],
