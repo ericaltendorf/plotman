@@ -298,6 +298,7 @@ def parse_command_line_with_click(
     params = {}
     subcommand_name = None
     subparams = {}
+    error: typing.Optional[click.ClickException]
     try:
         # TODO: sounds interesting resilient_parsing=True
         context = command.make_context(info_name="", args=list(command_arguments))
