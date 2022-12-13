@@ -28,7 +28,6 @@ class Commands:
 
         return decorator
 
-
     def _decorator(
         self, command: _T_CommandOrGroup, *, version: typing.Sequence[int]
     ) -> _T_CommandOrGroup:
