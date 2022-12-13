@@ -170,7 +170,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip setuptools wheel
-        pip install tox
+        pip install 'tox<4'
 
     - name: Prepare tox environment
       run: |
@@ -256,7 +256,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip setuptools wheel
-        pip install tox
+        pip install 'tox<4'
 
     - name: Prepare tox environment
       run: |
