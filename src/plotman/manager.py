@@ -183,105 +183,108 @@ def maybe_start_new_plot(
 
                     dstdir = max(dir2ph, key=key)
 
-            log_file_path = log_cfg.create_plot_log_path(time=pendulum.now())
+            if plot_util.df_b(dstdir) > plot_util.get_plotsize(32):
+                log_file_path = log_cfg.create_plot_log_path(time=pendulum.now())
 
-            plot_args: typing.List[str]
-            if plotting_cfg.type == "bladebit":
-                if plotting_cfg.bladebit is None:
-                    raise Exception(
-                        "bladebit plotter selected but not configured, report this as a plotman bug",
+                plot_args: typing.List[str]
+                if plotting_cfg.type == "bladebit":
+                    if plotting_cfg.bladebit is None:
+                        raise Exception(
+                            "bladebit plotter selected but not configured, report this as a plotman bug",
+                        )
+                    plot_args = plotman.plotters.bladebit.create_command_line(
+                        options=plotting_cfg.bladebit,
+                        tmpdir=tmpdir,
+                        tmp2dir=dir_cfg.tmp2,
+                        dstdir=dstdir,
+                        farmer_public_key=plotting_cfg.farmer_pk,
+                        pool_public_key=plotting_cfg.pool_pk,
+                        pool_contract_address=plotting_cfg.pool_contract_address,
                     )
-                plot_args = plotman.plotters.bladebit.create_command_line(
-                    options=plotting_cfg.bladebit,
-                    tmpdir=tmpdir,
-                    tmp2dir=dir_cfg.tmp2,
-                    dstdir=dstdir,
-                    farmer_public_key=plotting_cfg.farmer_pk,
-                    pool_public_key=plotting_cfg.pool_pk,
-                    pool_contract_address=plotting_cfg.pool_contract_address,
-                )
-            elif plotting_cfg.type == "madmax":
-                if plotting_cfg.madmax is None:
-                    raise Exception(
-                        "madmax plotter selected but not configured, report this as a plotman bug",
+                elif plotting_cfg.type == "madmax":
+                    if plotting_cfg.madmax is None:
+                        raise Exception(
+                            "madmax plotter selected but not configured, report this as a plotman bug",
+                        )
+                    plot_args = plotman.plotters.madmax.create_command_line(
+                        options=plotting_cfg.madmax,
+                        tmpdir=tmpdir,
+                        tmp2dir=dir_cfg.tmp2,
+                        dstdir=dstdir,
+                        farmer_public_key=plotting_cfg.farmer_pk,
+                        pool_public_key=plotting_cfg.pool_pk,
+                        pool_contract_address=plotting_cfg.pool_contract_address,
                     )
-                plot_args = plotman.plotters.madmax.create_command_line(
-                    options=plotting_cfg.madmax,
-                    tmpdir=tmpdir,
-                    tmp2dir=dir_cfg.tmp2,
-                    dstdir=dstdir,
-                    farmer_public_key=plotting_cfg.farmer_pk,
-                    pool_public_key=plotting_cfg.pool_pk,
-                    pool_contract_address=plotting_cfg.pool_contract_address,
+                else:
+                    if plotting_cfg.chia is None:
+                        raise Exception(
+                            "chia plotter selected but not configured, report this as a plotman bug",
+                        )
+                    plot_args = plotman.plotters.chianetwork.create_command_line(
+                        options=plotting_cfg.chia,
+                        tmpdir=tmpdir,
+                        tmp2dir=dir_cfg.tmp2,
+                        dstdir=dstdir,
+                        farmer_public_key=plotting_cfg.farmer_pk,
+                        pool_public_key=plotting_cfg.pool_pk,
+                        pool_contract_address=plotting_cfg.pool_contract_address,
+                    )
+
+                logmsg = "Starting plot job: %s ; logging to %s" % (
+                    " ".join(plot_args),
+                    log_file_path,
                 )
+
+                # TODO: CAMPid 09840103109429840981397487498131
+                try:
+                    open_log_file = open(log_file_path, "x")
+                except FileExistsError:
+                    # The desired log file name already exists.  Most likely another
+                    # plotman process already launched a new process in response to
+                    # the same scenario that triggered us.  Let's at least not
+                    # confuse things further by having two plotting processes
+                    # logging to the same file.  If we really should launch another
+                    # plotting process, we'll get it at the next check cycle anyways.
+                    message = (
+                        f"Plot log file already exists, skipping attempt to start a"
+                        f" new plot: {log_file_path!r}"
+                    )
+                    return (False, logmsg)
+                except FileNotFoundError as e:
+                    message = (
+                        f"Unable to open log file.  Verify that the directory exists"
+                        f" and has proper write permissions: {log_file_path!r}"
+                    )
+                    raise Exception(message) from e
+
+                # Preferably, do not add any code between the try block above
+                # and the with block below.  IOW, this space intentionally left
+                # blank...  As is, this provides a good chance that our handle
+                # of the log file will get closed explicitly while still
+                # allowing handling of just the log file opening error.
+
+                if sys.platform == "win32":
+                    creationflags = subprocess.CREATE_NO_WINDOW
+                    nice = psutil.BELOW_NORMAL_PRIORITY_CLASS
+                else:
+                    creationflags = 0
+                    nice = 15
+
+                with open_log_file:
+                    # start_new_sessions to make the job independent of this controlling tty (POSIX only).
+                    # subprocess.CREATE_NO_WINDOW to make the process independent of this controlling tty and have no console window on Windows.
+                    p = subprocess.Popen(
+                        plot_args,
+                        stdout=open_log_file,
+                        stderr=subprocess.STDOUT,
+                        start_new_session=True,
+                        creationflags=creationflags,
+                    )
+
+                psutil.Process(p.pid).nice(nice)
+                return (True, logmsg)
             else:
-                if plotting_cfg.chia is None:
-                    raise Exception(
-                        "chia plotter selected but not configured, report this as a plotman bug",
-                    )
-                plot_args = plotman.plotters.chianetwork.create_command_line(
-                    options=plotting_cfg.chia,
-                    tmpdir=tmpdir,
-                    tmp2dir=dir_cfg.tmp2,
-                    dstdir=dstdir,
-                    farmer_public_key=plotting_cfg.farmer_pk,
-                    pool_public_key=plotting_cfg.pool_pk,
-                    pool_contract_address=plotting_cfg.pool_contract_address,
-                )
-
-            logmsg = "Starting plot job: %s ; logging to %s" % (
-                " ".join(plot_args),
-                log_file_path,
-            )
-
-            # TODO: CAMPid 09840103109429840981397487498131
-            try:
-                open_log_file = open(log_file_path, "x")
-            except FileExistsError:
-                # The desired log file name already exists.  Most likely another
-                # plotman process already launched a new process in response to
-                # the same scenario that triggered us.  Let's at least not
-                # confuse things further by having two plotting processes
-                # logging to the same file.  If we really should launch another
-                # plotting process, we'll get it at the next check cycle anyways.
-                message = (
-                    f"Plot log file already exists, skipping attempt to start a"
-                    f" new plot: {log_file_path!r}"
-                )
-                return (False, logmsg)
-            except FileNotFoundError as e:
-                message = (
-                    f"Unable to open log file.  Verify that the directory exists"
-                    f" and has proper write permissions: {log_file_path!r}"
-                )
-                raise Exception(message) from e
-
-            # Preferably, do not add any code between the try block above
-            # and the with block below.  IOW, this space intentionally left
-            # blank...  As is, this provides a good chance that our handle
-            # of the log file will get closed explicitly while still
-            # allowing handling of just the log file opening error.
-
-            if sys.platform == "win32":
-                creationflags = subprocess.CREATE_NO_WINDOW
-                nice = psutil.BELOW_NORMAL_PRIORITY_CLASS
-            else:
-                creationflags = 0
-                nice = 15
-
-            with open_log_file:
-                # start_new_sessions to make the job independent of this controlling tty (POSIX only).
-                # subprocess.CREATE_NO_WINDOW to make the process independent of this controlling tty and have no console window on Windows.
-                p = subprocess.Popen(
-                    plot_args,
-                    stdout=open_log_file,
-                    stderr=subprocess.STDOUT,
-                    start_new_session=True,
-                    creationflags=creationflags,
-                )
-
-            psutil.Process(p.pid).nice(nice)
-            return (True, logmsg)
+                wait_reason = "Insufficient space in dst"
 
     return (False, wait_reason)
 
