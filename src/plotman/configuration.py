@@ -20,6 +20,7 @@ import yaml
 
 from plotman import resources as plotman_resources
 import plotman.plotters.bladebit
+import plotman.plotters.bladebit2disk
 import plotman.plotters.chianetwork
 import plotman.plotters.madmax
 
@@ -104,6 +105,27 @@ def get_validated_configs(
         if executable_name != "bladebit":
             raise ConfigurationException(
                 "plotting: bladebit: executable: must refer to an executable named bladebit"
+            )
+    if loaded.plotting.type == "bladebit2disk":
+        if loaded.plotting.bladebit2disk is None:
+            # TODO: fix all the `TODO: use the configured executable` so this is not
+            #       needed.
+            raise ConfigurationException(
+                "BladeBit 2 disk selected as plotter but plotting: bladebit2disk: was not specified in the config",
+            )
+
+        if (
+            loaded.plotting.pool_pk is not None
+            and loaded.plotting.pool_contract_address is not None
+        ):
+            raise ConfigurationException(
+                "BladeBit plotter accepts up to one of plotting: pool_pk: and pool_contract_address: but both are specified",
+            )
+
+        executable_name = os.path.basename(loaded.plotting.bladebit2disk.executable)
+        if executable_name != "bladebit":
+            raise ConfigurationException(
+                "plotting: bladebit2disk: executable: must refer to an executable named bladebit"
             )
     elif loaded.plotting.type == "chia":
         if loaded.plotting.chia is None:
@@ -415,13 +437,14 @@ class Plotting:
             desert._make._DESERT_SENTINEL: {
                 "marshmallow_field": marshmallow.fields.String(
                     validate=marshmallow.validate.OneOf(
-                        choices=["bladebit", "chia", "madmax"]
+                        choices=["bladebit", "bladebit2disk", "chia", "madmax"]
                     ),
                 ),
             },
         },
     )
     bladebit: Optional[plotman.plotters.bladebit.Options] = None
+    bladebit2disk: Optional[plotman.plotters.bladebit2disk.Options] = None
     chia: Optional[plotman.plotters.chianetwork.Options] = None
     madmax: Optional[plotman.plotters.madmax.Options] = None
 
