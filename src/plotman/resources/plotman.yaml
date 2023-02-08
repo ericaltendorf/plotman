@@ -184,5 +184,21 @@ plotting:
                 n_rmulti2: 1          # Default is 1 
         bladebit:
                 # executable: /path/to/bladebit/.bin/release/bladebit
-                threads: 2
                 no_numa: false
+        bladebit2disk:
+                # executable: /path/to/bladebit/build-release/bladebit
+                no_numa: false
+                no_cpu_affinity: false
+                # buckets:
+                no_t1_direct: false
+                no_t2_direct: false
+                # cache: 200GiB
+                # threads:
+                        # default is the global threads setting and can be overridden for
+                        # each portion of the plot by the more specific thread settings.
+                        # default:
+                        # f1:
+                        # fp:
+                        # c:
+                        # p2:
+                        # p3:

@@ -200,6 +200,20 @@ def maybe_start_new_plot(
                     pool_public_key=plotting_cfg.pool_pk,
                     pool_contract_address=plotting_cfg.pool_contract_address,
                 )
+            elif plotting_cfg.type == "bladebit2disk":
+                if plotting_cfg.bladebit2disk is None:
+                    raise Exception(
+                        "bladebit2disk plotter selected but not configured, report this as a plotman bug",
+                    )
+                plot_args = plotman.plotters.bladebit2disk.create_command_line(
+                    options=plotting_cfg.bladebit2disk,
+                    tmpdir=tmpdir,
+                    tmp2dir=dir_cfg.tmp2,
+                    dstdir=dstdir,
+                    farmer_public_key=plotting_cfg.farmer_pk,
+                    pool_public_key=plotting_cfg.pool_pk,
+                    pool_contract_address=plotting_cfg.pool_contract_address,
+                )
             elif plotting_cfg.type == "madmax":
                 if plotting_cfg.madmax is None:
                     raise Exception(
