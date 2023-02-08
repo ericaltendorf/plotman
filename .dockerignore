@@ -1,0 +1,6 @@
+.git
+.github
+.coveragerc
+.gitignore
+docker
+!docker/supervisord.conf

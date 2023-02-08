@@ -1,5 +1,20 @@
 # Default/example plotman.yaml configuration file
 
+# https://github.com/ericaltendorf/plotman/wiki/Configuration#versions
+version: [2]
+
+#logging:
+#        # One directory in which to store all plot job logs (the STDOUT/
+#        # STDERR of all plot jobs).  In order to monitor progress, plotman
+#        # reads these logs on a regular basis, so using a fast drive is
+#        # recommended.
+#        # For Linux, these paths default to a directory under ~/.local/share/plotman/
+#         plots: <directory>
+#         transfers: <directory>
+#        # For Linux, these paths default to a file at ~/.cache/plotman/log/
+#         application: <file>
+#         disk_spaces: <file>
+
 # Options for display and rendering
 user_interface:
         # Call out to the `stty` program to determine terminal size, instead of
@@ -9,14 +24,16 @@ user_interface:
         # you resize the terminal window, you can try setting this to True. 
         use_stty_size: True
 
+# Optional custom settings for the subcommands (status, interactive etc)
+commands:
+        interactive:
+                # Set it to False if you don't want to auto start plotting when 'interactive' is ran.
+                # You can override this value from the command line, type "plotman interactive -h" for details
+                autostart_plotting: True
+                autostart_archiving: True
+
 # Where to plot and log.
 directories:
-        # One directory in which to store all plot job logs (the STDOUT/
-        # STDERR of all plot jobs).  In order to monitor progress, plotman
-        # reads these logs on a regular basis, so using a fast drive is
-        # recommended.
-        log: /home/chia/chia/logs
-
         # One or more directories to use as tmp dirs for plotting.  The
         # scheduler will use all of them and distribute jobs among them.
         # It assumes that IO is independent for each one (i.e., that each
@@ -30,57 +47,51 @@ directories:
                 - /mnt/tmp/02
                 - /mnt/tmp/03
 
-        # Optional: Allows overriding some characteristics of certain tmp
-        # directories. This contains a map of tmp directory names to
-        # attributes. If a tmp directory and attribute is not listed here,
-        # it uses the default attribute setting from the main configuration.
-        #
-        # Currently support override parameters:
-        #     - tmpdir_max_jobs
-        tmp_overrides:
-                # In this example, /mnt/tmp/00 is larger than the other tmp
-                # dirs and it can hold more plots than the default.
-                "/mnt/tmp/00":
-                        tmpdir_max_jobs: 5
-
         # Optional: tmp2 directory.  If specified, will be passed to
         # chia plots create as -2.  Only one tmp2 directory is supported.
         # tmp2: /mnt/tmp/a
 
-        # One or more directories; the scheduler will use all of them.
-        # These again are presumed to be on independent physical devices,
-        # so writes (plot jobs) and reads (archivals) can be scheduled
-        # to minimize IO contention.
+        # Optional: A list of one or more directories; the scheduler will
+        # use all of them.  These again are presumed to be on independent
+        # physical devices so writes (plot jobs) and reads (archivals) can
+        # be scheduled to minimize IO contention.
+        # 
+        # If dst is commented out, the tmp directories will be used as the
+        # buffer.
         dst:
                 - /mnt/dst/00
                 - /mnt/dst/01
 
-        # Archival configuration.  Optional; if you do not wish to run the
-        # archiving operation, comment this section out.
-        #
-        # Currently archival depends on an rsync daemon running on the remote
-        # host.
-        # The archival also uses ssh to connect to the remote host and check 
-        # for available directories. Set up ssh keys on the remote host to 
-        # allow public key login from rsyncd_user.
-        # Complete example: https://github.com/ericaltendorf/plotman/wiki/Archiving
-        archive:
-                rsyncd_module: plots # Define this in remote rsyncd.conf.
-                rsyncd_path: /plots # This is used via ssh. Should match path 
-                                    # defined in the module referenced above.
-                rsyncd_bwlimit: 80000  # Bandwidth limit in KB/s
-                rsyncd_host: myfarmer
-                rsyncd_user: chia
-                # Optional index.  If omitted or set to 0, plotman will archive
-                # to the first archive dir with free space.  If specified,
-                # plotman will skip forward up to 'index' drives (if they exist).
-                # This can be useful to reduce io contention on a drive on the
-                # archive host if you have multiple plotters (simultaneous io
-                # can still happen at the time a drive fills up.)  E.g., if you
-                # have four plotters, you could set this to 0, 1, 2, and 3, on
-                # the 4 machines, or 0, 1, 0, 1.
-                #   index: 0
-
+# Archival configuration.  Optional; if you do not wish to run the
+# archiving operation, comment this section out.  Almost everyone
+# should be using the archival feature.  It is meant to distribute
+# plots among multiple disks filling them all.  This can be done both
+# to local and to remote disks.
+#
+# As of v0.4, archiving commands are highly configurable.  The basic
+# configuration consists of a script for checking available disk space
+# and another for actually transferring plots.  Each can be specified
+# as either a path to an existing script or inline script contents.
+# It is expected that most people will use existing recipes and will
+# adjust them by specifying environment variables that will set their
+# system specific values.  These can be provided to the scripts via
+# the `env` key.  plotman will additionally provide `source` and
+# `destination` environment variables to the transfer script so it
+# knows the specifically selected items to process.  plotman also needs
+# to be able to generally detect if a transfer process is already
+# running.  To be able to identify externally launched transfers, the
+# process name and an argument prefix to match must be provided.  Note
+# that variable substitution of environment variables including those
+# specified in the env key can be used in both process name and process
+# argument prefix elements but that they use the python substitution
+# format.
+#
+# Complete example: https://github.com/ericaltendorf/plotman/wiki/Archiving
+archiving:
+  target: local_rsync
+  env:
+    command: rsync
+    site_root: /farm/sites
 
 # Plotting scheduling parameters
 scheduling:
@@ -91,8 +102,8 @@ scheduling:
         # the table or table pair in sequence, phase limit corresponds to
         # the number of plots allowed before [phase major : phase minor].
         # e.g, with default settings, a new plot will start only when your plot
-        # reaches phase [2 : 1] on your temp drive. This setting takes precidence 
-        # over global_stagger_m 
+        # reaches phase [2 : 1] on your temp drive. This setting takes precidence
+        # over global_stagger_m
         tmpdir_stagger_phase_major: 2
         tmpdir_stagger_phase_minor: 1
         # Optional: default is 1
@@ -110,16 +121,84 @@ scheduling:
         # How often the daemon wakes to consider starting a new plot job, in seconds.
         polling_time_s: 20
 
+        # Optional: Allows the overriding of some scheduling characteristics of the
+        # tmp directories specified here.
+        # This contains a map of tmp directory names to attributes. If a tmp directory 
+        # and attribute is not listed here, the default attribute setting from the main 
+        # configuration will be used
+        #
+        # Currently support override parameters:
+        #     - tmpdir_stagger_phase_major (requires tmpdir_stagger_phase_minor)
+        #     - tmpdir_stagger_phase_minor (requires tmpdir_stagger_phase_major)
+        #     - tmpdir_stagger_phase_limit
+        #     - tmpdir_max_jobs
+        tmp_overrides:
+                # In this example, /mnt/tmp/00 is larger and faster than the
+                # other tmp dirs and it can hold more plots than the default,
+                # allowing more simultaneous plots, so they are being started
+                # earlier than the global setting above.
+                "/mnt/tmp/00":
+                        tmpdir_stagger_phase_major: 1
+                        tmpdir_stagger_phase_minor: 5
+                        tmpdir_max_jobs: 5
+                # Here, /mnt/tmp/03 is smaller, so a different config might be
+                # to space the phase stagger further apart and only allow 2 jobs
+                # to run concurrently in it
+                "/mnt/tmp/03":
+                        tmpdir_stagger_phase_major: 3
+                        tmpdir_stagger_phase_minor: 1
+                        tmpdir_max_jobs: 2
 
 # Plotting parameters.  These are pass-through parameters to chia plots create.
 # See documentation at
 # https://github.com/Chia-Network/chia-blockchain/wiki/CLI-Commands-Reference#create
 plotting:
-        k: 32
-        e: False             # Use -e plotting option
-        n_threads: 2         # Threads per job
-        n_buckets: 128       # Number of buckets to split data into
-        job_buffer: 3389     # Per job memory
-        # If specified, pass through to the -f and -p options.  See CLI reference.
-        #   farmer_pk: ...
-        #   pool_pk: ...
+        # Your public keys.  Be sure to use the pool contract address for
+        # portable pool plots.  The pool public key is only for original
+        # non-portable plots that can not be used with the official pooling
+        # protocol.
+        # farmer_pk: ...
+        # pool_pk: ...
+        # pool_contract_address: ...
+        
+        # If you enable Chia, plot in *parallel* with higher tmpdir_max_jobs and global_max_jobs
+        type: chia
+        chia:
+                # The stock plotter: https://github.com/Chia-Network/chia-blockchain
+                # executable: /path/to/chia
+                k: 32                # k-size of plot, leave at 32 most of the time
+                e: False             # Use -e plotting option
+                n_threads: 2         # Threads per job
+                n_buckets: 128       # Number of buckets to split data into
+                job_buffer: 3389     # Per job memory
+
+        # If you enable madMAx, plot in *sequence* with very low tmpdir_max_jobs and global_max_jobs
+        madmax:
+                # madMAx plotter: https://github.com/madMAx43v3r/chia-plotter
+                # executable: /path/to/chia_plot
+                # executable_k34: /path/to/chia_plot_k34
+                k: 32
+                n_threads: 4          # Default is 4, crank up if you have many cores
+                n_buckets: 256        # Default is 256
+                n_buckets3: 256       # Default is 256
+                n_rmulti2: 1          # Default is 1 
+        bladebit:
+                # executable: /path/to/bladebit/.bin/release/bladebit
+                no_numa: false
+        bladebit2disk:
+                # executable: /path/to/bladebit/build-release/bladebit
+                no_numa: false
+                no_cpu_affinity: false
+                # buckets:
+                no_t1_direct: false
+                no_t2_direct: false
+                # cache: 200GiB
+                # threads:
+                        # default is the global threads setting and can be overridden for
+                        # each portion of the plot by the more specific thread settings.
+                        # default:
+                        # f1:
+                        # fp:
+                        # c:
+                        # p2:
+                        # p3:
