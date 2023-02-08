@@ -183,8 +183,19 @@ def maybe_start_new_plot(
 
                     dstdir = max(dir2ph, key=key)
             
+            required_plot_space = plot_util.get_plotsize(32) + 10737418240
+            # If tmp & dst share directory and 'worst case' tmp space required
+            if plotting_cfg.type == "bladebit":
+                if dstdir == tmpdir:
+                    required_plot_space = required_plot_space + 64424509440  # 480 GiB
+            elif plotting_cfg.type == "madmax":
+                if dstdir == tmpdir:
+                    required_plot_space = required_plot_space + 44291850240  # 330 GiB
+            elif dstdir == tmpdir:
+                    required_plot_space = required_plot_space + 32078036992  # 239 GiB
+
             # Check available space with a 10G margin for error
-            if plot_util.df_b(dstdir) < (plot_util.get_plotsize(32) + 10737418240):
+            if plot_util.df_b(dstdir) < required_plot_space:
                 wait_reason = "Insufficient space in dst"
                 return (False, wait_reason)
 
