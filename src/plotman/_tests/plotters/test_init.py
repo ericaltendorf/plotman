@@ -11,6 +11,7 @@ import plotman.errors
 import plotman.job
 import plotman.plotters
 import plotman.plotters.bladebit
+import plotman.plotters.bladebit2disk
 import plotman.plotters.chianetwork
 import plotman.plotters.madmax
 import plotman._tests.resources
@@ -114,6 +115,53 @@ default_bladebit_arguments = dict(
 )
 
 
+default_bladebit2disk_arguments = dict(
+    sorted(
+        {
+            # general
+            "threads": None,
+            "count": 1,
+            "farmer_key": None,
+            "pool_contract": None,
+            "pool_key": None,
+            "warm_start": False,
+            "plot_id": None,
+            "memo": None,
+            "show_memo": False,
+            "verbose": False,
+            "no_numa": False,
+            "no_cpu_affinity": False,
+            "memory": False,
+            "memory_json": False,
+            "version": False,
+        }.items()
+    )
+)
+
+
+default_bladebit2disk_subcommand_arguments = dict(
+    sorted(
+        {
+            # diskplot
+            "buckets": 256,
+            "temp1": None,
+            "temp2": None,
+            "no_t1_direct": False,
+            "no_t2_direct": False,
+            "sizes": False,
+            "cache": None,
+            "f1_threads": None,
+            "fp_threads": None,
+            "c_threads": None,
+            "p2_threads": None,
+            "p3_threads": None,
+            # TODO: is this really the default
+            "out_dir": pathlib.Path("."),
+        }.items()
+    )
+)
+
+
 default_chia_network_arguments = dict(
     sorted(
         {
@@ -143,6 +191,7 @@ default_madmax_arguments = dict(
     sorted(
         {
             "size": 32,
+            "port": 8444,
             "count": 1,
             "threads": 4,
             "buckets": 256,
@@ -150,11 +199,14 @@ default_madmax_arguments = dict(
             "tmpdir": pathlib.PosixPath("."),
             "tmpdir2": None,
             "finaldir": pathlib.PosixPath("."),
+            "stagedir": None,
             "waitforcopy": False,
             "poolkey": None,
             "contract": None,
             "farmerkey": None,
             "tmptoggle": None,
+            "directout": False,
+            "unique": False,
             "rmulti2": 1,
         }.items()
     )
@@ -277,6 +329,173 @@ bladebit_command_line_examples: typing.List[CommandLineExample] = [
                 "pool_key": "poolpublickey",
                 "pool_contract": "poolcontractaddress",
                 "verbose": True,
+                "out_dir": pathlib.Path("/farm/dst/dir"),
+            },
+        ),
+    ),
+]
+
+
+bladebit2disk_command_line_examples: typing.List[CommandLineExample] = [
+    CommandLineExample(
+        line=["bladebit", "diskplot", "an_output_directory/"],
+        plotter=plotman.plotters.bladebit2disk.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=False,
+            parameters={
+                **default_bladebit2disk_arguments,
+            },
+            subcommand_name="diskplot",
+            subparameters={
+                **default_bladebit2disk_subcommand_arguments,
+                "out_dir": pathlib.Path("an_output_directory"),
+            },
+        ),
+    ),
+    CommandLineExample(
+        line=["bladebit", "diskplot", "-h"],
+        plotter=plotman.plotters.bladebit2disk.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=True,
+            parameters={**default_bladebit2disk_arguments},
+            subcommand_name="diskplot",
+            subparameters={
+                **default_bladebit2disk_subcommand_arguments,
+            },
+        ),
+    ),
+    CommandLineExample(
+        line=["bladebit", "diskplot", "--help"],
+        plotter=plotman.plotters.bladebit2disk.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=True,
+            parameters={**default_bladebit2disk_arguments},
+            subcommand_name="diskplot",
+            subparameters={
+                **default_bladebit2disk_subcommand_arguments,
+            },
+        ),
+    ),
+    CommandLineExample(
+        line=["bladebit", "diskplot", "--invalid-option"],
+        plotter=plotman.plotters.bladebit2disk.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=click.NoSuchOption("--invalid-option"),
+            help=False,
+            parameters={**default_bladebit2disk_arguments},
+            subcommand_name="diskplot",
+            subparameters={},
+        ),
+    ),
+    CommandLineExample(
+        line=[
+            "bladebit",
+            "--pool-contract",
+            "xch123abc",
+            "--farmer-key",
+            "abc123",
+            "diskplot",
+        ],
+        plotter=plotman.plotters.bladebit2disk.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=False,
+            parameters={
+                **default_bladebit2disk_arguments,
+                "pool_contract": "xch123abc",
+                "farmer_key": "abc123",
+            },
+            subcommand_name="diskplot",
+            subparameters={
+                **default_bladebit2disk_subcommand_arguments,
+            },
+        ),
+    ),
+    CommandLineExample(
+        line=["here/there/bladebit", "diskplot"],
+        plotter=plotman.plotters.bladebit2disk.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=False,
+            parameters={**default_bladebit2disk_arguments},
+            subcommand_name="diskplot",
+            subparameters={
+                **default_bladebit2disk_subcommand_arguments,
+            },
+        ),
+    ),
+    CommandLineExample(
+        line=["bladebit", "diskplot", "final/dir"],
+        cwd="/cwd",
+        plotter=plotman.plotters.bladebit2disk.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=False,
+            parameters={
+                **default_bladebit2disk_arguments,
+            },
+            subcommand_name="diskplot",
+            subparameters={
+                **default_bladebit2disk_subcommand_arguments,
+                "out_dir": pathlib.Path("/", "cwd", "final", "dir"),
+            },
+        ),
+    ),
+    CommandLineExample(
+        line=plotman.plotters.bladebit2disk.create_command_line(
+            options=plotman.plotters.bladebit2disk.Options(),
+            tmpdir="/farm/tmp/dir",
+            tmp2dir=None,
+            dstdir="/farm/dst/dir",
+            farmer_public_key=None,
+            pool_public_key=None,
+            pool_contract_address=None,
+        ),
+        plotter=plotman.plotters.bladebit2disk.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=False,
+            parameters={
+                **default_bladebit2disk_arguments,
+                "verbose": True,
+            },
+            subcommand_name="diskplot",
+            subparameters={
+                **default_bladebit2disk_subcommand_arguments,
+                "temp1": pathlib.Path("/farm/tmp/dir"),
+                "out_dir": pathlib.Path("/farm/dst/dir"),
+            },
+        ),
+    ),
+    CommandLineExample(
+        line=plotman.plotters.bladebit2disk.create_command_line(
+            options=plotman.plotters.bladebit2disk.Options(),
+            tmpdir="/farm/tmp/dir",
+            tmp2dir="/farm/tmp2/dir",
+            dstdir="/farm/dst/dir",
+            farmer_public_key="farmerpublickey",
+            pool_public_key="poolpublickey",
+            pool_contract_address="poolcontractaddress",
+        ),
+        plotter=plotman.plotters.bladebit2disk.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=False,
+            parameters={
+                **default_bladebit2disk_arguments,
+                "farmer_key": "farmerpublickey",
+                "pool_key": "poolpublickey",
+                "pool_contract": "poolcontractaddress",
+                "verbose": True,
+            },
+            subcommand_name="diskplot",
+            subparameters={
+                **default_bladebit2disk_subcommand_arguments,
+                "temp1": pathlib.Path("/farm/tmp/dir"),
+                "temp2": pathlib.Path("/farm/tmp2/dir"),
                 "out_dir": pathlib.Path("/farm/dst/dir"),
             },
         ),
@@ -511,6 +730,24 @@ madmax_command_line_examples: typing.List[CommandLineExample] = [
         ),
     ),
     CommandLineExample(
+        line=["chia_plot_k34"],
+        plotter=plotman.plotters.madmax.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=False,
+            parameters={**default_madmax_arguments},
+        ),
+    ),
+    CommandLineExample(
+        line=["chia_plot"],
+        plotter=plotman.plotters.madmax.Plotter,
+        parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+            error=None,
+            help=False,
+            parameters={**default_madmax_arguments},
+        ),
+    ),
+    CommandLineExample(
         line=["chia_plot", "-h"],
         plotter=plotman.plotters.madmax.Plotter,
         parsed=plotman.job.ParsedChiaPlotsCreateCommand(
@@ -628,11 +865,25 @@ madmax_command_line_examples: typing.List[CommandLineExample] = [
             },
         ),
     ),
+    *(
+        CommandLineExample(
+            line=[executable, "-k", str(k)],
+            plotter=plotman.plotters.madmax.Plotter,
+            parsed=plotman.job.ParsedChiaPlotsCreateCommand(
+                error=None,
+                help=False,
+                parameters={**default_madmax_arguments, "size": k},
+            ),
+        )
+        for executable in ["chia_plot", "chia_plot_k34"]
+        for k in [32, 33, 34]
+    ),
 ]
 
 
 command_line_examples: typing.List[CommandLineExample] = [
     *bladebit_command_line_examples,
+    *bladebit2disk_command_line_examples,
     *chianetwork_command_line_examples,
     *madmax_command_line_examples,
 ]

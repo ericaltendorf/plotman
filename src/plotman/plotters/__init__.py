@@ -242,17 +242,21 @@ check_Plotter = ProtocolChecker[Plotter]()
 def all_plotters() -> typing.List[typing.Type[Plotter]]:
     # TODO: maybe avoid the import loop some other way
     import plotman.plotters.bladebit
+    import plotman.plotters.bladebit2disk
     import plotman.plotters.chianetwork
     import plotman.plotters.madmax
 
     return [
         plotman.plotters.bladebit.Plotter,
+        plotman.plotters.bladebit2disk.Plotter,
         plotman.plotters.chianetwork.Plotter,
         plotman.plotters.madmax.Plotter,
     ]
 
 
 def get_plotter_from_log(lines: typing.Iterable[str]) -> typing.Type[Plotter]:
+    import plotman.plotters.bladebit
+    import plotman.plotters.bladebit2disk
     import plotman.plotters.chianetwork
     import plotman.plotters.madmax
 
@@ -279,8 +283,9 @@ def get_plotter_from_command_line(
 
 
 def parse_command_line_with_click(
-    command: "plotman.plotters.core.CommandProtocol",
+    command: click.Command,
     arguments: typing.List[str],
+    subcommand: typing.Optional[click.Command] = None,
 ) -> plotman.job.ParsedChiaPlotsCreateCommand:
     # nice idea, but this doesn't include -h
     # help_option_names = command.get_help_option_names(ctx=context)
@@ -290,19 +295,41 @@ def parse_command_line_with_click(
         argument for argument in arguments if argument not in help_option_names
     ]
 
+    params = {}
+    subcommand_name = None
+    subparams = {}
+    error: typing.Optional[click.ClickException]
     try:
+        # TODO: sounds interesting resilient_parsing=True
         context = command.make_context(info_name="", args=list(command_arguments))
     except click.ClickException as e:
         error = e
-        params = {}
     else:
-        error = None
         params = context.params
+        if subcommand is None:
+            error = None
+        elif subcommand.name not in context.protected_args:
+            error = click.ClickException("not the requested subcommand")
+        else:
+            subcommand_name = subcommand.name
+            try:
+                subcontext = subcommand.make_context(
+                    info_name="",
+                    args=list(context.args),
+                )
+            except click.ClickException as e:
+                error = e
+            else:
+                error = None
+                params = context.params
+                subparams = subcontext.params
 
     return plotman.job.ParsedChiaPlotsCreateCommand(
         error=error,
         help=len(arguments) > len(command_arguments),
         parameters=dict(sorted(params.items())),
+        subcommand_name=subcommand_name,
+        subparameters=dict(sorted(subparams.items())),
     )
 
 

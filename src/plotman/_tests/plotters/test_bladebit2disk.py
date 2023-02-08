@@ -1,43 +1,38 @@
 import importlib.resources
-import pathlib
-import typing
 
 import pendulum
 
 import plotman.job
-import plotman.plotters.madmax
+import plotman.plotters.bladebit2disk
 import plotman._tests.resources
 
 
 def test_byte_by_byte_full_load() -> None:
     read_bytes = importlib.resources.read_binary(
         package=plotman._tests.resources,
-        resource="madmax.plot.log",
+        resource="bladebit2disk.plot.log",
     )
 
-    parser = plotman.plotters.madmax.Plotter()
+    parser = plotman.plotters.bladebit2disk.Plotter()
 
     for byte in (bytes([byte]) for byte in read_bytes):
         parser.update(chunk=byte)
 
-    assert parser.info == plotman.plotters.madmax.SpecificInfo(
-        phase=plotman.job.Phase(major=5, minor=2),
-        started_at=pendulum.datetime(2021, 7, 14, 21, 56, 0, tz=None),
-        plot_id="522acbd6308af7e229281352f746449134126482cfabd51d38e0f89745d21698",
-        p1_buckets=256,
-        p34_buckets=256,
-        threads=8,
-        plot_size=33,
-        tmp_dir="/farm/yards/902/",
-        tmp2_dir="/farm/yards/902/fake_tmp2/",
-        dst_dir="/farm/yards/902/fake_dst/",
-        phase1_duration_raw=2197.52,
-        phase2_duration_raw=1363.42,
-        phase3_duration_raw=1320.47,
-        phase4_duration_raw=86.9555,
-        total_time_raw=4968.41,
-        filename="",
-        plot_name="plot-k33-2021-07-14-21-56-522acbd6308af7e229281352f746449134126482cfabd51d38e0f89745d21698",
+    assert parser.info == plotman.plotters.bladebit2disk.SpecificInfo(
+        phase=plotman.job.Phase(major=4, minor=2),
+        started_at=pendulum.datetime(2022, 5, 4, 00, 44, 0, tz=None),
+        plot_id="8f781fecff9d78b83b7116580af550b62530a623750738a19dcea498a7a73010",
+        threads=64,
+        plot_size=32,
+        tmp1_dir="/farm/yards/907/1",
+        tmp2_dir="/farm/yards/907/2",
+        dst_dir="/farm/yards/907/d",
+        phase1_duration_raw=526.48,
+        phase2_duration_raw=100.36,
+        phase3_duration_raw=562.95,
+        total_time_raw=1189.79,
+        filename="plot-k32-2022-05-04-00-44-8f781fecff9d78b83b7116580af550b62530a623750738a19dcea498a7a73010.plot.tmp",
+        plot_name="plot-k32-2022-05-04-00-44-8f781fecff9d78b83b7116580af550b62530a623750738a19dcea498a7a73010",
     )
 
 
@@ -45,10 +40,10 @@ def test_log_phases() -> None:
     # TODO: CAMPid 0978413087474699698142013249869897439887
     read_bytes = importlib.resources.read_binary(
         package=plotman._tests.resources,
-        resource="madmax.marked",
+        resource="bladebit2disk.marked",
     )
 
-    parser = plotman.plotters.madmax.Plotter()
+    parser = plotman.plotters.bladebit2disk.Plotter()
 
     wrong = []
 
@@ -69,11 +64,11 @@ def test_marked_log_matches() -> None:
     # TODO: CAMPid 909831931987460871349879878609830987138931700871340870
     marked_bytes = importlib.resources.read_binary(
         package=plotman._tests.resources,
-        resource="madmax.marked",
+        resource="bladebit2disk.marked",
     )
     log_bytes = importlib.resources.read_binary(
         package=plotman._tests.resources,
-        resource="madmax.plot.log",
+        resource="bladebit2disk.plot.log",
     )
 
     for marked_line, log_line in zip(
