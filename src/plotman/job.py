@@ -12,6 +12,7 @@ import click
 import psutil
 
 import plotman.errors
+import plotman.plotters
 
 if typing.TYPE_CHECKING:
     import plotman.errors

@@ -1,10 +1,12 @@
 import collections
 import functools
+import importlib
 import io
 import itertools
 import math
 import os
 import time
+import typing
 
 import anyio
 import attr
@@ -28,15 +30,23 @@ import plotman.job
 import plotman.manager
 import plotman.plot_util
 import plotman.reporting
+import plotman.resources
 
 
-def with_rich():
+def with_rich() -> None:
     config_path = plotman.configuration.get_path()
     config_text = plotman.configuration.read_configuration_text(config_path)
-    cfg = plotman.configuration.get_validated_configs(config_text, config_path)
+    preset_target_definitions_text = importlib.resources.read_text(
+        plotman.resources,
+        "target_definitions.yaml",
+    )
+    cfg = plotman.configuration.get_validated_configs(config_text, config_path, preset_target_definitions_text)
 
     tmp_prefix = os.path.commonpath(cfg.directories.tmp)
-    dst_prefix = os.path.commonpath(cfg.directories.dst)
+    if cfg.directories.dst is None:
+        dst_prefix = ""
+    else:
+        dst_prefix = os.path.commonpath(cfg.directories.dst)
 
     overall = rich.layout.Layout('overall')
     rows = [
@@ -64,7 +74,7 @@ def with_rich():
 
     disks_layout.split_row(*disks_layouts)
 
-    jobs = []
+    jobs: typing.List[plotman.job.Job] = []
 
     prompt_toolkit_input = prompt_toolkit.input.create_input()
     with prompt_toolkit_input.raw_mode():
@@ -73,7 +83,7 @@ def with_rich():
                 header_layout.update(str(i))
 
                 jobs = plotman.job.Job.get_running_jobs(
-                    cfg.directories.log,
+                    cfg.logging.plots,
                     cached_jobs=jobs,
                 )
                 jobs_data = build_jobs_data(
@@ -104,17 +114,20 @@ def with_rich():
                     time.sleep(0.1)
 
 
-async def with_prompt_toolkit():
+async def with_prompt_toolkit() -> None:
     config_path = plotman.configuration.get_path()
     config_text = plotman.configuration.read_configuration_text(config_path)
-    cfg = plotman.configuration.get_validated_configs(config_text, config_path)
-
-    archiving_configured = cfg.directories.archive is not None
+    preset_target_definitions_text = importlib.resources.read_text(
+        plotman.resources,
+        "target_definitions.yaml",
+    )
+    cfg = plotman.configuration.get_validated_configs(config_text, config_path, preset_target_definitions_text)
 
     tmp_prefix = os.path.commonpath(cfg.directories.tmp)
-    dst_prefix = os.path.commonpath(cfg.directories.dst)
-    if archiving_configured:
-        arch_prefix = cfg.directories.archive.rsyncd_path
+    if cfg.directories.dst is None:
+        dst_prefix = ""
+    else:
+        dst_prefix = os.path.commonpath(cfg.directories.dst)
 
     header_buffer = prompt_toolkit.layout.controls.FormattedTextControl('header')
     plots_buffer = prompt_toolkit.layout.controls.FormattedTextControl('plots')
@@ -153,24 +166,24 @@ async def with_prompt_toolkit():
 
     key_bindings = prompt_toolkit.key_binding.KeyBindings()
 
-    application = prompt_toolkit.Application(
+    application = prompt_toolkit.Application[None](
         layout=layout,
         full_screen=True,
         key_bindings=key_bindings,
     )
 
     # https://github.com/prompt-toolkit/python-prompt-toolkit/issues/827#issuecomment-459099452
-    application.output.show_cursor = lambda: False
+    application.output.show_cursor = lambda: False  # type: ignore[assignment]
 
     rich_console = rich.console.Console()
 
-    jobs = []
+    jobs: typing.List[plotman.job.Job] = []
 
     # i think this should be able to be a single call...
     key_bindings.add('q')(exit_key_binding)
     key_bindings.add('c-c')(exit_key_binding)
 
-    binding_handler_names = {
+    binding_handler_names: typing.Dict[typing.Callable[[prompt_toolkit.key_binding.key_processor.KeyPressEvent], object], str] = {
         exit_key_binding: 'exit',
     }
 
@@ -194,7 +207,7 @@ async def with_prompt_toolkit():
             header_buffer.text = str(i)
 
             jobs = plotman.job.Job.get_running_jobs(
-                cfg.directories.log,
+                cfg.logging.plots,
                 cached_jobs=jobs,
             )
             jobs_data = build_jobs_data(
@@ -227,8 +240,15 @@ async def with_prompt_toolkit():
 
             size = application.output.get_size()
 
-            if archiving_configured:
-                archdir_freebytes = plotman.archive.get_archdir_freebytes(cfg.directories.archive)
+            if cfg.archiving is not None:
+                archdir_freebytes, log_message = plotman.archive.get_archdir_freebytes(cfg.archiving)
+
+                archive_directories = list(archdir_freebytes.keys())
+                if len(archive_directories) == 0:
+                    arch_prefix = ""
+                else:
+                    arch_prefix = os.path.commonpath(archive_directories)
+
                 archdir_rich = arch_dir_text(
                     archdir_freebytes=archdir_freebytes,
                     width=size.columns,
@@ -243,23 +263,23 @@ async def with_prompt_toolkit():
             await anyio.sleep(1)
 
 
-async def cancel_after_application(application, cancel_scope):
+async def cancel_after_application(application: prompt_toolkit.Application[None], cancel_scope: anyio.CancelScope) -> None:
     await application.run_async()
     cancel_scope.cancel()
 
 
-def exit_key_binding(event):
+def exit_key_binding(event: prompt_toolkit.key_binding.key_processor.KeyPressEvent) -> None:
     event.app.exit()
 
 
-def capture_rich(*objects, console):
+def capture_rich(*objects: object, console: rich.console.Console) -> prompt_toolkit.ANSI:
     with console.capture() as capture:
         console.print(*objects)
 
     return prompt_toolkit.ANSI(capture.get().strip())
 
 
-def row_ib(name):
+def row_ib(name: str) -> typing.Any:
     return attr.ib(converter=str, metadata={'name': name})
 
 
@@ -280,16 +300,17 @@ class JobRow:
     io: str = row_ib(name='io')
 
     @classmethod
-    def from_job(cls, job, dst_prefix, tmp_prefix):
+    def from_job(cls, job: plotman.job.Job, dst_prefix: str, tmp_prefix: str) -> "JobRow":
+        plot_info = job.plotter.common_info()
         self = cls(
-            plot_id=job.plot_id[:8],
-            k=job.k,
-            tmp_path=plotman.reporting.abbr_path(job.tmpdir, tmp_prefix),
-            dst=plotman.reporting.abbr_path(job.dstdir, dst_prefix),
+            plot_id=job.plot_id_prefix(),
+            k=str(plot_info.plot_size),
+            tmp_path=plotman.reporting.abbr_path(plot_info.tmpdir, tmp_prefix),
+            dst=plotman.reporting.abbr_path(plot_info.dstdir, dst_prefix),
             wall=plotman.plot_util.time_format(job.get_time_wall()),
-            phase=plotman.reporting.phase_str(job.progress()),
+            phase=plotman.reporting.phases_str([job.progress()]),
             tmp_usage=plotman.plot_util.human_format(job.get_tmp_usage(), 0),
-            pid=job.proc.pid,
+            pid=str(job.proc.pid),
             stat=job.get_run_status(),
             mem=plotman.plot_util.human_format(job.get_mem_usage(), 1),
             user=plotman.plot_util.time_format(job.get_time_user()),
@@ -300,7 +321,7 @@ class JobRow:
         return self
 
 
-def build_jobs_data(jobs, dst_prefix, tmp_prefix):
+def build_jobs_data(jobs: typing.List[plotman.job.Job], dst_prefix: str, tmp_prefix: str) -> typing.List[JobRow]:
     sorted_jobs = sorted(jobs, key=plotman.job.Job.get_time_wall)
 
     jobs_data = [
@@ -311,7 +332,7 @@ def build_jobs_data(jobs, dst_prefix, tmp_prefix):
     return jobs_data
 
 
-def build_jobs_table(jobs_data):
+def build_jobs_table(jobs_data: typing.List[JobRow]) -> rich.table.Table:
     table = rich.table.Table(box=None, header_style='reverse')
 
     table.add_column('#')
@@ -329,10 +350,10 @@ def build_jobs_table(jobs_data):
 class TmpRow:
     path: str = row_ib(name='tmp')
     ready: bool = row_ib(name='ready')
-    phases: list[plotman.job.Phase] = row_ib(name='phases')
+    phases: str = row_ib(name='phases')
 
     @classmethod
-    def from_tmp(cls, dir_cfg, jobs, sched_cfg, tmp, prefix):
+    def from_tmp(cls, dir_cfg: plotman.configuration.Directories, jobs: typing.List[plotman.job.Job], sched_cfg: plotman.configuration.Scheduling, tmp: str, prefix: str) -> "TmpRow":
         phases = sorted(plotman.job.job_phases_for_tmpdir(d=tmp, all_jobs=jobs))
         tmp_suffix = plotman.reporting.abbr_path(path=tmp, putative_prefix=prefix)
         ready = plotman.manager.phases_permit_new_job(
@@ -343,13 +364,13 @@ class TmpRow:
         )
         self = cls(
             path=tmp_suffix,
-            ready='OK' if ready else '--',
+            ready=ready,
             phases=plotman.reporting.phases_str(phases=phases, max_num=5),
         )
         return self
 
 
-def build_tmp_data(jobs, dir_cfg, sched_cfg, prefix):
+def build_tmp_data(jobs: typing.List[plotman.job.Job], dir_cfg: plotman.configuration.Directories, sched_cfg: plotman.configuration.Scheduling, prefix: str) -> typing.List[TmpRow]:
     rows = [
         TmpRow.from_tmp(
             dir_cfg=dir_cfg,
@@ -364,7 +385,7 @@ def build_tmp_data(jobs, dir_cfg, sched_cfg, prefix):
     return rows
 
 
-def build_tmp_table(tmp_data):
+def build_tmp_table(tmp_data: typing.List[TmpRow]) -> rich.table.Table:
     table = rich.table.Table(box=None, header_style='reverse')
 
     for field in attr.fields(TmpRow):
@@ -380,18 +401,18 @@ def build_tmp_table(tmp_data):
 class DstRow:
     dst: str = row_ib(name='dst')
     plot_count: int = row_ib(name='plots')
-    free: int = row_ib(name='free')
-    inbound_phases: list[plotman.job.Phase] = row_ib(name='phases')
+    free: str = row_ib(name='free')
+    inbound_phases: str = row_ib(name='phases')
     priority: int = row_ib(name='pri')
 
     @classmethod
-    def from_dst(cls, dst, jobs, prefix, dir2oldphase):
+    def from_dst(cls, dst: str, jobs: typing.List[plotman.job.Job], prefix: str, dir2oldphase: typing.Dict[str, plotman.job.Phase]) -> "DstRow":
         # TODO: This logic is replicated in archive.py's priority computation,
         # maybe by moving more of the logic in to directory.py
         eldest_ph = dir2oldphase.get(dst, plotman.job.Phase(0, 0))
         phases = plotman.job.job_phases_for_dstdir(dst, jobs)
 
-        dir_plots = plotman.plot_util.list_k32_plots(dst)
+        dir_plots = plotman.plot_util.list_plots(dst)
         free = plotman.plot_util.df_b(dst)
         n_plots = len(dir_plots)
         priority = plotman.archive.compute_priority(
@@ -411,8 +432,11 @@ class DstRow:
         return self
 
 
-def build_dst_data(jobs, dstdirs, prefix):
+def build_dst_data(jobs: typing.List[plotman.job.Job], dstdirs: typing.Optional[typing.List[str]], prefix: str) -> typing.List[DstRow]:
     dir2oldphase = plotman.manager.dstdirs_to_furthest_phase(jobs)
+
+    if dstdirs is None:
+        return []
 
     rows = [
         DstRow.from_dst(
@@ -427,7 +451,7 @@ def build_dst_data(jobs, dstdirs, prefix):
     return rows
 
 
-def build_dst_table(dst_data):
+def build_dst_table(dst_data: typing.List[DstRow]) -> rich.table.Table:
     table = rich.table.Table(box=None, header_style='reverse')
 
     for field in attr.fields(DstRow):
@@ -439,19 +463,7 @@ def build_dst_table(dst_data):
     return table
 
 
-def build_dst_table(dst_data):
-    table = rich.table.Table(box=None, header_style='reverse')
-
-    for field in attr.fields(DstRow):
-        table.add_column(field.metadata['name'])
-
-    for row in dst_data:
-        table.add_row(*attr.astuple(row))
-
-    return table
-
-
-def arch_dir_text(archdir_freebytes, width, prefix):
+def arch_dir_text(archdir_freebytes: typing.Dict[str, int], width: int, prefix: str) -> str:
     lines = [
         '[reverse]archive dirs free space[/reverse]',
     ]
