@@ -192,7 +192,7 @@ def maybe_start_new_plot(
                 if dstdir == tmpdir:
                     required_plot_space = required_plot_space + 44291850240  # 330 GiB
             elif dstdir == tmpdir:
-                    required_plot_space = required_plot_space + 32078036992  # 239 GiB
+                required_plot_space = required_plot_space + 32078036992  # 239 GiB
 
             # Check available space with a 10G margin for error
             if plot_util.df_b(dstdir) < required_plot_space:
