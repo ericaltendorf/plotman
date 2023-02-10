@@ -1,3 +1,4 @@
+import anyio
 import argparse
 import datetime
 import importlib
@@ -15,13 +16,7 @@ import typing
 import pendulum
 
 # Plotman libraries
-from plotman import (
-    analyzer,
-    archive,
-    configuration,
-    interactive,
-    manager,
-    plot_util,
+from plotman import (analyzer, archive, configuration, interactive, manager, monitor, plot_util,
     reporting,
     csv_exporter,
 )
@@ -80,6 +75,10 @@ class PlotmanArgParser:
             default=None,
             dest="autostart_archiving",
         )
+
+        sp.add_parser('rich', help='monitoring with rich')
+
+        sp.add_parser('prompt_toolkit', help='monitoring with prompt_toolkit')
 
         sp.add_parser("dsched", help="print destination dir schedule")
 
@@ -314,6 +313,12 @@ def main() -> None:
             else:
                 with open(args.save_to, "w", encoding="utf-8") as file:
                     csv_exporter.generate(logfilenames=logfilenames, file=file)
+
+        elif args.cmd == 'rich':
+            monitor.with_rich()
+
+        elif args.cmd == 'prompt_toolkit':
+            anyio.run(monitor.with_prompt_toolkit)
 
         else:
             jobs = Job.get_running_jobs(cfg.logging.plots)
