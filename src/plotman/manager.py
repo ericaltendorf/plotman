@@ -182,7 +182,7 @@ def maybe_start_new_plot(
                         return dir2ph[key]
 
                     dstdir = max(dir2ph, key=key)
-            
+
             required_plot_space = plot_util.get_plotsize(32) + 10737418240
             # If tmp & dst share directory and 'worst case' tmp space required
             if plotting_cfg.type == "bladebit":
