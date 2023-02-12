@@ -52,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Allows explicit specification of the plotter executable path if this is preferred over setting the `PATH` environment variable to find the program.
   Presently does not support executables other than the expected names (`chia`, and `chia_plot`).
   ([#823](https://github.com/ericaltendorf/plotman/pull/823))
+- New rsyncd target definition which removes a single file after archiving based on a file glob (for replotting)
 
 ## [0.5] - 2021-07-07
 ### Fixed

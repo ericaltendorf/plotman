@@ -58,6 +58,38 @@ target_definitions:
       "${command}" ${options} "${source}" "${url_root}/${relative_path}/"
     transfer_process_name: "{command}"
     transfer_process_argument_prefix: "rsync://{user}@{host}:{rsync_port}/{site}"
+  rsyncd_replot:
+    env:
+      # A value of null indicates a mandatory option
+      command: rsync
+      options: --bwlimit=80000 --preallocate --remove-source-files --skip-compress plot --whole-file
+      rsync_port: 873
+      ssh_port: 22
+      user: null
+      host: null
+      site_root: null
+      site: null
+      path_suffix: ""
+      # Provide the file glob to determine the next file to be deleted e.g. "*/plot-k32-2021-0[3-6]-*"
+      replot_glob: null
+    disk_space_script: |
+      #!/bin/bash
+      set -evx
+      site_root_stripped=$(echo "${site_root}" | sed 's;/\+$;;')
+      # printf with %.0f used to handle mawk such as in Ubuntu Docker images
+      # otherwise it saturates and you get saturated sizes like 2147483647
+      ssh -p "${ssh_port}" "${user}@${host}" "df -aBK | grep \" $(echo "${site_root_stripped}" | sed 's;/\+$;;')/\" | awk '{ gsub(/K\$/,\"\",\$4); printf \"%s:%.0f\n\", \$6, \$4*1024 }'"
+    transfer_script: |
+      #!/bin/bash
+      set -evx
+      echo Launching transfer activity
+      full_destination=$(realpath --canonicalize-missing "${destination}/${path_suffix}")
+      relative_path=$(realpath --canonicalize-missing --relative-to="${site_root}" "${full_destination}")
+      url_root="rsync://${user}@${host}:${rsync_port}/${site}"
+      "${command}" ${options} "${source}" "${url_root}/${relative_path}/"
+      ssh -p "${ssh_port}" "${user}@${host}" "ls -1U ${site_root}/${replot_glob}.plot | head -n 1 | xargs rm -fv"
+    transfer_process_name: "{command}"
+    transfer_process_argument_prefix: "rsync://{user}@{host}:{rsync_port}/{site}"
 #  external_script:
 #    env:
 #      some_common_value_with_a_default: /a/path
